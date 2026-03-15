@@ -1,0 +1,81 @@
+/* Palette inspirée du bouquet */
+:root {
+  --cream: #f8f3eb;
+  --green: #9eb8a5;
+  --terracotta: #c86d3c;
+  --beige: #e2d6c4;
+  --header-height: 68px; /* Hauteur de la bannière */
+}
+
+body {
+  overflow-y: hidden;
+  background-color: var(--cream);
+  color: #1f2937;
+}
+
+/* Hauteur de la bannière */
+.header-fixed {
+  height: var(--header-height);
+}
+
+/* Conteneur principal pour toutes les pages */
+#book-container {
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  padding-top: var(--header-height);
+  scroll-behavior: smooth;
+}
+
+/* Style des pages individuelles */
+.book-page {
+  height: calc(100vh - var(--header-height));
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ajustement de l'intro */
+#intro {
+  scroll-snap-align: end;
+  justify-content: center;
+}
+
+.page-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Styles pour les boutons de navigation */
+.nav-button-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  transition: all 150ms ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.nav-button-overlay:hover {
+  background-color: rgba(0, 0, 0, 0.6);
+}
