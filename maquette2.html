@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Demande de Témoin (Alignement Corrigé)</title>
+
+    <style>
+      /* Palette inspirée du bouquet */
+      :root {
+        --cream: #f8f3eb;
+        --green: #9eb8a5;
+        --terracotta: #c86d3c;
+        --beige: #e2d6c4;
+        --header-height: 68px; /* Hauteur de la bannière */
+      }
+
+      body {
+        overflow-y: hidden;
+        background-color: var(--cream);
+        color: #1f2937;
+      }
+
+      /* Conteneur principal pour toutes les pages */
+      #book-container {
+        height: 100vh;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        padding-top: var(--header-height);
+        scroll-behavior: smooth;
+      }
+
+      /* Style des pages individuelles */
+      .book-page {
+        height: calc(100vh - var(--header-height));
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* CORRECTION 1 & 2: Ajustement de l'intro */
+      #intro {
+        /* Assure que l'ancre (le haut de la page) s'aligne bien sous la bannière */
+        scroll-snap-align: end; /* Force l'alignement en bas pour éviter de voir le bas de la page suivante */
+        justify-content: center;
+      }
+
+      .page-image {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Styles pour les boutons de navigation */
+      .nav-button-overlay {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 15;
+
+        /* Style visuel AJUSTÉ */
+        @apply w-12 h-12 rounded-lg text-white shadow transition flex items-center justify-center text-4xl font-bold;
+        /* Transparence avec fond noir */
+        background-color: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+        /* Centrage vertical du symbole */
+        line-height: 1;
+      }
+      .nav-button-overlay:hover {
+        background-color: rgba(0, 0, 0, 0.6);
+      }
+    </style>
+  </head>
+
+  <body>
+    <header
+      class="w-full bg-white shadow-md fixed top-0 left-0 z-20"
+      style="height: var(--header-height)"
+    >
+      <div
+        class="max-w-5xl mx-auto py-4 px-6 flex justify-between items-center"
+      >
+        <h1 class="text-xl font-bold text-[var(--terracotta)]">
+          Notre Mariage
+        </h1>
+        <nav class="text-sm text-[var(--green)]">Demande spéciale</nav>
+      </div>
+    </header>
+
+    <div id="book-container">
+      <section id="intro" class="book-page">
+        <div
+          class="book-page h-full w-full bg-cover bg-center flex items-center justify-center"
+          style="
+            background-image: url('./accueil-fond.jpeg');
+            background-color: var(--cream);
+          "
+        >
+          <div
+            class="bg-white/80 p-8 rounded-2xl shadow-xl max-w-lg text-center"
+          >
+            <h2 class="text-2xl font-semibold text-[var(--terracotta)] mb-4">
+              Une petite surprise…
+            </h2>
+            <p class="text-gray-700 mb-6">
+              Avant de te poser une question importante, voici quelque chose
+              pour toi.
+            </p>
+            <a
+              href="#page-1"
+              class="px-6 py-3 rounded-xl bg-[var(--terracotta)] text-white shadow hover:bg-[var(--green)] transition"
+            >
+              Ouvrir le livre
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-1" class="book-page bg-[var(--cream)]">
+        <div
+          class="w-full h-full flex flex-col items-center justify-center p-6 max-w-5xl mx-auto"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-lg flex w-full h-3/4 relative"
+          >
+            <a href="#intro" class="nav-button-overlay top-8"> ↑ </a>
+
+            <div class="flex w-full h-full flex-col sm:flex-row">
+              <div class="w-full h-1/2 sm:w-1/2 sm:h-full">
+                <img
+                  src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e"
+                  class="page-image rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none"
+                  alt="Image pour page 1"
+                />
+              </div>
+              <div
+                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none"
+              >
+                <p
+                  class="text-lg sm:text-xl text-gray-800 leading-relaxed text-center"
+                >
+                  Depuis tant d'années, tu fais partie de notre histoire…
+                </p>
+              </div>
+            </div>
+
+            <a href="#page-2" class="nav-button-overlay bottom-8"> ↓ </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-2" class="book-page bg-[var(--cream)]">
+        <div
+          class="w-full h-full flex flex-col items-center justify-center p-6 max-w-5xl mx-auto"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-lg flex w-full h-3/4 relative"
+          >
+            <a href="#page-1" class="nav-button-overlay top-8"> ↑ </a>
+
+            <div class="flex w-full h-full flex-col sm:flex-row">
+              <div
+                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none order-1"
+              >
+                <p
+                  class="text-lg sm:text-xl text-gray-800 leading-relaxed text-center"
+                >
+                  Tu as toujours été présent(e) dans les grands moments.
+                </p>
+              </div>
+              <div class="w-full h-1/2 sm:w-1/2 sm:h-full order-2">
+                <img
+                  src="https://images.unsplash.com/photo-1519682337058-a94d519337bc"
+                  class="page-image rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none"
+                  alt="Image pour page 2"
+                />
+              </div>
+            </div>
+
+            <a href="#page-3" class="nav-button-overlay bottom-8"> ↓ </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-3" class="book-page bg-[var(--cream)]">
+        <div
+          class="w-full h-full flex flex-col items-center justify-center p-6 max-w-5xl mx-auto"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-lg flex w-full h-3/4 relative"
+          >
+            <a href="#page-2" class="nav-button-overlay top-8"> ↑ </a>
+
+            <div class="flex w-full h-full flex-col sm:flex-row">
+              <div class="w-full h-1/2 sm:w-1/2 sm:h-full">
+                <img
+                  src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486"
+                  class="page-image rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none"
+                  alt="Image pour page 3"
+                />
+              </div>
+              <div
+                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none"
+              >
+                <p
+                  class="text-lg sm:text-xl text-gray-800 leading-relaxed text-center"
+                >
+                  Et aujourd’hui, nous aimerions t’avoir à nos côtés.
+                </p>
+              </div>
+            </div>
+
+            <a href="#page-finale" class="nav-button-overlay bottom-8"> ↓ </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-finale" class="book-page bg-[var(--cream)]">
+        <div
+          class="w-full h-full flex flex-col items-center justify-center p-6 max-w-5xl mx-auto"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-lg flex w-full h-3/4 relative"
+          >
+            <a href="#page-3" class="nav-button-overlay top-8"> ↑ </a>
+
+            <div class="flex-1 flex justify-center items-center flex-col p-10">
+              <h2
+                class="text-3xl font-semibold text-[var(--terracotta)] mb-6 text-center"
+              >
+                Alors… accepterais-tu ? 💍
+              </h2>
+              <div class="flex gap-4">
+                <button
+                  class="bg-[var(--green)] text-white px-6 py-3 rounded-xl hover:bg-[var(--terracotta)]"
+                >
+                  Oui !
+                </button>
+                <button
+                  class="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600"
+                >
+                  Je ne peux pas…
+                </button>
+              </div>
+            </div>
+
+            <a href="#" class="nav-button-overlay bottom-8 hidden"> ↓ </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

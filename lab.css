@@ -1,0 +1,15 @@
+.container {
+  margin: 0px 0px;
+  width: 100vw;
+  height: 1000vh;
+  background-color: cadetblue;
+}
+
+.banner {
+  height: 50px;
+  width: 80vw;
+  max-width: 700px;
+  min-width: 500px;
+  background-color: coral;
+  margin: auto;
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Demande de Témoin</title>
+
+    <style>
+      /* Palette inspirée du bouquet */
+      :root {
+        --cream: #f8f3eb;
+        --green: #9eb8a5;
+        --terracotta: #c86d3c;
+        --beige: #e2d6c4;
+      }
+    </style>
+  </head>
+
+  <body class="bg-[var(--cream)] text-gray-800">
+    <!-- BANNIERE FIXE -->
+    <header class="w-full bg-white shadow-md fixed top-0 left-0 z-20">
+      <div
+        class="max-w-5xl mx-auto py-4 px-6 flex justify-between items-center"
+      >
+        <h1 class="text-xl font-bold text-[var(--terracotta)]">
+          Notre Mariage
+        </h1>
+        <nav class="text-sm text-[var(--green)]">Demande spéciale</nav>
+      </div>
+    </header>
+
+    <!-- INTRO FULLSCREEN -->
+    <section
+      id="intro"
+      class="pt-20 h-[calc(100vh-80px)] bg-cover bg-center flex items-center justify-center"
+      style="
+        background-image: url('/mnt/data/WhatsApp Image 2025-11-20 at 01.20.05.jpeg');
+      "
+    >
+      <div class="bg-white/80 p-8 rounded-2xl shadow-xl max-w-lg text-center">
+        <h2 class="text-2xl font-semibold text-[var(--terracotta)] mb-4">
+          Une petite surprise…
+        </h2>
+        <p class="text-gray-700 mb-6">
+          Avant de te poser une question importante, voici quelque chose pour
+          toi.
+        </p>
+
+        <button
+          onclick="startStory()"
+          class="px-6 py-3 rounded-xl bg-[var(--terracotta)] text-white shadow hover:bg-[var(--green)] transition"
+        >
+          Ouvrir le livre
+        </button>
+      </div>
+    </section>
+
+    <!-- SECTION LIVRE OUVERT -->
+    <section id="book" class="hidden pt-20 h-[calc(100vh-80px)] flex flex-col">
+      <!-- RETOUR -->
+      <div class="px-6">
+        <button
+          onclick="prevPage()"
+          class="text-[var(--terracotta)] font-semibold hover:underline mb-4"
+        >
+          ← Page précédente
+        </button>
+      </div>
+
+      <!-- CONTENU PAGE -->
+      <div
+        id="page"
+        class="flex-1 mx-6 bg-white rounded-2xl shadow-lg flex overflow-hidden"
+      >
+        <!-- Dynamique -->
+      </div>
+    </section>
+
+    <!-- LOGIQUE JS -->
+    <script>
+      const pages = [
+        {
+          img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e",
+          text: "Depuis tant d’années, tu fais partie de notre histoire…",
+        },
+        {
+          img: "https://images.unsplash.com/photo-1519682337058-a94d519337bc",
+          text: "Tu as toujours été présent(e) dans les grands moments.",
+        },
+        {
+          img: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486",
+          text: "Et aujourd’hui, nous aimerions t’avoir à nos côtés.",
+        },
+      ];
+
+      let index = 0;
+
+      function startStory() {
+        document.getElementById("intro").classList.add("hidden");
+        document.getElementById("book").classList.remove("hidden");
+        loadPage();
+      }
+
+      function prevPage() {
+        if (index === 0) {
+          document.getElementById("book").classList.add("hidden");
+          document.getElementById("intro").classList.remove("hidden");
+          return;
+        }
+        index--;
+        loadPage();
+      }
+
+      function nextPage() {
+        index++;
+        loadPage();
+      }
+
+      function loadPage() {
+        const page = document.getElementById("page");
+
+        // Dernière page : Valider / Décliner
+        if (index === pages.length) {
+          page.innerHTML = `
+          <div class="flex-1 flex justify-center items-center flex-col p-10">
+            <h2 class="text-3xl font-semibold text-[var(--terracotta)] mb-6">
+              Alors… accepterais-tu ? 💍
+            </h2>
+            <div class="flex gap-4">
+              <button class="bg-[var(--green)] text-white px-6 py-3 rounded-xl hover:bg-[var(--terracotta)]">
+                Oui !
+              </button>
+              <button class="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600">
+                Je ne peux pas…
+              </button>
+            </div>
+          </div>
+        `;
+          return;
+        }
+
+        const data = pages[index];
+        const reverse = index % 2 !== 0; // alternance
+
+        page.innerHTML = `
+        <div class="flex w-full h-full">
+
+          <!-- IMAGE -->
+          <div class="w-1/2 h-full ${reverse ? "order-2" : ""}">
+            <img src="${data.img}" class="w-full h-full object-cover" />
+          </div>
+
+          <!-- TEXTE -->
+          <div class="w-1/2 h-full flex items-center justify-center p-10 bg-[var(--beige)] ${
+            reverse ? "order-1" : ""
+          }">
+            <p class="text-xl text-gray-800 leading-relaxed">
+              ${data.text}
+            </p>
+          </div>
+
+        </div>
+
+        <!-- BOUTON CONTINUER -->
+        <div class="absolute bottom-8 right-8">
+          <button onclick="nextPage()"
+            class="px-6 py-3 rounded-xl bg-[var(--terracotta)] text-white shadow hover:bg-[var(--green)] transition">
+            Page suivante →
+          </button>
+        </div>
+      `;
+      }
+    </script>
+  </body>
+</html>
