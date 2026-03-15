@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 sys.path.append(str(BASE_DIR / "apps"))
 
-
+SITE_BASE_URL = "http://127.0.0.1:8000"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "guests",
     "specialdemands",
 ]
 
@@ -125,3 +126,23 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+#configuration SMTP
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp-relay.brevo.com"
+EMAIL_PORT = 587
+
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+EMAIL_HOST_USER = "a4fd76001@smtp-brevo.com"
+EMAIL_HOST_PASSWORD = "PUR5QC2JbVBdw0Wt"
+
+DEFAULT_FROM_EMAIL = "Mariage <boliobi93@gmail.com>"
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+SPECIAL_DEMAND_DEFAULT_NOTIFY_EMAILS = [
+    "boliobi93@gmail.com",
+    "leslie.sokeng@gmail.com",
+]
