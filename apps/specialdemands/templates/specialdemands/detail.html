@@ -16,22 +16,24 @@
 
   <body>
     <header
-      class="w-full bg-white shadow-md fixed top-0 left-0 z-20 header-fixed"
+      class="w-full bg-[var(--darkgreen)] shadow-md fixed top-0 left-0 z-20 header-fixed"
     >
       <div
         class="max-w-5xl mx-auto py-4 px-6 flex justify-between items-center"
       >
-        <h1 class="text-xl font-bold text-[var(--terracotta)]">
-          Notre Mariage
+        <h1 class="text-xl font-bold text-[var(--cream)]">
+          Leslie &amp; Bolivar
         </h1>
-        <nav class="text-sm text-[var(--green)]">Demande spéciale</nav>
+        <nav class="text-base font-bold text-[var(--beige)]">
+          Demande spéciale
+        </nav>
       </div>
     </header>
 
     <div id="book-container">
       <section id="intro" class="book-page">
         <div
-          class="book-page h-full w-full bg-cover bg-center flex items-center justify-center"
+          class="h-full w-full bg-cover bg-center flex items-center justify-center"
           style="
             background-image: url('{% static 'specialdemands/images/accueil-fond.jpeg' %}');
             background-color: var(--cream);
@@ -75,9 +77,7 @@
         <div
           class="w-full h-full flex flex-col items-center justify-center p-6 max-w-5xl mx-auto"
         >
-          <div
-            class="bg-white rounded-2xl shadow-lg flex w-full h-3/4 relative"
-          >
+          <div class="album-spread-luxe rounded-2xl flex w-full h-3/4 relative">
             {% if forloop.first %}
             <a
               href="#intro"
@@ -94,10 +94,10 @@
             >
             {% endif %}
 
-            <div class="flex w-full h-full flex-col sm:flex-row">
+            <div class="flex w-full h-full flex-col sm:flex-row spread-content">
               {% if forloop.counter|divisibleby:2 %}
               <div
-                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none order-1"
+                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none order-1 spread-panel-luxe spread-panel-text"
               >
                 <div class="text-center">
                   {% if slide.title %}
@@ -114,27 +114,29 @@
                   </p>
                 </div>
               </div>
+
               <div
-                class="w-full h-1/2 sm:w-1/2 sm:h-full order-2 flex items-center justify-center overflow-hidden"
+                class="w-full h-1/2 sm:w-1/2 sm:h-full order-2 flex items-center justify-center overflow-hidden bg-[var(--cream)] rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none spread-panel-luxe spread-panel-image"
               >
                 <img
                   src="{{ slide.image.url }}"
-                  class="page-image rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none"
+                  class="page-image"
                   alt="{{ slide.title|default:'Image souvenir' }}"
                 />
               </div>
               {% else %}
               <div
-                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center overflow-hidden"
+                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center overflow-hidden bg-[var(--cream)] rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none spread-panel-luxe spread-panel-image"
               >
                 <img
                   src="{{ slide.image.url }}"
-                  class="page-image rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none"
+                  class="page-image"
                   alt="{{ slide.title|default:'Image souvenir' }}"
                 />
               </div>
+
               <div
-                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none"
+                class="w-full h-1/2 sm:w-1/2 sm:h-full flex items-center justify-center p-6 sm:p-10 bg-[var(--beige)] rounded-b-2xl sm:rounded-r-2xl sm:rounded-b-none spread-panel-luxe spread-panel-text"
               >
                 <div class="text-center">
                   {% if slide.title %}
@@ -179,7 +181,7 @@
           class="w-full h-full flex flex-col items-center justify-center p-6 max-w-5xl mx-auto"
         >
           <div
-            class="bg-white rounded-2xl shadow-lg flex w-full h-3/4 relative"
+            class="final-card rounded-2xl flex w-full h-3/4 relative bg-white"
           >
             {% if slides %}
             <a
@@ -208,14 +210,14 @@
               <form
                 method="post"
                 action="{% url 'specialdemands:respond' demand.token %}"
-                class="flex gap-4"
+                class="flex gap-4 flex-wrap justify-center"
               >
                 {% csrf_token %}
                 <button
                   type="submit"
                   name="decision"
                   value="accepted"
-                  class="bg-[var(--green)] text-white px-6 py-3 rounded-xl hover:bg-[var(--terracotta)]"
+                  class="bg-[var(--green)] text-white px-6 py-3 rounded-xl hover:bg-[var(--terracotta)] transition"
                 >
                   Oui !
                 </button>
@@ -223,7 +225,7 @@
                   type="submit"
                   name="decision"
                   value="declined"
-                  class="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600"
+                  class="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 transition"
                 >
                   Je ne peux pas…
                 </button>
