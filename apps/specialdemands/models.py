@@ -89,8 +89,24 @@ class SpecialDemand(models.Model):
     def get_absolute_url(self):
         return reverse("specialdemands:detail", kwargs={"token": self.token})
     
+    def generate_final_question(self):
+        if self.demand_type == "witness":
+            return "Alors… accepterais-tu être mon témoin ? 💍"
+
+        if self.demand_type == "maid_of_honor":
+            return "Alors… accepterais-tu des faire partie de mes dames d'honneur ? 💍"
+
+        if self.demand_type == "best_man":
+            return "Alors… accepterais-tu de faire partie de mes hommes d'honneur ? 💍"
+
+        return "Alors… accepterais-tu ? 💍"
+    
     def __str__(self):
         return f"{self.guest.full_name} - {self.get_demand_type_display()}"
+    
+    def save(self, *args, **kwargs):
+        self.final_question = self.generate_final_question()
+        super().save(*args, **kwargs)
 
 class SpecialDemandSlide(models.Model):
     special_demand = models.ForeignKey(
