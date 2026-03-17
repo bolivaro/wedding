@@ -8,7 +8,7 @@ Bonjour {{ guest_first_name }},
 
 {% if is_witness_accepted %}
 Comme nous avons besoin du dossier de notre témoin pour la mairie,
-pourrais-tu nous envoyer une pièce d’identité, idéalement ton passeport ?
+pourrais-tu nous envoyer ton adresse de domiciliation ainsi qu'une copie de ta pièce d’identité, idéalement ton passeport ?
 
 Tu peux nous l’envoyer :
 - en répondant directement à ce mail
