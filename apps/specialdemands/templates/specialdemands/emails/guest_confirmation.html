@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirmation de réception</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f6f1ea;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #2d2a26;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      style="background-color: #f6f1ea; margin: 0; padding: 24px 0"
+    >
+      <tr>
+        <td align="center" style="padding: 0 12px">
+          <table
+            role="presentation"
+            width="100%"
+            cellspacing="0"
+            cellpadding="0"
+            style="
+              max-width: 680px;
+              background: #ffffff;
+              border-radius: 22px;
+              overflow: hidden;
+              box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+            "
+          >
+            <tr>
+              <td
+                style="
+                  background: linear-gradient(135deg, #d7b395, #bb7554);
+                  padding: 38px 24px;
+                  text-align: center;
+                "
+              >
+                <div
+                  style="
+                    font-size: 30px;
+                    line-height: 1.2;
+                    font-weight: 700;
+                    color: #ffffff;
+                  "
+                >
+                  Leslie &amp; Bolivar
+                </div>
+                <div
+                  style="
+                    margin-top: 10px;
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #fff5ef;
+                  "
+                >
+                  Une petite confirmation pleine de douceur 💛
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding: 34px 28px 20px 28px">
+                <p
+                  style="margin: 0 0 14px 0; font-size: 16px; line-height: 1.8"
+                >
+                  Bonjour {{ guest_first_name }},
+                </p>
+
+                <h1
+                  style="
+                    margin: 0 0 18px 0;
+                    font-size: 24px;
+                    line-height: 1.3;
+                    color: #9a5a3c;
+                  "
+                >
+                  {{ title }}
+                </h1>
+
+                <p
+                  style="margin: 0 0 18px 0; font-size: 16px; line-height: 1.8"
+                >
+                  {{ intro|safe }}
+                </p>
+
+                <div
+                  style="
+                    margin: 24px 0;
+                    padding: 18px 20px;
+                    border-radius: 16px;
+                    background-color: #fbf6f1;
+                    border: 1px solid #eadccf;
+                  "
+                >
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 16px;
+                      line-height: 1.8;
+                      color: #4a4038;
+                    "
+                  >
+                    <strong>{{ response_box_text }}</strong>
+                  </p>
+                </div>
+
+                {% if is_witness_accepted %}
+                <div
+                  style="
+                    margin: 30px 0 10px 0;
+                    padding: 24px;
+                    border-radius: 18px;
+                    background: #fff9f4;
+                    border: 1px solid #ecd8ca;
+                  "
+                >
+                  <h2
+                    style="
+                      margin: 0 0 14px 0;
+                      font-size: 20px;
+                      line-height: 1.4;
+                      color: #9a5a3c;
+                    "
+                  >
+                    Petite étape supplémentaire pour la mairie ✨
+                  </h2>
+
+                  <p
+                    style="
+                      margin: 0 0 14px 0;
+                      font-size: 15px;
+                      line-height: 1.9;
+                    "
+                  >
+                    Comme nous avons besoin du dossier de notre témoin pour la
+                    mairie, pourrais-tu nous envoyer une
+                    <strong>pièce d’identité</strong>, idéalement ton
+                    <strong>passeport</strong> ?
+                  </p>
+
+                  <p
+                    style="
+                      margin: 0 0 14px 0;
+                      font-size: 15px;
+                      line-height: 1.9;
+                    "
+                  >
+                    Tu peux nous l’envoyer :
+                  </p>
+
+                  <ul
+                    style="
+                      margin: 0 0 18px 20px;
+                      padding: 0;
+                      font-size: 15px;
+                      line-height: 1.9;
+                      color: #4a4038;
+                    "
+                  >
+                    <li>en répondant directement à ce mail ;</li>
+                    <li>ou par WhatsApp via les boutons ci-dessous.</li>
+                  </ul>
+
+                  <table
+                    role="presentation"
+                    cellspacing="0"
+                    cellpadding="0"
+                    border="0"
+                    style="margin-top: 18px"
+                  >
+                    <tr>
+                      <td style="padding: 0 16px 10px 0; vertical-align: top">
+                        <table
+                          role="presentation"
+                          cellspacing="0"
+                          cellpadding="0"
+                          border="0"
+                        >
+                          <tr>
+                            <td style="padding-bottom: 8px">
+                              <a
+                                href="{{ whatsapp_link_1 }}"
+                                target="_blank"
+                                style="text-decoration: none"
+                              >
+                                <img
+                                  src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                                  alt="Envoyer à {{ whatsapp_label_1 }} sur WhatsApp"
+                                  width="52"
+                                  height="52"
+                                  style="display: block; border: 0"
+                                />
+                              </a>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              bgcolor="#25D366"
+                              style="
+                                border-radius: 12px;
+                                background-color: #25d366;
+                              "
+                            >
+                              <a
+                                href="{{ whatsapp_link_1 }}"
+                                target="_blank"
+                                style="
+                                  display: inline-block;
+                                  padding: 14px 18px;
+                                  font-size: 15px;
+                                  font-weight: 700;
+                                  line-height: 1.2;
+                                  color: #ffffff;
+                                  text-decoration: none;
+                                "
+                              >
+                                📱 Envoyer à {{ whatsapp_label_1 }}
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+
+                      <td style="padding: 0 0 10px 0; vertical-align: top">
+                        <table
+                          role="presentation"
+                          cellspacing="0"
+                          cellpadding="0"
+                          border="0"
+                        >
+                          <tr>
+                            <td style="padding-bottom: 8px">
+                              <a
+                                href="{{ whatsapp_link_2 }}"
+                                target="_blank"
+                                style="text-decoration: none"
+                              >
+                                <img
+                                  src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                                  alt="Envoyer à {{ whatsapp_label_2 }} sur WhatsApp"
+                                  width="52"
+                                  height="52"
+                                  style="display: block; border: 0"
+                                />
+                              </a>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              bgcolor="#25D366"
+                              style="
+                                border-radius: 12px;
+                                background-color: #25d366;
+                              "
+                            >
+                              <a
+                                href="{{ whatsapp_link_2 }}"
+                                target="_blank"
+                                style="
+                                  display: inline-block;
+                                  padding: 14px 18px;
+                                  font-size: 15px;
+                                  font-weight: 700;
+                                  line-height: 1.2;
+                                  color: #ffffff;
+                                  text-decoration: none;
+                                "
+                              >
+                                📱 Envoyer à {{ whatsapp_label_2 }}
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p
+                    style="
+                      margin: 16px 0 0 0;
+                      font-size: 13px;
+                      line-height: 1.7;
+                      color: #7c6e64;
+                    "
+                  >
+                    En cliquant sur l’un des boutons, un message WhatsApp
+                    prérempli s’ouvrira automatiquement.
+                  </p>
+                </div>
+                {% endif %}
+
+                <p
+                  style="margin: 28px 0 0 0; font-size: 16px; line-height: 1.8"
+                >
+                  {{ closing }}
+                </p>
+
+                <p
+                  style="margin: 20px 0 0 0; font-size: 16px; line-height: 1.8"
+                >
+                  Avec affection,<br />
+                  <strong>Leslie &amp; Bolivar</strong>
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  padding: 18px 24px;
+                  text-align: center;
+                  background: #f8f3ee;
+                  color: #7d6f64;
+                  font-size: 13px;
+                  line-height: 1.7;
+                "
+              >
+                Cet email confirme simplement que ta réponse a bien été reçue.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

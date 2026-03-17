@@ -130,19 +130,24 @@ MEDIA_ROOT = BASE_DIR / "media"
 #configuration SMTP
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-EMAIL_HOST = "smtp-relay.brevo.com"
+EMAIL_HOST = "ssl0.ovh.net"
 EMAIL_PORT = 587
 
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
-EMAIL_HOST_USER = "a4fd76001@smtp-brevo.com"
-EMAIL_HOST_PASSWORD = "PUR5QC2JbVBdw0Wt"
+EMAIL_HOST_USER = "nous@leslieniboli.fr"
+EMAIL_HOST_PASSWORD = "BonbedLNB26**"
 
-DEFAULT_FROM_EMAIL = "Mariage <boliobi93@gmail.com>"
+DEFAULT_FROM_EMAIL = "Leslie & Bolivar 💍 <nous@leslieniboli.fr>"
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 SPECIAL_DEMAND_DEFAULT_NOTIFY_EMAILS = [
-    "boliobi93@gmail.com",
-    "leslie.sokeng@gmail.com",
+    "nous@leslieniboli.fr",
 ]
+
+WHATSAPP_NUMBER_1 = "33646164126"
+WHATSAPP_NUMBER_2 = "33624660814"
+
+WHATSAPP_LABEL_1 = "Leslie"
+WHATSAPP_LABEL_2 = "Bolivar"

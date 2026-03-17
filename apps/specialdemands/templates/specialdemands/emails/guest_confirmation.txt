@@ -1,0 +1,23 @@
+Bonjour {{ guest_first_name }},
+
+{{ title }}
+
+{{ intro|striptags }}
+
+{{ response_box_text }}
+
+{% if is_witness_accepted %}
+Comme nous avons besoin du dossier de notre témoin pour la mairie,
+pourrais-tu nous envoyer une pièce d’identité, idéalement ton passeport ?
+
+Tu peux nous l’envoyer :
+- en répondant directement à ce mail
+- ou par WhatsApp via les liens ci-dessous
+
+{{ whatsapp_label_1 }} : {{ whatsapp_link_1 }}
+{{ whatsapp_label_2 }} : {{ whatsapp_link_2 }}
+{% endif %}
+
+{{ closing }}
+
+Leslie & Bolivar
