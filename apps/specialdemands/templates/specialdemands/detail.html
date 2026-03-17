@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="{% static 'specialdemands/css/styles.css' %}"
@@ -14,16 +20,25 @@
     <title>Demande spéciale</title>
   </head>
 
-  <body>
+  <body
+    data-guest-first-name="{{ demand.guest.first_name|escape }}"
+    data-initial-status="{{ demand.status }}"
+  >
     <header
       class="w-full bg-[var(--darkgreen)] shadow-md fixed top-0 left-0 z-20 header-fixed"
     >
       <div
         class="max-w-5xl mx-auto py-4 px-6 flex justify-between items-center"
       >
-        <h1 class="text-xl font-bold text-[var(--cream)]">
-          Leslie &amp; Bolivar
-        </h1>
+        <a
+          href="#intro"
+          class="site-logo"
+          aria-label="Revenir au début de la page"
+        >
+          <span class="site-logo-name">Leslie</span>
+          <span class="site-logo-amp">&amp;</span>
+          <span class="site-logo-name">Bolivar</span>
+        </a>
         <nav class="text-base font-bold text-[var(--beige)]">
           Demande spéciale
         </nav>
@@ -39,9 +54,7 @@
             background-color: var(--cream);
           "
         >
-          <div
-            class="bg-white/80 p-8 rounded-2xl shadow-xl max-w-lg text-center"
-          >
+          <div class="bg-white p-8 rounded-2xl max-w-lg text-center shadow-xl">
             <h2 class="text-2xl font-semibold text-[var(--terracotta)] mb-4">
               Une petite surprise…
             </h2>
@@ -199,7 +212,16 @@
             >
             {% endif %}
 
-            <div class="flex-1 flex justify-center items-center flex-col p-10">
+            <div
+              id="final-content"
+              class="flex-1 flex justify-center items-center flex-col p-10 text-center relative"
+            >
+              <div
+                id="confetti-layer"
+                class="confetti-layer hidden"
+                aria-hidden="true"
+              ></div>
+
               <h2
                 class="text-3xl font-semibold text-[var(--terracotta)] mb-6 text-center"
               >
@@ -208,6 +230,7 @@
 
               {% if demand.status == "pending" %}
               <form
+                id="response-form"
                 method="post"
                 action="{% url 'specialdemands:respond' demand.token %}"
                 class="flex gap-4 flex-wrap justify-center"
@@ -217,7 +240,7 @@
                   type="submit"
                   name="decision"
                   value="accepted"
-                  class="bg-[var(--green)] text-white px-6 py-3 rounded-xl hover:bg-[var(--terracotta)] transition"
+                  class="decision-btn bg-[var(--green)] text-white px-6 py-3 rounded-xl hover:bg-[var(--terracotta)] transition"
                 >
                   Oui !
                 </button>
@@ -225,11 +248,13 @@
                   type="submit"
                   name="decision"
                   value="declined"
-                  class="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 transition"
+                  class="decision-btn bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 transition"
                 >
                   Je ne peux pas…
                 </button>
               </form>
+
+              <div id="response-feedback" class="hidden mt-8"></div>
               {% elif demand.status == "accepted" %}
               <div class="text-center">
                 <p class="text-2xl font-semibold text-[var(--green)] mb-3">
@@ -259,5 +284,7 @@
         </div>
       </section>
     </div>
+
+    <script src="{% static 'specialdemands/js/detail.js' %}"></script>
   </body>
 </html>

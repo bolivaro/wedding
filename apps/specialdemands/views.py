@@ -2,11 +2,14 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+from django.http import JsonResponse
 
 from .models import SpecialDemand
 
+
 def home(request):
     return render(request, "specialdemands/home.html")
+
 
 def special_demand_detail(request, token):
     demand = get_object_or_404(
@@ -30,15 +33,23 @@ def special_demand_respond(request, token):
         token=token
     )
 
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
     if request.method != "POST":
+        if is_ajax:
+            return JsonResponse({"error": "Méthode non autorisée."}, status=405)
         return redirect("specialdemands:detail", token=demand.token)
 
     if demand.status != "pending":
+        if is_ajax:
+            return JsonResponse({"status": demand.status}, status=200)
         return redirect("specialdemands:detail", token=demand.token)
 
     decision = request.POST.get("decision")
 
     if decision not in ["accepted", "declined"]:
+        if is_ajax:
+            return JsonResponse({"error": "Décision invalide."}, status=400)
         return redirect("specialdemands:detail", token=demand.token)
 
     demand.status = decision
@@ -47,6 +58,14 @@ def special_demand_respond(request, token):
 
     send_notification_email_to_couple(demand)
     send_confirmation_email_to_guest(demand)
+
+    if is_ajax:
+        return JsonResponse(
+            {
+                "status": demand.status,
+                "responded_at": demand.responded_at.isoformat(),
+            }
+        )
 
     return redirect("specialdemands:detail", token=demand.token)
 
@@ -68,7 +87,11 @@ def send_notification_email_to_couple(demand):
         recipients.extend(settings.SPECIAL_DEMAND_DEFAULT_NOTIFY_EMAILS)
 
     if demand.notify_emails:
-        extra_emails = [email.strip() for email in demand.notify_emails.split(",") if email.strip()]
+        extra_emails = [
+            email.strip()
+            for email in demand.notify_emails.split(",")
+            if email.strip()
+        ]
         recipients.extend(extra_emails)
 
     recipients = list(dict.fromkeys(recipients))
