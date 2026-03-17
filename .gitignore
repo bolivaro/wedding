@@ -2,21 +2,22 @@
 __pycache__/
 *.py[cod]
 *.pyo
-
-# Virtualenv
+*.pyd
+.Python
 .venv/
+venv/
 
 # Django
 db.sqlite3
 media/
 staticfiles/
 
-# macOS
-.DS_Store
+# Env / secrets
+.env
+.env.*
+!.env.example
 
-# IDE
+# OS / editors
+.DS_Store
 .vscode/
 .idea/
-
-# Env
-.env

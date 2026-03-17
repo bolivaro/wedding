@@ -1,4 +1,10 @@
 asgiref==3.11.1
 Django==6.0.3
+django-environ==0.13.0
+gunicorn==25.1.0
+packaging==26.0
 pillow==12.1.1
+psycopg==3.3.3
+psycopg-binary==3.3.3
 sqlparse==0.5.5
+whitenoise==6.12.0
