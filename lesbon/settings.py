@@ -86,7 +86,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = Path("/app/media")
+MEDIA_ROOT = Path(env("MEDIA_ROOT", default="/app/media"))
 
 STORAGES = {
     "default": {
