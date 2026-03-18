@@ -91,13 +91,13 @@ class SpecialDemand(models.Model):
     
     def generate_final_question(self):
         if self.demand_type == "witness":
-            return "Alors… accepterais-tu être mon témoin ? 💍"
+            return "Alors… accepterais-tu être mon témoin pour notre mariage, ce 17 octobre ? 💍"
 
         if self.demand_type == "maid_of_honor":
-            return "Alors… accepterais-tu des faire partie de mes dames d'honneur ? 💍"
+            return "Alors… accepterais-tu de faire partie de mes dames d'honneur pour notre mariage, ce 17 octobre ? 💍"
 
         if self.demand_type == "best_man":
-            return "Alors… accepterais-tu de faire partie de mes hommes d'honneur ? 💍"
+            return "Alors… accepterais-tu de faire partie de mes hommes d'honneur pour notre mariage, ce 17 octobre ? 💍"
 
         return "Alors… accepterais-tu ? 💍"
     
