@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+mkdir -p /app/staticfiles
+python manage.py collectstatic --noinput
+
+exec gunicorn lesbon.wsgi:application --bind 0.0.0.0:$PORT
