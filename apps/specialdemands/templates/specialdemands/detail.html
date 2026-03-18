@@ -94,14 +94,14 @@
             {% if forloop.first %}
             <a
               href="#intro"
-              class="nav-button-overlay top-3"
+              class="nav-button-overlay top-1"
               aria-label="Page précédente"
               >↑</a
             >
             {% else %}
             <a
               href="#page-{{ forloop.counter0 }}"
-              class="nav-button-overlay top-3"
+              class="nav-button-overlay top-1"
               aria-label="Page précédente"
               >↑</a
             >
@@ -172,14 +172,14 @@
             {% if forloop.last %}
             <a
               href="#page-finale"
-              class="nav-button-overlay bottom-3"
+              class="nav-button-overlay bottom-1"
               aria-label="Page suivante"
               >↓</a
             >
             {% else %}
             <a
               href="#page-{{ forloop.counter|add:1 }}"
-              class="nav-button-overlay bottom-3"
+              class="nav-button-overlay bottom-1"
               aria-label="Page suivante"
               >↓</a
             >

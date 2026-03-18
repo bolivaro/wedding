@@ -198,7 +198,6 @@ body {
   font-weight: 700;
   line-height: 1;
   background-color: rgba(70, 55, 40, 0.34);
-  backdrop-filter: blur(1px);
   text-decoration: none;
 }
 
