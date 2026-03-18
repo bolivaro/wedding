@@ -10,10 +10,6 @@ env = environ.Env(
     EMAIL_PORT=(int, 587),
     EMAIL_USE_TLS=(bool, True),
     EMAIL_USE_SSL=(bool, False),
-    SECURE_SSL_REDIRECT=(bool, False),
-    SESSION_COOKIE_SECURE=(bool, False),
-    CSRF_COOKIE_SECURE=(bool, False),
-    SECURE_HSTS_SECONDS=(int, 0),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -71,10 +67,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "lesbon.wsgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -96,7 +89,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env("EMAIL_HOST", default="ssl0.ovh.net")
@@ -106,7 +106,10 @@ EMAIL_USE_SSL = env("EMAIL_USE_SSL", default=False)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Leslie & Bolivar <nous@leslieniboli.fr>")
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL",
+    default="Leslie & Bolivar <nous@leslieniboli.fr>",
+)
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 SPECIAL_DEMAND_REPLY_TO_EMAIL = env(
@@ -128,12 +131,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
     X_FRAME_OPTIONS = "DENY"
-
-    SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT", default=True)
-    SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE", default=True)
-    CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE", default=True)
-
-    SECURE_HSTS_SECONDS = env("SECURE_HSTS_SECONDS", default=3600)
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = False
