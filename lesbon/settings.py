@@ -104,11 +104,14 @@ EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
 EMAIL_USE_SSL = env("EMAIL_USE_SSL", default=False)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+EMAIL_TIMEOUT = 10
 
-DEFAULT_FROM_EMAIL = env(
-    "DEFAULT_FROM_EMAIL",
-    default="Leslie & Bolivar <nous@leslieniboli.fr>",
-)
+BREVO_API_KEY = env("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL", default="nous@leslieniboli.fr")
+BREVO_SENDER_NAME = env("BREVO_SENDER_NAME", default="Leslie & Bolivar")
+
+# optionnel si tu veux garder un from email cohérent ailleurs
+DEFAULT_FROM_EMAIL = f"{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>"
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 SPECIAL_DEMAND_REPLY_TO_EMAIL = env(

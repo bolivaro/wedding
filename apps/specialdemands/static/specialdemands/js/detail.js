@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('response-form');
   const feedback = document.getElementById('response-feedback');
   const finalContent = document.getElementById('final-content');
-  const confettiLayer = document.getElementById('confetti-layer');
   const body = document.body;
 
   if (!form || !feedback || !finalContent) {
@@ -73,16 +72,26 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function renderError() {
+  function renderEmailWarning() {
+    showFeedback(`
+      <div class="mt-4 text-amber-700 animate-fade-in">
+        Ta réponse a bien été enregistrée, mais un email de confirmation n’a pas pu être envoyé immédiatement.
+      </div>
+    `);
+  }
+
+  function renderError(
+    message = 'Une erreur est survenue. Merci de réessayer.',
+  ) {
     showFeedback(`
       <div class="mt-4 text-red-600 animate-fade-in">
-        Une erreur est survenue. Merci de réessayer.
+        ${escapeHtml(message)}
       </div>
     `);
   }
 
   function escapeHtml(value) {
-    return value
+    return String(value)
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
@@ -136,10 +145,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setTimeout(() => {
-      if (layer) {
-        layer.innerHTML = '';
-      }
+      layer.innerHTML = '';
     }, 4600);
+  }
+
+  async function parseResponse(response) {
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      return response.json();
+    }
+
+    const text = await response.text();
+    console.error('Réponse non JSON reçue du serveur:', text);
+    throw new Error('Réponse serveur invalide.');
   }
 
   async function submitDecision(decision) {
@@ -165,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur serveur');
@@ -178,9 +197,16 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         throw new Error('Réponse inattendue');
       }
+
+      if (Array.isArray(data.email_errors) && data.email_errors.length > 0) {
+        renderEmailWarning();
+      } else {
+        hideFeedback();
+      }
     } catch (error) {
+      console.error('Erreur lors de la soumission de la réponse :', error);
       setButtonsDisabled(false);
-      renderError();
+      renderError(error.message);
     }
   }
 

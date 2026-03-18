@@ -1,13 +1,19 @@
+import json
+import logging
 from urllib.parse import quote
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.conf import settings
 from django.http import JsonResponse
-from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 
 from .models import SpecialDemand
+
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -45,7 +51,13 @@ def special_demand_respond(request, token):
 
     if demand.status != "pending":
         if is_ajax:
-            return JsonResponse({"status": demand.status}, status=200)
+            return JsonResponse(
+                {
+                    "status": demand.status,
+                    "responded_at": demand.responded_at.isoformat() if demand.responded_at else None,
+                },
+                status=200,
+            )
         return redirect("specialdemands:detail", token=demand.token)
 
     decision = request.POST.get("decision")
@@ -59,18 +71,116 @@ def special_demand_respond(request, token):
     demand.responded_at = timezone.now()
     demand.save()
 
-    send_notification_email_to_couple(demand)
-    send_confirmation_email_to_guest(demand)
+    email_errors = []
+
+    try:
+        send_notification_email_to_couple(demand)
+    except Exception:
+        logger.exception(
+            "Erreur lors de l'envoi de la notification au couple pour la demande %s",
+            demand.id,
+        )
+        email_errors.append("notification_couple")
+
+    try:
+        send_confirmation_email_to_guest(demand)
+    except Exception:
+        logger.exception(
+            "Erreur lors de l'envoi de l'email de confirmation à l'invité pour la demande %s",
+            demand.id,
+        )
+        email_errors.append("confirmation_invite")
 
     if is_ajax:
         return JsonResponse(
             {
                 "status": demand.status,
                 "responded_at": demand.responded_at.isoformat(),
+                "email_errors": email_errors,
             }
         )
 
     return redirect("specialdemands:detail", token=demand.token)
+
+
+def get_brevo_sender():
+    sender_email = getattr(settings, "BREVO_SENDER_EMAIL", None) or getattr(
+        settings,
+        "DEFAULT_FROM_EMAIL_ADDRESS",
+        None,
+    ) or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+
+    sender_name = getattr(settings, "BREVO_SENDER_NAME", "Leslie & Bolivar")
+
+    if not sender_email:
+        raise ValueError("BREVO_SENDER_EMAIL manquant dans les settings.")
+
+    return {
+        "email": sender_email,
+        "name": sender_name,
+    }
+
+
+def send_brevo_email(
+    *,
+    to,
+    subject,
+    text_content=None,
+    html_content=None,
+    reply_to=None,
+    cc=None,
+    bcc=None,
+):
+    api_key = getattr(settings, "BREVO_API_KEY", None)
+    if not api_key:
+        raise ValueError("BREVO_API_KEY manquant dans les settings.")
+
+    if not to:
+        raise ValueError("Aucun destinataire fourni.")
+
+    payload = {
+        "sender": get_brevo_sender(),
+        "to": to,
+        "subject": subject,
+    }
+
+    if text_content:
+        payload["textContent"] = text_content
+
+    if html_content:
+        payload["htmlContent"] = html_content
+
+    if reply_to:
+        payload["replyTo"] = reply_to
+
+    if cc:
+        payload["cc"] = cc
+
+    if bcc:
+        payload["bcc"] = bcc
+
+    request = Request(
+        url="https://api.brevo.com/v3/smtp/email",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": api_key,
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=15) as response:
+            body = response.read().decode("utf-8")
+            return json.loads(body) if body else {}
+    except HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        logger.error("Brevo HTTPError %s: %s", exc.code, error_body)
+        raise
+    except URLError:
+        logger.exception("Brevo URLError lors de l'envoi d'email")
+        raise
 
 
 def send_notification_email_to_couple(demand):
@@ -99,21 +209,23 @@ def send_notification_email_to_couple(demand):
 
     recipients = list(dict.fromkeys(recipients))
 
-    if recipients:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=recipients,
-            fail_silently=False,
-        )
+    if not recipients:
+        return
+
+    to = [{"email": email} for email in recipients]
+
+    send_brevo_email(
+        to=to,
+        subject=subject,
+        text_content=message,
+        reply_to={
+            "email": getattr(settings, "SPECIAL_DEMAND_REPLY_TO_EMAIL", get_brevo_sender()["email"]),
+            "name": getattr(settings, "BREVO_SENDER_NAME", "Leslie & Bolivar"),
+        },
+    )
 
 
 def build_whatsapp_link(phone_number, message):
-    """
-    phone_number doit être au format international sans '+' ni espaces.
-    Exemple : 33612345678
-    """
     return f"https://wa.me/{phone_number}?text={quote(message)}"
 
 
@@ -126,9 +238,9 @@ def get_guest_confirmation_content(demand):
     is_witness_accepted = is_accepted and demand_type == "witness"
 
     whatsapp_message = (
-        f"Bonjour Leslie et Bolivar, "
-        f"je vous envoie ma pièce d'identité suite à mon acceptation "
-        f"de votre demande de témoin."
+        "Bonjour Leslie et Bolivar, "
+        "je vous envoie ma pièce d'identité suite à mon acceptation "
+        "de votre demande de témoin."
     )
 
     if is_witness_accepted:
@@ -147,8 +259,8 @@ def get_guest_confirmation_content(demand):
         subject = "Merci pour ta réponse 💛"
         title = "Merci infiniment 💛"
         intro = (
-            f"Nous avons bien reçu ta réponse concernant notre demande "
-            f"d’<strong>homme d’honneur</strong>."
+            "Nous avons bien reçu ta réponse concernant notre demande "
+            "d’<strong>homme d’honneur</strong>."
         )
         response_box_text = "Tu as accepté cette demande."
         closing = (
@@ -159,8 +271,8 @@ def get_guest_confirmation_content(demand):
         subject = "Merci pour ta réponse 💛"
         title = "Merci infiniment 💛"
         intro = (
-            f"Nous avons bien reçu ta réponse concernant notre demande de "
-            f"<strong>femme d’honneur</strong>."
+            "Nous avons bien reçu ta réponse concernant notre demande de "
+            "<strong>femme d’honneur</strong>."
         )
         response_box_text = "Tu as accepté cette demande."
         closing = (
@@ -220,13 +332,20 @@ def get_guest_confirmation_content(demand):
         ),
         "whatsapp_label_1": getattr(settings, "WHATSAPP_LABEL_1", "Leslie"),
         "whatsapp_label_2": getattr(settings, "WHATSAPP_LABEL_2", "Bolivar"),
-        "reply_to_email": getattr(settings, "SPECIAL_DEMAND_REPLY_TO_EMAIL", settings.DEFAULT_FROM_EMAIL),
+        "reply_to_email": getattr(
+            settings,
+            "SPECIAL_DEMAND_REPLY_TO_EMAIL",
+            get_brevo_sender()["email"],
+        ),
     }
 
     return subject, context
 
 
 def send_confirmation_email_to_guest(demand):
+    if not demand.guest.email:
+        return
+
     subject, context = get_guest_confirmation_content(demand)
 
     text_content = render_to_string(
@@ -241,15 +360,21 @@ def send_confirmation_email_to_guest(demand):
     reply_to_email = getattr(
         settings,
         "SPECIAL_DEMAND_REPLY_TO_EMAIL",
-        settings.DEFAULT_FROM_EMAIL
+        get_brevo_sender()["email"],
     )
 
-    email = EmailMultiAlternatives(
+    send_brevo_email(
+        to=[
+            {
+                "email": demand.guest.email,
+                "name": demand.guest.full_name,
+            }
+        ],
         subject=subject,
-        body=text_content,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[demand.guest.email],
-        reply_to=[reply_to_email],
+        text_content=text_content,
+        html_content=html_content,
+        reply_to={
+            "email": reply_to_email,
+            "name": getattr(settings, "BREVO_SENDER_NAME", "Leslie & Bolivar"),
+        },
     )
-    email.attach_alternative(html_content, "text/html")
-    email.send(fail_silently=False)
