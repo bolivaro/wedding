@@ -86,7 +86,9 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = Path(env("MEDIA_ROOT", default="/app/media"))
+MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
+
+OBJECT_STORAGE_ENABLED = env.bool("OBJECT_STORAGE_ENABLED", default=False)
 
 STORAGES = {
     "default": {
@@ -96,6 +98,29 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+if OBJECT_STORAGE_ENABLED:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": env("OBJECT_STORAGE_BUCKET_NAME"),
+            "access_key": env("OBJECT_STORAGE_ACCESS_KEY_ID"),
+            "secret_key": env("OBJECT_STORAGE_SECRET_ACCESS_KEY"),
+            "endpoint_url": env("OBJECT_STORAGE_ENDPOINT"),
+            "region_name": env("OBJECT_STORAGE_REGION", default="auto"),
+            "addressing_style": env(
+                "OBJECT_STORAGE_ADDRESSING_STYLE",
+                default="virtual",
+            ),
+            "default_acl": None,
+            "querystring_auth": True,
+            "querystring_expire": env.int(
+                "OBJECT_STORAGE_URL_EXPIRE",
+                default=3600,
+            ),
+            "file_overwrite": False,
+        },
+    }
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env("EMAIL_HOST", default="ssl0.ovh.net")
