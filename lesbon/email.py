@@ -32,6 +32,7 @@ def send_brevo_email(
     reply_to=None,
     cc=None,
     bcc=None,
+    attachments=None,
 ):
     api_key = getattr(settings, "BREVO_API_KEY", None)
     if not api_key:
@@ -46,6 +47,7 @@ def send_brevo_email(
         "replyTo": reply_to,
         "cc": cc,
         "bcc": bcc,
+        "attachment": attachments,
     }.items():
         if value:
             payload[key] = value
