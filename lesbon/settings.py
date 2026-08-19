@@ -25,6 +25,24 @@ GUEST_ACCESS_MAX_FAILURES = env.int("GUEST_ACCESS_MAX_FAILURES", default=5)
 GUEST_ACCESS_LOCK_MINUTES = env.int("GUEST_ACCESS_LOCK_MINUTES", default=15)
 GUEST_EMAIL_TOKEN_MINUTES = env.int("GUEST_EMAIL_TOKEN_MINUTES", default=30)
 
+# Toutes les positions sont des proportions du gabarit (0 à 1). Le remplacement
+# futur du visuel et le calage final n'imposeront donc aucun changement du service.
+TICKET_TEMPLATE_STATIC_PATH = env(
+    "TICKET_TEMPLATE_STATIC_PATH",
+    default="guests/images/ticket-preview-placeholder.png",
+)
+TICKET_TEMPLATE_VERSION = env("TICKET_TEMPLATE_VERSION", default="placeholder-v1")
+TICKET_FONT_STATIC_PATH = env(
+    "TICKET_FONT_STATIC_PATH",
+    default="guests/fonts/CormorantGaramond.ttf",
+)
+TICKET_NAME_CENTER_X = env.float("TICKET_NAME_CENTER_X", default=0.5)
+TICKET_NAME_TOP_Y = env.float("TICKET_NAME_TOP_Y", default=0.39)
+TICKET_NAME_FONT_RATIO = env.float("TICKET_NAME_FONT_RATIO", default=0.042)
+TICKET_QR_CENTER_X = env.float("TICKET_QR_CENTER_X", default=0.5)
+TICKET_QR_TOP_Y = env.float("TICKET_QR_TOP_Y", default=0.57)
+TICKET_QR_SIZE_RATIO = env.float("TICKET_QR_SIZE_RATIO", default=0.22)
+
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG", default=False)
 

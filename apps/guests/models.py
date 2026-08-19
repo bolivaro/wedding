@@ -456,3 +456,56 @@ class GuestEmailToken(models.Model):
         ordering = ["-created_at"]
         verbose_name = "jeton email invité"
         verbose_name_plural = "jetons email invités"
+
+
+def guest_ticket_upload_to(instance, filename):
+    return f"guests/tickets/{instance.guest.qr_token}/{filename}"
+
+
+class Ticket(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "À générer"
+        READY = "ready", "Prêt"
+        FAILED = "failed", "Échec"
+
+    guest = models.OneToOneField(
+        Guest,
+        on_delete=models.CASCADE,
+        related_name="ticket",
+        verbose_name="invité",
+    )
+    status = models.CharField(
+        "statut",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    jpg_file = models.FileField(
+        "billet JPG",
+        upload_to=guest_ticket_upload_to,
+        blank=True,
+    )
+    pdf_file = models.FileField(
+        "billet PDF",
+        upload_to=guest_ticket_upload_to,
+        blank=True,
+    )
+    template_version = models.CharField("version du gabarit", max_length=100, blank=True)
+    template_checksum = models.CharField("empreinte du gabarit", max_length=64, blank=True)
+    render_signature = models.CharField("empreinte du rendu", max_length=64, blank=True)
+    generated_at = models.DateTimeField("généré le", null=True, blank=True)
+    last_error = models.TextField("dernière erreur", blank=True)
+    created_at = models.DateTimeField("créé le", auto_now_add=True)
+    updated_at = models.DateTimeField("mis à jour le", auto_now=True)
+
+    class Meta:
+        ordering = ["guest__first_name", "guest__last_name"]
+        verbose_name = "billet"
+        verbose_name_plural = "billets"
+
+    def __str__(self):
+        return f"Billet de {self.guest}"
+
+    @property
+    def is_ready(self):
+        return self.status == self.Status.READY and bool(self.jpg_file and self.pdf_file)
