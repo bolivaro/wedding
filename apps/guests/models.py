@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -260,3 +261,120 @@ class GuestEventInvitation(models.Model):
 
     def __str__(self):
         return f"{self.guest} — {self.event}"
+
+
+def guest_import_upload_to(instance, filename):
+    return f"guests/imports/{instance.checksum[:12]}-{filename}"
+
+
+class GuestImportBatch(models.Model):
+    class Status(models.TextChoices):
+        UPLOADED = "uploaded", "Téléversé"
+        ANALYZED = "analyzed", "Analysé"
+        APPLIED = "applied", "Appliqué"
+        FAILED = "failed", "Échec"
+
+    file = models.FileField("fichier Excel", upload_to=guest_import_upload_to)
+    original_filename = models.CharField("nom du fichier", max_length=255)
+    checksum = models.CharField("empreinte SHA-256", max_length=64, unique=True)
+    status = models.CharField(
+        "statut",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.UPLOADED,
+    )
+    summary = models.JSONField("résumé", default=dict, blank=True)
+    error_message = models.TextField("erreur", blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="guest_import_batches",
+        verbose_name="créé par",
+    )
+    created_at = models.DateTimeField("créé le", auto_now_add=True)
+    applied_at = models.DateTimeField("appliqué le", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "import d'invités"
+        verbose_name_plural = "imports d'invités"
+
+    def __str__(self):
+        return f"{self.original_filename} — {self.get_status_display()}"
+
+
+class GuestImportRow(models.Model):
+    class Outcome(models.TextChoices):
+        NEW = "new", "Nouvel invité"
+        MATCHED = "matched", "Invité existant"
+        AMBIGUOUS = "ambiguous", "Correspondance ambiguë"
+        CONFLICT = "conflict", "Conflit"
+        INVALID = "invalid", "Ligne invalide"
+
+    batch = models.ForeignKey(
+        GuestImportBatch,
+        on_delete=models.CASCADE,
+        related_name="rows",
+        verbose_name="import",
+    )
+    sheet_name = models.CharField("feuille", max_length=100)
+    row_number = models.PositiveIntegerField("numéro de ligne")
+    source_key = models.CharField("clé source", max_length=255, blank=True)
+    raw_data = models.JSONField("données source", default=dict)
+    outcome = models.CharField("résultat", max_length=20, choices=Outcome.choices)
+    matched_guest = models.ForeignKey(
+        Guest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="import_rows",
+        verbose_name="invité trouvé",
+    )
+    proposed_changes = models.JSONField("modifications proposées", default=dict, blank=True)
+    messages = models.JSONField("messages", default=list, blank=True)
+
+    class Meta:
+        ordering = ["sheet_name", "row_number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["batch", "sheet_name", "row_number"],
+                name="unique_row_per_guest_import",
+            ),
+        ]
+        verbose_name = "ligne d'import"
+        verbose_name_plural = "lignes d'import"
+
+    def __str__(self):
+        return f"{self.sheet_name} ligne {self.row_number}"
+
+
+class GuestSourceRecord(models.Model):
+    guest = models.ForeignKey(
+        Guest,
+        on_delete=models.CASCADE,
+        related_name="source_records",
+        verbose_name="invité",
+    )
+    source = models.CharField("source", max_length=30, default="excel")
+    external_key = models.CharField("clé externe", max_length=255)
+    last_seen_batch = models.ForeignKey(
+        GuestImportBatch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_records",
+        verbose_name="dernier import",
+    )
+    updated_at = models.DateTimeField("mis à jour le", auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["source", "external_key"],
+                name="unique_guest_external_source_key",
+            ),
+        ]
+        verbose_name = "identité source d'un invité"
+        verbose_name_plural = "identités source des invités"

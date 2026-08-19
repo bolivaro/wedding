@@ -1,0 +1,45 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Accueil</a>
+  &rsaquo; <a href="{% url 'admin:guests_guest_changelist' %}">Invités</a>
+  &rsaquo; Prévisualisation
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <div class="module">
+    <h2>{{ batch.original_filename }}</h2>
+    <p><strong>Statut :</strong> {{ batch.get_status_display }}</p>
+    <p><strong>Empreinte :</strong> <code>{{ batch.checksum }}</code></p>
+    {% if batch.error_message %}<p class="errornote">{{ batch.error_message }}</p>{% endif %}
+    <ul>
+      <li>Nouveaux : {{ batch.summary.new|default:0 }}</li>
+      <li>Existants : {{ batch.summary.matched|default:0 }}</li>
+      <li>Ambigus : {{ batch.summary.ambiguous|default:0 }}</li>
+      <li>Conflits : {{ batch.summary.conflict|default:0 }}</li>
+      <li>Invalides : {{ batch.summary.invalid|default:0 }}</li>
+    </ul>
+  </div>
+  <div class="module">
+    <table>
+      <thead><tr><th>Feuille</th><th>Ligne</th><th>Invité</th><th>Résultat</th><th>Modifications</th><th>Messages</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.sheet_name }}</td><td>{{ row.row_number }}</td>
+          <td>{{ row.raw_data.Prénom }} {{ row.raw_data.Nom }}</td><td>{{ row.get_outcome_display }}</td>
+          <td>{% for field, change in row.proposed_changes.items %}<div><strong>{{ field }}</strong> : {{ change.old|default:"—" }} → {{ change.new|default:"—" }}</div>{% empty %}Aucune{% endfor %}</td>
+          <td>{% for message in row.messages %}<div>{{ message }}</div>{% empty %}—{% endfor %}</td>
+        </tr>
+      {% empty %}<tr><td colspan="6">Aucune ligne analysée.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if batch.status == "analyzed" %}
+  <form method="post" action="{{ confirm_url }}">{% csrf_token %}<div class="submit-row"><input type="submit" value="Confirmer l'import" class="default"></div></form>
+  {% endif %}
+</div>
+{% endblock %}

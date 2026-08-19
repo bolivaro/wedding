@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Accueil</a>
+  &rsaquo; <a href="{% url 'admin:guests_guest_changelist' %}">Invités</a>
+  &rsaquo; Importer
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      <h2>Fichier source</h2>
+      <div class="form-row">
+        {{ form.file.errors }}
+        {{ form.file.label_tag }} {{ form.file }}
+        <p class="help">Maximum 10 Mo. Les feuilles d'invités seront analysées ; Statistiques sera ignorée.</p>
+      </div>
+    </fieldset>
+    <div class="submit-row"><input type="submit" value="Analyser le fichier" class="default"></div>
+  </form>
+</div>
+{% endblock %}
