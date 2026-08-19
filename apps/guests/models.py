@@ -378,3 +378,70 @@ class GuestSourceRecord(models.Model):
         ]
         verbose_name = "identité source d'un invité"
         verbose_name_plural = "identités source des invités"
+
+
+class GuestAccessCredential(models.Model):
+    guest = models.ForeignKey(
+        Guest,
+        on_delete=models.CASCADE,
+        related_name="access_credentials",
+        verbose_name="invité",
+    )
+    selector = models.UUIDField("sélecteur", default=uuid.uuid4, unique=True, editable=False)
+    secret_hash = models.CharField("empreinte du secret", max_length=255, editable=False)
+    expires_at = models.DateTimeField("expire le")
+    revoked_at = models.DateTimeField("révoqué le", null=True, blank=True)
+    created_at = models.DateTimeField("créé le", auto_now_add=True)
+    last_used_at = models.DateTimeField("dernière utilisation", null=True, blank=True)
+    failed_attempts = models.PositiveSmallIntegerField("tentatives échouées", default=0)
+    locked_until = models.DateTimeField("verrouillé jusqu'au", null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_guest_credentials",
+        verbose_name="créé par",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "accès RSVP"
+        verbose_name_plural = "accès RSVP"
+
+    def __str__(self):
+        return f"Accès de {self.guest} créé le {self.created_at:%d/%m/%Y}"
+
+    def is_usable(self, at):
+        return (
+            self.revoked_at is None
+            and self.expires_at > at
+            and (self.locked_until is None or self.locked_until <= at)
+            and self.guest.is_active
+            and self.guest.invitation_owner_id is None
+        )
+
+
+class GuestEmailToken(models.Model):
+    class Purpose(models.TextChoices):
+        VERIFY = "verify", "Vérification d'email"
+        RECOVER = "recover", "Récupération d'accès"
+
+    guest = models.ForeignKey(
+        Guest,
+        on_delete=models.CASCADE,
+        related_name="email_tokens",
+        verbose_name="invité",
+    )
+    purpose = models.CharField("usage", max_length=20, choices=Purpose.choices)
+    selector = models.UUIDField("sélecteur", default=uuid.uuid4, unique=True, editable=False)
+    secret_hash = models.CharField("empreinte du secret", max_length=255, editable=False)
+    target_email = models.EmailField("adresse concernée")
+    expires_at = models.DateTimeField("expire le")
+    used_at = models.DateTimeField("utilisé le", null=True, blank=True)
+    created_at = models.DateTimeField("créé le", auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "jeton email invité"
+        verbose_name_plural = "jetons email invités"
