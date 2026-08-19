@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 import sys
 import environ
@@ -15,6 +16,10 @@ env = environ.Env(
 environ.Env.read_env(BASE_DIR / ".env")
 
 SITE_BASE_URL = env("SITE_BASE_URL", default="http://127.0.0.1:8000")
+RSVP_DEADLINE = datetime.fromisoformat(
+    env("RSVP_DEADLINE", default="2026-09-15T23:59:59+02:00")
+)
+RSVP_SUPPORT_EMAIL = env("RSVP_SUPPORT_EMAIL", default="nous@leslieniboli.fr")
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG", default=False)

@@ -124,6 +124,7 @@ class Guest(models.Model):
         unique=True,
         editable=False,
     )
+    is_active = models.BooleanField("actif", default=True)
 
     created_at = models.DateTimeField("créé le", auto_now_add=True)
     updated_at = models.DateTimeField("mis à jour le", auto_now=True)
@@ -180,3 +181,82 @@ class Guest(models.Model):
 
         if errors:
             raise ValidationError(errors)
+
+
+class WeddingEvent(models.Model):
+    class Code(models.TextChoices):
+        CITY_HALL = "city_hall", "Mairie"
+        CHURCH = "church", "Église"
+        RECEPTION = "reception", "Soirée"
+
+    code = models.CharField("code", max_length=30, choices=Code.choices, unique=True)
+    name = models.CharField("nom", max_length=100)
+    starts_at = models.DateTimeField("début", null=True, blank=True)
+    capacity = models.PositiveIntegerField("capacité", null=True, blank=True)
+    display_order = models.PositiveSmallIntegerField("ordre", default=0)
+    is_active = models.BooleanField("actif", default=True)
+
+    class Meta:
+        ordering = ["display_order", "name"]
+        verbose_name = "événement du mariage"
+        verbose_name_plural = "événements du mariage"
+
+    def __str__(self):
+        return self.name
+
+
+class GuestEventInvitation(models.Model):
+    guest = models.ForeignKey(
+        Guest,
+        on_delete=models.CASCADE,
+        related_name="event_invitations",
+        verbose_name="invité",
+    )
+    event = models.ForeignKey(
+        WeddingEvent,
+        on_delete=models.PROTECT,
+        related_name="guest_invitations",
+        verbose_name="événement",
+    )
+    is_eligible = models.BooleanField("éligible", default=True)
+    attendance_status = models.CharField(
+        "présence",
+        max_length=20,
+        choices=Guest.RSVPStatus.choices,
+        default=Guest.RSVPStatus.PENDING,
+    )
+    response_source = models.CharField(
+        "source de la réponse",
+        max_length=20,
+        choices=Guest.RSVPSource.choices,
+        blank=True,
+    )
+    responded_at = models.DateTimeField("répondu le", null=True, blank=True)
+
+    class Meta:
+        ordering = ["event__display_order"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["guest", "event"],
+                name="unique_guest_event_invitation",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(is_eligible=True)
+                    | ~models.Q(attendance_status=Guest.RSVPStatus.ATTENDING)
+                ),
+                name="ineligible_guest_cannot_attend_event",
+            ),
+        ]
+        verbose_name = "invitation à un événement"
+        verbose_name_plural = "invitations aux événements"
+
+    def clean(self):
+        super().clean()
+        if not self.is_eligible and self.attendance_status == Guest.RSVPStatus.ATTENDING:
+            raise ValidationError(
+                {"attendance_status": "Un invité non éligible ne peut pas confirmer sa présence."}
+            )
+
+    def __str__(self):
+        return f"{self.guest} — {self.event}"
