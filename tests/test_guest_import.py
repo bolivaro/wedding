@@ -78,6 +78,8 @@ class GuestImportServiceTests(TestCase):
         apply_batch(batch)
 
         guest = Guest.objects.get()
+        self.assertEqual(batch.rows.get().outcome, GuestImportRow.Outcome.NEW)
+        self.assertEqual(batch.rows.get().matched_guest, guest)
         self.assertEqual(guest.invitation_kind, Guest.InvitationKind.COUPLE)
         self.assertEqual(guest.rsvp_status, Guest.RSVPStatus.ATTENDING)
         self.assertIsNone(guest.email)

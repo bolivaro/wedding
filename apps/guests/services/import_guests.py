@@ -342,8 +342,7 @@ def apply_batch(batch):
             guest.full_clean()
             guest.save()
             row.matched_guest = guest
-            row.outcome = GuestImportRow.Outcome.MATCHED
-            row.save(update_fields=["matched_guest", "outcome"])
+            row.save(update_fields=["matched_guest"])
 
         full_parsed = _parse_row(row.sheet_name, row.row_number, row.raw_data)[1]
         _apply_event_invitations(guest, full_parsed, response_time)

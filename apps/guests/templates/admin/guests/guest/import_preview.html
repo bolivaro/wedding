@@ -31,7 +31,7 @@
         <tr>
           <td>{{ row.sheet_name }}</td><td>{{ row.row_number }}</td>
           <td>{{ row.raw_data.Prénom }} {{ row.raw_data.Nom }}</td><td>{{ row.get_outcome_display }}</td>
-          <td>{% for field, change in row.proposed_changes.items %}<div><strong>{{ field }}</strong> : {{ change.old|default:"—" }} → {{ change.new|default:"—" }}</div>{% empty %}Aucune{% endfor %}</td>
+          <td>{% for field, change in row.proposed_changes.items %}<div><strong>{{ field }}</strong> : {{ change.old|default_if_none:"—" }} → {{ change.new|default_if_none:"—" }}</div>{% empty %}Aucune{% endfor %}</td>
           <td>{% for message in row.messages %}<div>{{ message }}</div>{% empty %}—{% endfor %}</td>
         </tr>
       {% empty %}<tr><td colspan="6">Aucune ligne analysée.</td></tr>{% endfor %}
