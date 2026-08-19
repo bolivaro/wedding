@@ -1,19 +1,50 @@
 {% extends "guests/base.html" %}
 {% load static %}
 
-{% block title %}Aperçu du billet{% endblock %}
+{% block title %}Vos billets{% endblock %}
 {% block content %}
-<section class="page-heading"><p class="eyebrow">Prototype visuel</p><h1>Aperçu de votre billet</h1><p>Ce rendu n'est pas le billet final. Il valide uniquement le parcours, la hiérarchie et le comportement responsive.</p></section>
-<div class="ticket-layout">
-  <article class="ticket-preview" aria-label="Aperçu illustré du billet">
-    <img src="{% static 'guests/images/ticket-preview-placeholder.png' %}" alt="Fond botanique terracotta et sable">
-    <div class="ticket-content">
-      <p class="ticket-kicker">Invitation au mariage</p>
-      <p class="ticket-name">{{ guest.salutation }} {{ guest.first_name }}<br><strong>{{ guest.last_name|upper }}</strong></p>
-      <div class="qr-placeholder" aria-label="Emplacement futur du QR code"><span>APERÇU<br>QR</span></div>
-      <p class="ticket-note">Identifiant permanent déjà réservé</p>
+<section class="page-heading">
+  <p class="eyebrow">Billets personnalisés</p>
+  <h1>Vos billets sont à portée de main</h1>
+  <p>Chaque personne dispose d'un billet et d'un QR code permanent distinct. Le QR ne donne aucun accès à la modification de votre RSVP.</p>
+</section>
+
+<aside class="notice ticket-security-note">
+  <strong>Un seul accès privé RSVP</strong>
+  <span>Vous gérez et téléchargez ici les billets de vos accompagnants, puis vous pouvez les leur transmettre.</span>
+</aside>
+
+<div class="ticket-toolbar card">
+  <div><h2>Toute votre invitation</h2><p class="muted">Le PDF groupé contient une page par personne.</p></div>
+  <div class="ticket-actions">
+    <form method="post" action="{% url 'guests:ticket_generate_all' %}">{% csrf_token %}<button class="button button-secondary" type="submit">Générer tous les billets</button></form>
+    <form method="post" action="{% url 'guests:party_ticket_download' %}">{% csrf_token %}<button class="button button-primary" type="submit">Télécharger le PDF groupé</button></form>
+    {% if can_email %}
+    <form method="post" action="{% url 'guests:ticket_email' %}">{% csrf_token %}<button class="button button-secondary" type="submit">Envoyer par email</button></form>
+    {% else %}<span class="lock-label">Email vérifié requis pour l'envoi</span>{% endif %}
+  </div>
+</div>
+
+<div class="ticket-grid">
+  {% for row in ticket_rows %}
+  <article class="ticket-person-card card">
+    <div class="ticket-image-frame">
+      {% if row.is_current %}
+      <img src="{% url 'guests:ticket_image' row.guest.pk %}" alt="Billet personnalisé de {{ row.guest.full_name }}">
+      {% else %}
+      <img src="{% static 'guests/images/ticket-preview-placeholder.png' %}" alt="Gabarit illustratif du billet de {{ row.guest.full_name }}">
+      <span class="ticket-image-badge">À générer</span>
+      {% endif %}
+    </div>
+    <div class="ticket-person-heading"><div><p class="eyebrow">{% if row.guest.pk == guest.pk %}Invité principal{% else %}Accompagnant{% endif %}</p><h2>{{ row.guest.salutation }} {{ row.guest.full_name }}</h2></div>{% if row.is_current %}<span class="verified">Prêt</span>{% endif %}</div>
+    <p class="muted">Son QR opaque reste identique même si sa table ou ses informations changent.</p>
+    <div class="ticket-actions">
+      <form method="post" action="{% url 'guests:ticket_generate' row.guest.pk %}">{% csrf_token %}<button class="button button-secondary" type="submit">{% if row.is_current %}Actualiser{% else %}Générer{% endif %}</button></form>
+      {% if row.is_current %}<a class="button button-primary" href="{% url 'guests:ticket_download' row.guest.pk 'jpg' %}">JPG</a><a class="button button-primary" href="{% url 'guests:ticket_download' row.guest.pk 'pdf' %}">PDF</a>{% endif %}
     </div>
   </article>
-  <aside class="card preview-note"><h2>Ce qui est validé ici</h2><ul><li>La civilité issue du genre structuré</li><li>La lisibilité du nom sur mobile</li><li>L'emplacement indicatif du QR</li><li>La séparation entre QR public et accès RSVP</li></ul><p>Les positions exactes, polices, dimensions JPG/PDF et le QR réel attendront votre template.</p><a class="button button-secondary" href="{% url 'guests:rsvp_dashboard' %}">Retour au RSVP</a></aside>
+  {% endfor %}
 </div>
+
+<p class="ticket-back"><a class="button button-secondary" href="{% url 'guests:rsvp_dashboard' %}">Retour au RSVP</a></p>
 {% endblock %}

@@ -1,0 +1,229 @@
+import base64
+import hashlib
+import io
+from datetime import datetime, timezone
+from pathlib import Path
+from unittest.mock import patch
+
+from PIL import Image
+from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
+from django.urls import reverse
+from django.utils import timezone as django_timezone
+
+from guests.models import Guest, GuestEventInvitation, Ticket, WeddingEvent
+from guests.services.access import issue_guest_access
+from guests.services.notifications import send_ticket_email
+from guests.services.ticket import (
+    build_party_pdf,
+    generate_ticket,
+    qr_payload,
+    ticket_is_current,
+)
+
+
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+OPEN_DEADLINE = datetime(2099, 9, 15, 23, 59, tzinfo=timezone.utc)
+
+
+@override_settings(
+    RSVP_DEADLINE=OPEN_DEADLINE,
+    SECURE_SSL_REDIRECT=False,
+    SITE_BASE_URL="https://example.test",
+    STORAGES=TEST_STORAGES,
+)
+class TicketGenerationTests(TestCase):
+    def setUp(self):
+        self.primary = Guest.objects.create(
+            first_name="Élodie",
+            last_name="Du Pré",
+            gender=Guest.Gender.FEMALE,
+            invitation_kind=Guest.InvitationKind.COUPLE,
+            party_size_limit=2,
+            rsvp_status=Guest.RSVPStatus.ATTENDING,
+        )
+        self.companion = Guest.objects.create(
+            first_name="Jean",
+            last_name="Du Pré",
+            gender=Guest.Gender.MALE,
+            invitation_owner=self.primary,
+        )
+        for event in WeddingEvent.objects.all():
+            GuestEventInvitation.objects.create(
+                guest=self.primary,
+                event=event,
+                is_eligible=True,
+                attendance_status=Guest.RSVPStatus.ATTENDING,
+            )
+
+    def _template_bytes(self):
+        template = Path(__file__).parents[1] / (
+            "apps/guests/static/guests/images/ticket-preview-placeholder.png"
+        )
+        return template.read_bytes()
+
+    def test_generation_creates_real_jpg_and_pdf_without_touching_template(self):
+        template_before = hashlib.sha256(self._template_bytes()).hexdigest()
+
+        ticket = generate_ticket(self.primary)
+
+        self.assertTrue(ticket.is_ready)
+        ticket.jpg_file.open("rb")
+        jpg_content = ticket.jpg_file.read()
+        ticket.jpg_file.close()
+        with Image.open(io.BytesIO(jpg_content)) as image:
+            self.assertEqual(image.format, "JPEG")
+            self.assertEqual(image.size, (1086, 1448))
+        self.assertEqual(ticket.template_version, "placeholder-v1")
+        ticket.pdf_file.open("rb")
+        self.assertTrue(ticket.pdf_file.read(5).startswith(b"%PDF"))
+        ticket.pdf_file.close()
+        self.assertEqual(template_before, hashlib.sha256(self._template_bytes()).hexdigest())
+
+    def test_qr_payload_is_opaque_and_stable_when_identity_changes(self):
+        initial_payload = qr_payload(self.primary)
+        initial_token = self.primary.qr_token
+        ticket = generate_ticket(self.primary)
+        initial_signature = ticket.render_signature
+
+        self.primary.last_name = "Nouveau nom"
+        self.primary.save(update_fields=["last_name", "updated_at"])
+        ticket = generate_ticket(self.primary)
+
+        self.assertEqual(qr_payload(self.primary), initial_payload)
+        self.assertEqual(self.primary.qr_token, initial_token)
+        self.assertNotIn("Nouveau", initial_payload)
+        self.assertNotEqual(ticket.render_signature, initial_signature)
+
+    def test_generation_is_idempotent_while_ticket_is_current(self):
+        first = generate_ticket(self.primary)
+        first_jpg_name = first.jpg_file.name
+        generated_at = first.generated_at
+
+        second = generate_ticket(self.primary)
+
+        self.assertEqual(second.pk, first.pk)
+        self.assertEqual(second.jpg_file.name, first_jpg_name)
+        self.assertEqual(second.generated_at, generated_at)
+        self.assertTrue(ticket_is_current(second, self.primary))
+
+    def test_companion_has_an_individual_ticket_and_grouped_pdf(self):
+        content = build_party_pdf(self.primary)
+
+        self.assertTrue(content.startswith(b"%PDF"))
+        self.assertTrue(Ticket.objects.get(guest=self.primary).is_ready)
+        self.assertTrue(Ticket.objects.get(guest=self.companion).is_ready)
+        self.assertNotEqual(qr_payload(self.primary), qr_payload(self.companion))
+
+    @patch("guests.services.notifications.send_brevo_email")
+    def test_ticket_email_builds_a_brevo_pdf_attachment(self, send_email):
+        self.primary.email = "elodie@example.com"
+        self.primary.email_verified_at = django_timezone.now()
+        pdf_content = b"%PDF-test"
+
+        send_ticket_email(guest=self.primary, pdf_content=pdf_content)
+
+        attachment = send_email.call_args.kwargs["attachments"][0]
+        self.assertEqual(attachment["name"], "billets-mariage.pdf")
+        self.assertEqual(base64.b64decode(attachment["content"]), pdf_content)
+
+
+@override_settings(
+    RSVP_DEADLINE=OPEN_DEADLINE,
+    SECURE_SSL_REDIRECT=False,
+    SITE_BASE_URL="https://example.test",
+    STORAGES=TEST_STORAGES,
+)
+class TicketViewsTests(TestCase):
+    def setUp(self):
+        self.primary = Guest.objects.create(
+            first_name="Marie",
+            last_name="Dupont",
+            invitation_kind=Guest.InvitationKind.COUPLE,
+            party_size_limit=2,
+            rsvp_status=Guest.RSVPStatus.ATTENDING,
+        )
+        self.companion = Guest.objects.create(
+            first_name="Jean",
+            last_name="Dupont",
+            invitation_owner=self.primary,
+        )
+        self.unrelated = Guest.objects.create(first_name="Intrus")
+        for event in WeddingEvent.objects.all():
+            GuestEventInvitation.objects.create(
+                guest=self.primary,
+                event=event,
+                is_eligible=True,
+                attendance_status=Guest.RSVPStatus.ATTENDING,
+            )
+        issued = issue_guest_access(guest=self.primary)
+        self.client.get(
+            reverse(
+                "guests:access_entry",
+                kwargs={"selector": issued.credential.selector, "secret": issued.secret},
+            )
+        )
+
+    def test_primary_can_generate_and_download_companion_ticket(self):
+        response = self.client.post(
+            reverse("guests:ticket_generate", kwargs={"guest_id": self.companion.pk})
+        )
+        self.assertRedirects(response, reverse("guests:ticket_preview"))
+
+        response = self.client.get(
+            reverse(
+                "guests:ticket_download",
+                kwargs={"guest_id": self.companion.pk, "file_format": "jpg"},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+
+    def test_primary_cannot_reach_unrelated_ticket(self):
+        response = self.client.post(
+            reverse("guests:ticket_generate", kwargs={"guest_id": self.unrelated.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(Ticket.objects.filter(guest=self.unrelated).exists())
+
+    @patch("guests.views.send_ticket_email")
+    def test_email_delivery_requires_verified_address(self, send_email):
+        response = self.client.post(reverse("guests:ticket_email"))
+        self.assertRedirects(response, reverse("guests:ticket_preview"))
+        send_email.assert_not_called()
+
+        self.primary.email = "marie@example.com"
+        self.primary.email_verified_at = django_timezone.now()
+        self.primary.save(update_fields=["email", "email_verified_at", "updated_at"])
+        response = self.client.post(reverse("guests:ticket_email"))
+
+        self.assertRedirects(response, reverse("guests:ticket_preview"))
+        send_email.assert_called_once()
+        self.assertTrue(send_email.call_args.kwargs["pdf_content"].startswith(b"%PDF"))
+
+
+@override_settings(SECURE_SSL_REDIRECT=False, STORAGES=TEST_STORAGES)
+class TicketAdminTests(TestCase):
+    def test_admin_can_generate_selected_ticket(self):
+        admin = get_user_model().objects.create_superuser(
+            username="ticket-admin",
+            email="admin@example.com",
+            password="safe-test-password",
+        )
+        guest = Guest.objects.create(first_name="Marie")
+        self.client.force_login(admin)
+
+        response = self.client.post(
+            reverse("admin:guests_guest_changelist"),
+            {
+                "action": "generate_selected_tickets",
+                "_selected_action": [guest.pk],
+            },
+            follow=True,
+        )
+
+        self.assertContains(response, "1 billet(s) prêt(s).")
+        self.assertTrue(Ticket.objects.get(guest=guest).is_ready)

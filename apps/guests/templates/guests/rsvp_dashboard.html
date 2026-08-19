@@ -90,8 +90,8 @@
   </section>
 
   <section class="card ticket-callout">
-    <div><p class="eyebrow">Aperçu</p><h2>Votre billet illustré</h2><p class="muted">Le design sert à valider le parcours. Le fichier final et son QR définitif seront produits plus tard.</p></div>
-    {% if rsvp_complete %}<a class="button button-primary" href="{% url 'guests:ticket_preview' %}">Voir l'aperçu</a>{% else %}<span class="lock-label">Disponible après le RSVP complet</span>{% endif %}
+    <div><p class="eyebrow">Billets</p><h2>Vos billets personnalisés</h2><p class="muted">Générez un JPG ou un PDF distinct pour vous et chacun de vos accompagnants.</p></div>
+    {% if rsvp_complete %}<a class="button button-primary" href="{% url 'guests:ticket_preview' %}">Gérer mes billets</a>{% else %}<span class="lock-label">Disponible après le RSVP complet</span>{% endif %}
   </section>
 </div>
 {% endblock %}
