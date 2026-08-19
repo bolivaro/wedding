@@ -231,6 +231,19 @@ class GuestAccessAdminActionTests(TestCase):
 
         self.assertContains(response, "Ouvrir RSVP")
 
+    def test_guest_changelist_displays_public_qr_test_link(self):
+        response = self.client.get(reverse("admin:guests_guest_changelist"))
+        qr_path = reverse(
+            "guests:public_qr_landing",
+            kwargs={"token": self.primary.qr_token},
+        )
+
+        self.assertContains(response, "Tester le QR")
+        self.assertContains(response, qr_path)
+
+        qr_response = self.client.get(qr_path)
+        self.assertContains(qr_response, "Invitation reconnue")
+
     def test_quick_access_requires_an_authenticated_admin(self):
         issue_guest_access(guest=self.primary, created_by=self.admin_user)
         self.client.logout()

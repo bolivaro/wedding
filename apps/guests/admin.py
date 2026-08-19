@@ -61,6 +61,7 @@ class GuestAdmin(admin.ModelAdmin):
         "rsvp_status",
         "is_active",
         "access_status",
+        "qr_public_link",
     )
     search_fields = ("first_name", "last_name", "email", "qr_token")
     list_filter = (
@@ -72,7 +73,13 @@ class GuestAdmin(admin.ModelAdmin):
         "is_invited",
         "is_vip",
     )
-    readonly_fields = ("qr_token", "rsvp_quick_access", "created_at", "updated_at")
+    readonly_fields = (
+        "qr_token",
+        "rsvp_quick_access",
+        "qr_quick_access",
+        "created_at",
+        "updated_at",
+    )
     inlines = [GuestEventInvitationInline, CompanionInline, TicketInline]
     actions = ["regenerate_rsvp_access", "generate_selected_tickets"]
     list_select_related = ("invitation_owner",)
@@ -110,6 +117,26 @@ class GuestAdmin(admin.ModelAdmin):
         return format_html(
             "<a class=\"button\" href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir le RSVP sans régénérer</a>",
             reverse("admin:guests_guest_open_rsvp", kwargs={"guest_id": owner.pk}),
+        )
+
+    @admin.display(description="QR public")
+    def qr_public_link(self, obj):
+        if not obj.is_active:
+            return "Invité inactif"
+        return format_html(
+            "<a href=\"{}\" target=\"_blank\" rel=\"noopener\">Tester le QR ↗</a>",
+            reverse("guests:public_qr_landing", kwargs={"token": obj.qr_token}),
+        )
+
+    @admin.display(description="Test du QR permanent")
+    def qr_quick_access(self, obj):
+        if not obj or not obj.pk:
+            return "Enregistrez d'abord l'invité."
+        if not obj.is_active:
+            return "Le QR d'un invité inactif n'est pas reconnu publiquement."
+        return format_html(
+            "<a class=\"button\" href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir la page du QR</a>",
+            reverse("guests:public_qr_landing", kwargs={"token": obj.qr_token}),
         )
 
     @staticmethod
