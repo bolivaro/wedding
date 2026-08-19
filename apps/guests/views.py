@@ -4,6 +4,7 @@ from functools import wraps
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -22,8 +23,21 @@ from .services.email_access import (
     issue_recovery_token,
     request_email_verification,
 )
-from .services.notifications import send_access_recovery, send_email_verification
+from .services.notifications import (
+    send_access_recovery,
+    send_email_verification,
+    send_ticket_email,
+)
 from .services.rsvp import update_rsvp
+from .services.ticket import (
+    TicketGenerationError,
+    build_party_pdf,
+    generate_party_tickets,
+    generate_ticket,
+    party_members,
+    party_rsvp_complete,
+    ticket_is_current,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -250,19 +264,161 @@ def recovery_consume(request, selector, secret):
     return redirect("guests:rsvp_dashboard")
 
 
+def _ticket_primary(request):
+    return Guest.objects.prefetch_related(
+        "event_invitations__event",
+        "companions__ticket",
+    ).select_related("ticket").get(pk=request.guest.pk)
+
+
+def _party_member_or_404(primary_guest, guest_id):
+    if guest_id == primary_guest.pk:
+        return primary_guest
+    return get_object_or_404(
+        Guest,
+        pk=guest_id,
+        invitation_owner=primary_guest,
+        is_active=True,
+    )
+
+
+def _ensure_ticket_access(request, primary_guest):
+    if party_rsvp_complete(primary_guest):
+        return True
+    messages.info(request, "Terminez votre RSVP avant d'accéder à vos billets.")
+    return False
+
+
 @guest_access_required
 def ticket_preview(request):
-    guest = Guest.objects.prefetch_related("event_invitations__event").get(pk=request.guest.pk)
-    eligible = guest.event_invitations.filter(is_eligible=True, event__is_active=True)
-    complete = (
-        guest.rsvp_status == Guest.RSVPStatus.ATTENDING
-        and eligible.exists()
-        and not eligible.filter(attendance_status=Guest.RSVPStatus.PENDING).exists()
-    )
-    if not complete:
-        messages.info(request, "Terminez votre RSVP avant d'accéder à l'aperçu du billet.")
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
         return redirect("guests:rsvp_dashboard")
-    return render(request, "guests/ticket_preview.html", {"guest": guest})
+
+    ticket_rows = []
+    for member in party_members(primary_guest):
+        ticket = getattr(member, "ticket", None)
+        ticket_rows.append(
+            {
+                "guest": member,
+                "ticket": ticket,
+                "is_current": bool(ticket and ticket_is_current(ticket, member)),
+            }
+        )
+    return render(
+        request,
+        "guests/ticket_preview.html",
+        {
+            "guest": primary_guest,
+            "ticket_rows": ticket_rows,
+            "can_email": bool(primary_guest.email and primary_guest.email_verified_at),
+        },
+    )
+
+
+@require_POST
+@guest_access_required
+def ticket_generate(request, guest_id):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    member = _party_member_or_404(primary_guest, guest_id)
+    try:
+        generate_ticket(member)
+    except TicketGenerationError:
+        logger.exception("Impossible de générer le billet du guest %s", member.pk)
+        messages.error(request, "Le billet n'a pas pu être généré. Merci de réessayer.")
+    else:
+        messages.success(request, f"Le billet de {member.full_name} est prêt.")
+    return redirect("guests:ticket_preview")
+
+
+@require_POST
+@guest_access_required
+def ticket_generate_all(request):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    try:
+        generate_party_tickets(primary_guest)
+    except TicketGenerationError:
+        logger.exception("Impossible de générer tous les billets du guest %s", primary_guest.pk)
+        messages.error(request, "Tous les billets n'ont pas pu être générés.")
+    else:
+        messages.success(request, "Tous les billets de votre invitation sont prêts.")
+    return redirect("guests:ticket_preview")
+
+
+@guest_access_required
+def ticket_download(request, guest_id, file_format):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    member = _party_member_or_404(primary_guest, guest_id)
+    if file_format not in {"jpg", "pdf"}:
+        raise Http404
+    ticket = getattr(member, "ticket", None)
+    if not ticket or not ticket_is_current(ticket, member):
+        messages.info(request, "Générez ou actualisez d'abord ce billet.")
+        return redirect("guests:ticket_preview")
+
+    file_field = ticket.jpg_file if file_format == "jpg" else ticket.pdf_file
+    extension = "jpg" if file_format == "jpg" else "pdf"
+    file_field.open("rb")
+    return FileResponse(
+        file_field,
+        as_attachment=True,
+        filename=f"billet-{member.qr_token}.{extension}",
+    )
+
+
+@guest_access_required
+def ticket_image(request, guest_id):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    member = _party_member_or_404(primary_guest, guest_id)
+    ticket = getattr(member, "ticket", None)
+    if not ticket or not ticket_is_current(ticket, member):
+        raise Http404
+    ticket.jpg_file.open("rb")
+    return FileResponse(ticket.jpg_file, content_type="image/jpeg")
+
+
+@require_POST
+@guest_access_required
+def party_ticket_download(request):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    try:
+        content = build_party_pdf(primary_guest)
+    except TicketGenerationError:
+        messages.error(request, "Le PDF groupé n'a pas pu être préparé.")
+        return redirect("guests:ticket_preview")
+    response = HttpResponse(content, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="billets-mariage.pdf"'
+    return response
+
+
+@require_POST
+@guest_access_required
+def ticket_email(request):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    if not primary_guest.email or not primary_guest.email_verified_at:
+        messages.error(request, "Vérifiez d'abord votre adresse email depuis le RSVP.")
+        return redirect("guests:ticket_preview")
+    try:
+        pdf_content = build_party_pdf(primary_guest)
+        send_ticket_email(guest=primary_guest, pdf_content=pdf_content)
+    except Exception:
+        logger.exception("Impossible d'envoyer les billets du guest %s", primary_guest.pk)
+        messages.error(request, "L'email n'a pas pu être envoyé. Merci de réessayer.")
+    else:
+        messages.success(request, f"Les billets ont été envoyés à {primary_guest.email}.")
+    return redirect("guests:ticket_preview")
 
 
 def public_qr_landing(request, token):

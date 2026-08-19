@@ -11,10 +11,12 @@ from .models import (
     GuestEventInvitation,
     GuestImportBatch,
     GuestImportRow,
+    Ticket,
     WeddingEvent,
 )
 from .services.import_guests import analyze_batch, apply_batch, upload_checksum
 from .services.access import issue_guest_access
+from .services.ticket import TicketGenerationError, generate_ticket
 
 
 class GuestEventInvitationInline(admin.TabularInline):
@@ -28,6 +30,21 @@ class CompanionInline(admin.TabularInline):
     extra = 0
     fields = ("first_name", "last_name", "gender", "is_active", "rsvp_status")
     show_change_link = True
+
+
+class TicketInline(admin.StackedInline):
+    model = Ticket
+    extra = 0
+    can_delete = False
+    fields = (
+        "status",
+        "jpg_file",
+        "pdf_file",
+        "template_version",
+        "generated_at",
+        "last_error",
+    )
+    readonly_fields = fields
 
 
 @admin.register(Guest)
@@ -55,8 +72,8 @@ class GuestAdmin(admin.ModelAdmin):
         "is_vip",
     )
     readonly_fields = ("qr_token", "created_at", "updated_at")
-    inlines = [GuestEventInvitationInline, CompanionInline]
-    actions = ["regenerate_rsvp_access"]
+    inlines = [GuestEventInvitationInline, CompanionInline, TicketInline]
+    actions = ["regenerate_rsvp_access", "generate_selected_tickets"]
     list_select_related = ("invitation_owner",)
 
     @admin.display(description="Accès RSVP")
@@ -117,6 +134,26 @@ class GuestAdmin(admin.ModelAdmin):
                 request,
                 "Les invités principaux inactifs ont été ignorés.",
                 level=messages.INFO,
+            )
+
+    @admin.action(description="Générer les billets sélectionnés")
+    def generate_selected_tickets(self, request, queryset):
+        generated = 0
+        failed = []
+        for guest in queryset.filter(is_active=True):
+            try:
+                generate_ticket(guest)
+            except TicketGenerationError:
+                failed.append(guest.full_name)
+            else:
+                generated += 1
+        if generated:
+            self.message_user(request, f"{generated} billet(s) prêt(s).", messages.SUCCESS)
+        if failed:
+            self.message_user(
+                request,
+                f"Échec pour : {', '.join(failed)}.",
+                messages.ERROR,
             )
 
     def get_urls(self):
@@ -233,6 +270,32 @@ class GuestImportBatchAdmin(admin.ModelAdmin):
         "applied_at",
     )
     inlines = [GuestImportRowInline]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    list_display = ("guest", "status", "template_version", "generated_at", "updated_at")
+    list_filter = ("status", "template_version")
+    search_fields = ("guest__first_name", "guest__last_name", "guest__email")
+    readonly_fields = (
+        "guest",
+        "status",
+        "jpg_file",
+        "pdf_file",
+        "template_version",
+        "template_checksum",
+        "render_signature",
+        "generated_at",
+        "last_error",
+        "created_at",
+        "updated_at",
+    )
 
     def has_add_permission(self, request):
         return False
