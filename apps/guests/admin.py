@@ -57,9 +57,12 @@ class GuestAdmin(admin.ModelAdmin):
     readonly_fields = ("qr_token", "created_at", "updated_at")
     inlines = [GuestEventInvitationInline, CompanionInline]
     actions = ["regenerate_rsvp_access"]
+    list_select_related = ("invitation_owner",)
 
     @admin.display(description="Accès RSVP")
     def access_status(self, obj):
+        if obj.invitation_owner_id:
+            return f"Via {obj.invitation_owner.full_name}"
         credential = obj.access_credentials.order_by("-created_at").first()
         if not credential:
             return "Non généré"
@@ -67,10 +70,16 @@ class GuestAdmin(admin.ModelAdmin):
             return "Révoqué"
         return f"Valide jusqu'au {credential.expires_at:%d/%m/%Y}"
 
-    @admin.action(description="Régénérer l'accès RSVP sélectionné")
+    @admin.action(description="Régénérer l'accès des invités principaux sélectionnés")
     def regenerate_rsvp_access(self, request, queryset):
         links = []
-        for guest in queryset.filter(invitation_owner__isnull=True, is_active=True):
+        selected = queryset.select_related("invitation_owner")
+        companions = list(selected.filter(invitation_owner__isnull=False))
+        inactive_guests = list(
+            selected.filter(invitation_owner__isnull=True, is_active=False)
+        )
+
+        for guest in selected.filter(invitation_owner__isnull=True, is_active=True):
             issued = issue_guest_access(guest=guest, created_by=request.user)
             path = reverse(
                 "guests:access_entry",
@@ -89,6 +98,25 @@ class GuestAdmin(admin.ModelAdmin):
                     ((name, url, url) for name, url in links),
                 ),
                 level=messages.WARNING,
+            )
+        if companions:
+            self.message_user(
+                request,
+                format_html_join(
+                    "<br>",
+                    "{} — accès géré par l'invité principal {}",
+                    (
+                        (companion.full_name, companion.invitation_owner.full_name)
+                        for companion in companions
+                    ),
+                ),
+                level=messages.INFO,
+            )
+        if inactive_guests:
+            self.message_user(
+                request,
+                "Les invités principaux inactifs ont été ignorés.",
+                level=messages.INFO,
             )
 
     def get_urls(self):

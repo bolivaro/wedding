@@ -1,8 +1,10 @@
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from guests.models import Guest, GuestAccessCredential, GuestEmailToken
@@ -137,3 +139,41 @@ class GuestEmailTokenTests(TestCase):
 
         self.assertEqual(issued.token.purpose, GuestEmailToken.Purpose.RECOVER)
         self.assertTrue(check_password(issued.secret, issued.token.secret_hash))
+
+
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
+@override_settings(SECURE_SSL_REDIRECT=False, STORAGES=TEST_STORAGES)
+class GuestAccessAdminActionTests(TestCase):
+    def setUp(self):
+        self.admin_user = get_user_model().objects.create_superuser(
+            username="admin-access",
+            email="admin-access@example.com",
+            password="safe-test-password",
+        )
+        self.client.force_login(self.admin_user)
+        self.primary = Guest.objects.create(first_name="Marie", last_name="Dupont")
+        self.companion = Guest.objects.create(
+            first_name="Jean",
+            last_name="Dupont",
+            invitation_owner=self.primary,
+        )
+
+    def test_companion_action_explains_that_access_belongs_to_primary(self):
+        response = self.client.post(
+            reverse("admin:guests_guest_changelist"),
+            {
+                "action": "regenerate_rsvp_access",
+                "_selected_action": [self.companion.pk],
+            },
+            follow=True,
+        )
+
+        self.assertContains(response, "accès géré par l'invité principal Marie Dupont")
+        self.assertFalse(
+            GuestAccessCredential.objects.filter(guest=self.companion).exists()
+        )
