@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from guests.models import Guest, GuestEventInvitation, WeddingEvent
@@ -54,6 +54,32 @@ class RSVPViewsTests(TestCase):
         dashboard = self.client.get(reverse("guests:rsvp_dashboard"))
         self.assertContains(dashboard, "Bonjour Marie")
         self.assertNotContains(dashboard, self.issued.secret)
+        self.assertEqual(dashboard.headers["Referrer-Policy"], "same-origin")
+
+    def test_rsvp_post_passes_real_csrf_origin_check(self):
+        client = Client(enforce_csrf_checks=True)
+        client.get(
+            reverse(
+                "guests:access_entry",
+                kwargs={
+                    "selector": self.issued.credential.selector,
+                    "secret": self.issued.secret,
+                },
+            )
+        )
+        client.get(reverse("guests:rsvp_dashboard"))
+        csrf_token = client.cookies["csrftoken"].value
+
+        response = client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "csrfmiddlewaretoken": csrf_token,
+                "status": Guest.RSVPStatus.NOT_ATTENDING,
+            },
+            HTTP_ORIGIN="http://testserver",
+        )
+
+        self.assertRedirects(response, reverse("guests:rsvp_dashboard"))
 
     def test_invalid_private_link_is_rejected(self):
         response = self.client.get(

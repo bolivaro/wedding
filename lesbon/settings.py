@@ -33,6 +33,7 @@ CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
     default=["http://127.0.0.1:8000", "http://localhost:8000"],
 )
+SECURE_REFERRER_POLICY = "same-origin"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
