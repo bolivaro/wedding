@@ -1,0 +1,3 @@
+{% extends "guests/base.html" %}
+{% block title %}Invitation{% endblock %}
+{% block content %}<section class="centered-card"><div class="icon-disc">{% if recognized %}✓{% else %}!{% endif %}</div>{% if recognized %}<p class="eyebrow">QR permanent</p><h1>Invitation reconnue</h1><p>Ce QR identifie l'invitation sans donner accès à sa modification. Les informations de table seront accessibles au personnel autorisé le jour du mariage.</p>{% else %}<h1>QR non reconnu</h1><p>Cette invitation ne peut pas être retrouvée.</p>{% endif %}</section>{% endblock %}

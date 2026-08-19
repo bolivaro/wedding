@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
+from django.utils.html import format_html_join
 
 from .forms import GuestImportUploadForm
 from .models import (
@@ -13,6 +14,7 @@ from .models import (
     WeddingEvent,
 )
 from .services.import_guests import analyze_batch, apply_batch, upload_checksum
+from .services.access import issue_guest_access
 
 
 class GuestEventInvitationInline(admin.TabularInline):
@@ -40,6 +42,7 @@ class GuestAdmin(admin.ModelAdmin):
         "party_size_limit",
         "rsvp_status",
         "is_active",
+        "access_status",
     )
     search_fields = ("first_name", "last_name", "email", "qr_token")
     list_filter = (
@@ -53,6 +56,40 @@ class GuestAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("qr_token", "created_at", "updated_at")
     inlines = [GuestEventInvitationInline, CompanionInline]
+    actions = ["regenerate_rsvp_access"]
+
+    @admin.display(description="Accès RSVP")
+    def access_status(self, obj):
+        credential = obj.access_credentials.order_by("-created_at").first()
+        if not credential:
+            return "Non généré"
+        if credential.revoked_at:
+            return "Révoqué"
+        return f"Valide jusqu'au {credential.expires_at:%d/%m/%Y}"
+
+    @admin.action(description="Régénérer l'accès RSVP sélectionné")
+    def regenerate_rsvp_access(self, request, queryset):
+        links = []
+        for guest in queryset.filter(invitation_owner__isnull=True, is_active=True):
+            issued = issue_guest_access(guest=guest, created_by=request.user)
+            path = reverse(
+                "guests:access_entry",
+                kwargs={
+                    "selector": issued.credential.selector,
+                    "secret": issued.secret,
+                },
+            )
+            links.append((guest.full_name, request.build_absolute_uri(path)))
+        if links:
+            self.message_user(
+                request,
+                format_html_join(
+                    "<br>",
+                    "{} : <a href=\"{}\">{}</a>",
+                    ((name, url, url) for name, url in links),
+                ),
+                level=messages.WARNING,
+            )
 
     def get_urls(self):
         custom_urls = [

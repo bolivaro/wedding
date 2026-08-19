@@ -1,0 +1,19 @@
+{% extends "guests/base.html" %}
+{% load static %}
+
+{% block title %}Aperçu du billet{% endblock %}
+{% block content %}
+<section class="page-heading"><p class="eyebrow">Prototype visuel</p><h1>Aperçu de votre billet</h1><p>Ce rendu n'est pas le billet final. Il valide uniquement le parcours, la hiérarchie et le comportement responsive.</p></section>
+<div class="ticket-layout">
+  <article class="ticket-preview" aria-label="Aperçu illustré du billet">
+    <img src="{% static 'guests/images/ticket-preview-placeholder.png' %}" alt="Fond botanique terracotta et sable">
+    <div class="ticket-content">
+      <p class="ticket-kicker">Invitation au mariage</p>
+      <p class="ticket-name">{{ guest.salutation }} {{ guest.first_name }}<br><strong>{{ guest.last_name|upper }}</strong></p>
+      <div class="qr-placeholder" aria-label="Emplacement futur du QR code"><span>APERÇU<br>QR</span></div>
+      <p class="ticket-note">Identifiant permanent déjà réservé</p>
+    </div>
+  </article>
+  <aside class="card preview-note"><h2>Ce qui est validé ici</h2><ul><li>La civilité issue du genre structuré</li><li>La lisibilité du nom sur mobile</li><li>L'emplacement indicatif du QR</li><li>La séparation entre QR public et accès RSVP</li></ul><p>Les positions exactes, polices, dimensions JPG/PDF et le QR réel attendront votre template.</p><a class="button button-secondary" href="{% url 'guests:rsvp_dashboard' %}">Retour au RSVP</a></aside>
+</div>
+{% endblock %}

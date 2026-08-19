@@ -2,10 +2,13 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from guests.models import Guest, GuestEventInvitation
+from guests.services.deadline import is_rsvp_open
 
 
 @transaction.atomic
 def add_companion(*, primary_guest, first_name, last_name, gender):
+    if not is_rsvp_open():
+        raise ValidationError("La date limite RSVP est dépassée.")
     primary_guest = Guest.objects.select_for_update().get(pk=primary_guest.pk)
     if primary_guest.invitation_owner_id:
         raise ValidationError("Seul un invité principal peut ajouter des accompagnants.")
@@ -49,6 +52,8 @@ def add_companion(*, primary_guest, first_name, last_name, gender):
 
 @transaction.atomic
 def deactivate_companion(*, primary_guest, companion):
+    if not is_rsvp_open():
+        raise ValidationError("La date limite RSVP est dépassée.")
     companion = Guest.objects.select_for_update().get(
         pk=companion.pk,
         invitation_owner=primary_guest,
