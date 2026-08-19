@@ -3,7 +3,8 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
-from django.utils.html import format_html_join
+from django.utils import timezone
+from django.utils.html import format_html, format_html_join
 
 from .forms import GuestImportUploadForm
 from .models import (
@@ -15,7 +16,7 @@ from .models import (
     WeddingEvent,
 )
 from .services.import_guests import analyze_batch, apply_batch, upload_checksum
-from .services.access import issue_guest_access
+from .services.access import issue_guest_access, start_guest_session
 from .services.ticket import TicketGenerationError, generate_ticket
 
 
@@ -71,7 +72,7 @@ class GuestAdmin(admin.ModelAdmin):
         "is_invited",
         "is_vip",
     )
-    readonly_fields = ("qr_token", "created_at", "updated_at")
+    readonly_fields = ("qr_token", "rsvp_quick_access", "created_at", "updated_at")
     inlines = [GuestEventInvitationInline, CompanionInline, TicketInline]
     actions = ["regenerate_rsvp_access", "generate_selected_tickets"]
     list_select_related = ("invitation_owner",)
@@ -79,13 +80,45 @@ class GuestAdmin(admin.ModelAdmin):
     @admin.display(description="Accès RSVP")
     def access_status(self, obj):
         if obj.invitation_owner_id:
-            return f"Via {obj.invitation_owner.full_name}"
+            owner = obj.invitation_owner
+            credential = self._usable_access(owner)
+            if credential:
+                return format_html(
+                    "Via {} · <a href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir RSVP ↗</a>",
+                    owner.full_name,
+                    reverse("admin:guests_guest_open_rsvp", kwargs={"guest_id": owner.pk}),
+                )
+            return f"Via {owner.full_name} — accès indisponible"
         credential = obj.access_credentials.order_by("-created_at").first()
         if not credential:
             return "Non généré"
-        if credential.revoked_at:
-            return "Révoqué"
-        return f"Valide jusqu'au {credential.expires_at:%d/%m/%Y}"
+        if not credential.is_usable(timezone.now()):
+            return "Expiré, révoqué ou verrouillé"
+        return format_html(
+            "Valide jusqu'au {} · <a href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir RSVP ↗</a>",
+            credential.expires_at.strftime("%d/%m/%Y"),
+            reverse("admin:guests_guest_open_rsvp", kwargs={"guest_id": obj.pk}),
+        )
+
+    @admin.display(description="Accès rapide au RSVP")
+    def rsvp_quick_access(self, obj):
+        if not obj or not obj.pk:
+            return "Enregistrez d'abord l'invité."
+        owner = obj.invitation_owner or obj
+        if not self._usable_access(owner):
+            return "Aucun accès RSVP actif. Générez-en un depuis la liste des invités."
+        return format_html(
+            "<a class=\"button\" href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir le RSVP sans régénérer</a>",
+            reverse("admin:guests_guest_open_rsvp", kwargs={"guest_id": owner.pk}),
+        )
+
+    @staticmethod
+    def _usable_access(guest):
+        now = timezone.now()
+        for credential in guest.access_credentials.order_by("-created_at"):
+            if credential.is_usable(now):
+                return credential
+        return None
 
     @admin.action(description="Régénérer l'accès des invités principaux sélectionnés")
     def regenerate_rsvp_access(self, request, queryset):
@@ -169,8 +202,33 @@ class GuestAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.import_confirm_view),
                 name="guests_guest_import_confirm",
             ),
+            path(
+                "<int:guest_id>/open-rsvp/",
+                self.admin_site.admin_view(self.open_rsvp_view),
+                name="guests_guest_open_rsvp",
+            ),
         ]
         return custom_urls + super().get_urls()
+
+    def open_rsvp_view(self, request, guest_id):
+        guest = get_object_or_404(
+            Guest.objects.select_related("invitation_owner"),
+            pk=guest_id,
+        )
+        owner = guest.invitation_owner or guest
+        if not self.has_view_permission(request, owner):
+            from django.core.exceptions import PermissionDenied
+
+            raise PermissionDenied
+        credential = self._usable_access(owner)
+        if not credential:
+            messages.error(
+                request,
+                "Cet invité ne possède aucun accès RSVP actif.",
+            )
+            return redirect("admin:guests_guest_change", object_id=owner.pk)
+        start_guest_session(request, credential)
+        return redirect("guests:rsvp_dashboard")
 
     def _ensure_import_permission(self, request):
         if not self.has_change_permission(request):

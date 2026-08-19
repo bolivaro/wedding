@@ -177,3 +177,70 @@ class GuestAccessAdminActionTests(TestCase):
         self.assertFalse(
             GuestAccessCredential.objects.filter(guest=self.companion).exists()
         )
+
+    def test_admin_opens_existing_rsvp_without_regenerating_access(self):
+        issued = issue_guest_access(guest=self.primary, created_by=self.admin_user)
+        initial_count = GuestAccessCredential.objects.filter(guest=self.primary).count()
+
+        response = self.client.get(
+            reverse(
+                "admin:guests_guest_open_rsvp",
+                kwargs={"guest_id": self.primary.pk},
+            )
+        )
+
+        self.assertRedirects(response, reverse("guests:rsvp_dashboard"))
+        self.assertEqual(
+            GuestAccessCredential.objects.filter(guest=self.primary).count(),
+            initial_count,
+        )
+        issued.credential.refresh_from_db()
+        self.assertIsNone(issued.credential.revoked_at)
+        dashboard = self.client.get(reverse("guests:rsvp_dashboard"))
+        self.assertContains(dashboard, "Bonjour Marie")
+
+    def test_companion_quick_access_opens_primary_rsvp(self):
+        issue_guest_access(guest=self.primary, created_by=self.admin_user)
+
+        response = self.client.get(
+            reverse(
+                "admin:guests_guest_open_rsvp",
+                kwargs={"guest_id": self.companion.pk},
+            )
+        )
+
+        self.assertRedirects(response, reverse("guests:rsvp_dashboard"))
+        dashboard = self.client.get(reverse("guests:rsvp_dashboard"))
+        self.assertContains(dashboard, "Bonjour Marie")
+
+    def test_quick_access_is_unavailable_without_active_credential(self):
+        response = self.client.get(
+            reverse(
+                "admin:guests_guest_open_rsvp",
+                kwargs={"guest_id": self.primary.pk},
+            ),
+            follow=True,
+        )
+
+        self.assertContains(response, "aucun accès RSVP actif", status_code=200)
+
+    def test_guest_changelist_displays_one_click_rsvp_link(self):
+        issue_guest_access(guest=self.primary, created_by=self.admin_user)
+
+        response = self.client.get(reverse("admin:guests_guest_changelist"))
+
+        self.assertContains(response, "Ouvrir RSVP")
+
+    def test_quick_access_requires_an_authenticated_admin(self):
+        issue_guest_access(guest=self.primary, created_by=self.admin_user)
+        self.client.logout()
+
+        response = self.client.get(
+            reverse(
+                "admin:guests_guest_open_rsvp",
+                kwargs={"guest_id": self.primary.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("admin:login"), response.url)
