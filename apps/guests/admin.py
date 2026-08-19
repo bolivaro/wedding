@@ -47,6 +47,9 @@ class TicketInline(admin.StackedInline):
     )
     readonly_fields = fields
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(guest__invitation_owner__isnull=True)
+
 
 @admin.register(Guest)
 class GuestAdmin(admin.ModelAdmin):
@@ -121,22 +124,25 @@ class GuestAdmin(admin.ModelAdmin):
 
     @admin.display(description="QR public")
     def qr_public_link(self, obj):
-        if not obj.is_active:
+        owner = obj.invitation_owner or obj
+        if not obj.is_active or not owner.is_active:
             return "Invité inactif"
         return format_html(
-            "<a href=\"{}\" target=\"_blank\" rel=\"noopener\">Tester le QR ↗</a>",
-            reverse("guests:public_qr_landing", kwargs={"token": obj.qr_token}),
+            "{}<a href=\"{}\" target=\"_blank\" rel=\"noopener\">Tester le QR du groupe ↗</a>",
+            "Via l'invité principal · " if obj.invitation_owner_id else "",
+            reverse("guests:public_qr_landing", kwargs={"token": owner.qr_token}),
         )
 
     @admin.display(description="Test du QR permanent")
     def qr_quick_access(self, obj):
         if not obj or not obj.pk:
             return "Enregistrez d'abord l'invité."
-        if not obj.is_active:
+        owner = obj.invitation_owner or obj
+        if not obj.is_active or not owner.is_active:
             return "Le QR d'un invité inactif n'est pas reconnu publiquement."
         return format_html(
-            "<a class=\"button\" href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir la page du QR</a>",
-            reverse("guests:public_qr_landing", kwargs={"token": obj.qr_token}),
+            "<a class=\"button\" href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir la page du QR du groupe</a>",
+            reverse("guests:public_qr_landing", kwargs={"token": owner.qr_token}),
         )
 
     @staticmethod
@@ -200,7 +206,12 @@ class GuestAdmin(admin.ModelAdmin):
     def generate_selected_tickets(self, request, queryset):
         generated = 0
         failed = []
-        for guest in queryset.filter(is_active=True):
+        owners = {}
+        for guest in queryset.filter(is_active=True).select_related("invitation_owner"):
+            owner = guest.invitation_owner or guest
+            if owner.is_active:
+                owners[owner.pk] = owner
+        for guest in owners.values():
             try:
                 generate_ticket(guest)
             except TicketGenerationError:
@@ -208,7 +219,11 @@ class GuestAdmin(admin.ModelAdmin):
             else:
                 generated += 1
         if generated:
-            self.message_user(request, f"{generated} billet(s) prêt(s).", messages.SUCCESS)
+            self.message_user(
+                request,
+                f"{generated} billet(s) de groupe prêt(s).",
+                messages.SUCCESS,
+            )
         if failed:
             self.message_user(
                 request,

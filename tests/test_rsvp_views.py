@@ -146,7 +146,7 @@ class RSVPViewsTests(TestCase):
             },
         )
         response = self.client.get(reverse("guests:ticket_preview"))
-        self.assertContains(response, "Billets personnalisés")
+        self.assertContains(response, "Billet de groupe")
         self.assertContains(response, "Marie")
 
     def test_public_qr_does_not_expose_identity_or_open_session(self):

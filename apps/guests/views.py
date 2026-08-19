@@ -32,7 +32,6 @@ from .services.rsvp import update_rsvp
 from .services.ticket import (
     TicketGenerationError,
     build_party_pdf,
-    generate_party_tickets,
     generate_ticket,
     party_members,
     party_rsvp_complete,
@@ -267,7 +266,7 @@ def recovery_consume(request, selector, secret):
 def _ticket_primary(request):
     return Guest.objects.prefetch_related(
         "event_invitations__event",
-        "companions__ticket",
+        "companions",
     ).select_related("ticket").get(pk=request.guest.pk)
 
 
@@ -295,22 +294,17 @@ def ticket_preview(request):
     if not _ensure_ticket_access(request, primary_guest):
         return redirect("guests:rsvp_dashboard")
 
-    ticket_rows = []
-    for member in party_members(primary_guest):
-        ticket = getattr(member, "ticket", None)
-        ticket_rows.append(
-            {
-                "guest": member,
-                "ticket": ticket,
-                "is_current": bool(ticket and ticket_is_current(ticket, member)),
-            }
-        )
+    ticket = getattr(primary_guest, "ticket", None)
     return render(
         request,
         "guests/ticket_preview.html",
         {
             "guest": primary_guest,
-            "ticket_rows": ticket_rows,
+            "members": party_members(primary_guest),
+            "ticket": ticket,
+            "ticket_is_current": bool(
+                ticket and ticket_is_current(ticket, primary_guest)
+            ),
             "can_email": bool(primary_guest.email and primary_guest.email_verified_at),
         },
     )
@@ -322,14 +316,14 @@ def ticket_generate(request, guest_id):
     primary_guest = _ticket_primary(request)
     if not _ensure_ticket_access(request, primary_guest):
         return redirect("guests:rsvp_dashboard")
-    member = _party_member_or_404(primary_guest, guest_id)
+    _party_member_or_404(primary_guest, guest_id)
     try:
-        generate_ticket(member)
+        generate_ticket(primary_guest)
     except TicketGenerationError:
-        logger.exception("Impossible de générer le billet du guest %s", member.pk)
+        logger.exception("Impossible de générer le billet du groupe %s", primary_guest.pk)
         messages.error(request, "Le billet n'a pas pu être généré. Merci de réessayer.")
     else:
-        messages.success(request, f"Le billet de {member.full_name} est prêt.")
+        messages.success(request, "Le billet de votre invitation est prêt.")
     return redirect("guests:ticket_preview")
 
 
@@ -340,12 +334,12 @@ def ticket_generate_all(request):
     if not _ensure_ticket_access(request, primary_guest):
         return redirect("guests:rsvp_dashboard")
     try:
-        generate_party_tickets(primary_guest)
+        generate_ticket(primary_guest)
     except TicketGenerationError:
-        logger.exception("Impossible de générer tous les billets du guest %s", primary_guest.pk)
-        messages.error(request, "Tous les billets n'ont pas pu être générés.")
+        logger.exception("Impossible de générer le billet du groupe %s", primary_guest.pk)
+        messages.error(request, "Le billet de groupe n'a pas pu être généré.")
     else:
-        messages.success(request, "Tous les billets de votre invitation sont prêts.")
+        messages.success(request, "Le billet de votre invitation est prêt.")
     return redirect("guests:ticket_preview")
 
 
@@ -354,11 +348,11 @@ def ticket_download(request, guest_id, file_format):
     primary_guest = _ticket_primary(request)
     if not _ensure_ticket_access(request, primary_guest):
         return redirect("guests:rsvp_dashboard")
-    member = _party_member_or_404(primary_guest, guest_id)
+    _party_member_or_404(primary_guest, guest_id)
     if file_format not in {"jpg", "pdf"}:
         raise Http404
-    ticket = getattr(member, "ticket", None)
-    if not ticket or not ticket_is_current(ticket, member):
+    ticket = getattr(primary_guest, "ticket", None)
+    if not ticket or not ticket_is_current(ticket, primary_guest):
         messages.info(request, "Générez ou actualisez d'abord ce billet.")
         return redirect("guests:ticket_preview")
 
@@ -368,7 +362,7 @@ def ticket_download(request, guest_id, file_format):
     return FileResponse(
         file_field,
         as_attachment=True,
-        filename=f"billet-{member.qr_token}.{extension}",
+        filename=f"billet-groupe-{primary_guest.qr_token}.{extension}",
     )
 
 
@@ -377,9 +371,9 @@ def ticket_image(request, guest_id):
     primary_guest = _ticket_primary(request)
     if not _ensure_ticket_access(request, primary_guest):
         return redirect("guests:rsvp_dashboard")
-    member = _party_member_or_404(primary_guest, guest_id)
-    ticket = getattr(member, "ticket", None)
-    if not ticket or not ticket_is_current(ticket, member):
+    _party_member_or_404(primary_guest, guest_id)
+    ticket = getattr(primary_guest, "ticket", None)
+    if not ticket or not ticket_is_current(ticket, primary_guest):
         raise Http404
     ticket.jpg_file.open("rb")
     return FileResponse(ticket.jpg_file, content_type="image/jpeg")
@@ -397,7 +391,7 @@ def party_ticket_download(request):
         messages.error(request, "Le PDF groupé n'a pas pu être préparé.")
         return redirect("guests:ticket_preview")
     response = HttpResponse(content, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="billets-mariage.pdf"'
+    response["Content-Disposition"] = 'attachment; filename="billet-groupe-mariage.pdf"'
     return response
 
 

@@ -46,18 +46,18 @@ def send_ticket_email(*, guest, pdf_content):
         raise ValueError("Une adresse email vérifiée est requise pour envoyer les billets.")
     send_brevo_email(
         to=[{"email": guest.email, "name": guest.full_name}],
-        subject="Vos billets pour notre mariage",
+        subject="Votre billet pour notre mariage",
         text_content=(
             f"Bonjour {guest.first_name},\n\n"
-            "Vous trouverez en pièce jointe les billets de votre invitation. "
-            "Chaque personne dispose de son propre QR code.\n\n"
+            "Vous trouverez en pièce jointe le billet de votre invitation. "
+            "Son QR code unique permettra d'identifier tout votre groupe.\n\n"
             "Gardez votre lien RSVP privé : le QR du billet sert uniquement à "
             "retrouver les informations utiles le jour du mariage."
         ),
         reply_to=get_brevo_sender(),
         attachments=[
             {
-                "name": "billets-mariage.pdf",
+                "name": "billet-groupe-mariage.pdf",
                 "content": base64.b64encode(pdf_content).decode("ascii"),
             }
         ],

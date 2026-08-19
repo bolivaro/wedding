@@ -110,13 +110,32 @@ class TicketGenerationTests(TestCase):
         self.assertEqual(second.generated_at, generated_at)
         self.assertTrue(ticket_is_current(second, self.primary))
 
-    def test_companion_has_an_individual_ticket_and_grouped_pdf(self):
+    def test_party_has_one_group_ticket_and_one_qr(self):
         content = build_party_pdf(self.primary)
 
         self.assertTrue(content.startswith(b"%PDF"))
         self.assertTrue(Ticket.objects.get(guest=self.primary).is_ready)
-        self.assertTrue(Ticket.objects.get(guest=self.companion).is_ready)
-        self.assertNotEqual(qr_payload(self.primary), qr_payload(self.companion))
+        self.assertFalse(Ticket.objects.filter(guest=self.companion).exists())
+        self.assertEqual(qr_payload(self.primary), qr_payload(self.companion))
+
+    def test_legacy_companion_ticket_is_preserved_but_not_regenerated(self):
+        legacy_ticket = Ticket.objects.create(guest=self.companion)
+
+        group_ticket = generate_ticket(self.companion)
+
+        self.assertEqual(group_ticket.guest, self.primary)
+        self.assertTrue(Ticket.objects.filter(pk=legacy_ticket.pk).exists())
+        legacy_ticket.refresh_from_db()
+        self.assertEqual(legacy_ticket.status, Ticket.Status.PENDING)
+
+    def test_companion_change_makes_group_ticket_stale(self):
+        ticket = generate_ticket(self.primary)
+        self.assertTrue(ticket_is_current(ticket, self.primary))
+
+        self.companion.first_name = "Nouveau prénom"
+        self.companion.save(update_fields=["first_name", "updated_at"])
+
+        self.assertFalse(ticket_is_current(ticket, self.primary))
 
     @patch("guests.services.notifications.send_brevo_email")
     def test_ticket_email_builds_a_brevo_pdf_attachment(self, send_email):
@@ -127,7 +146,7 @@ class TicketGenerationTests(TestCase):
         send_ticket_email(guest=self.primary, pdf_content=pdf_content)
 
         attachment = send_email.call_args.kwargs["attachments"][0]
-        self.assertEqual(attachment["name"], "billets-mariage.pdf")
+        self.assertEqual(attachment["name"], "billet-groupe-mariage.pdf")
         self.assertEqual(base64.b64decode(attachment["content"]), pdf_content)
 
 
@@ -167,11 +186,13 @@ class TicketViewsTests(TestCase):
             )
         )
 
-    def test_primary_can_generate_and_download_companion_ticket(self):
+    def test_companion_route_generates_and_downloads_the_group_ticket(self):
         response = self.client.post(
             reverse("guests:ticket_generate", kwargs={"guest_id": self.companion.pk})
         )
         self.assertRedirects(response, reverse("guests:ticket_preview"))
+        self.assertTrue(Ticket.objects.filter(guest=self.primary).exists())
+        self.assertFalse(Ticket.objects.filter(guest=self.companion).exists())
 
         response = self.client.get(
             reverse(
@@ -181,6 +202,17 @@ class TicketViewsTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/jpeg")
+
+    def test_ticket_center_shows_one_group_card_and_all_members(self):
+        response = self.client.get(reverse("guests:ticket_preview"))
+
+        self.assertContains(response, "Marie Dupont")
+        self.assertContains(response, "Jean Dupont")
+        self.assertContains(
+            response,
+            'class="ticket-person-card ticket-group-card card"',
+            count=1,
+        )
 
     def test_primary_cannot_reach_unrelated_ticket(self):
         response = self.client.post(
@@ -225,5 +257,28 @@ class TicketAdminTests(TestCase):
             follow=True,
         )
 
-        self.assertContains(response, "1 billet(s) prêt(s).")
+        self.assertContains(response, "1 billet(s) de groupe prêt(s).")
         self.assertTrue(Ticket.objects.get(guest=guest).is_ready)
+
+    def test_selecting_companion_generates_primary_group_ticket(self):
+        admin = get_user_model().objects.create_superuser(
+            username="companion-ticket-admin",
+            email="companion-admin@example.com",
+            password="safe-test-password",
+        )
+        primary = Guest.objects.create(first_name="Marie")
+        companion = Guest.objects.create(first_name="Jean", invitation_owner=primary)
+        self.client.force_login(admin)
+
+        response = self.client.post(
+            reverse("admin:guests_guest_changelist"),
+            {
+                "action": "generate_selected_tickets",
+                "_selected_action": [companion.pk],
+            },
+            follow=True,
+        )
+
+        self.assertContains(response, "1 billet(s) de groupe prêt(s).")
+        self.assertTrue(Ticket.objects.filter(guest=primary).exists())
+        self.assertFalse(Ticket.objects.filter(guest=companion).exists())
