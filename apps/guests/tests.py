@@ -17,6 +17,12 @@ class GuestWorkflowFieldsTests(TestCase):
         self.assertIsNone(first.email)
         self.assertIsNone(second.email)
 
+    def test_database_rejects_email_that_only_differs_by_case(self):
+        Guest.objects.create(first_name="Marie", email="marie@example.com")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Guest.objects.create(first_name="Jean", email="MARIE@example.com")
+
     def test_salutation_is_derived_from_structured_gender(self):
         guest = Guest(first_name="Marie", gender=Guest.Gender.FEMALE)
 

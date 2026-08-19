@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class Guest(models.Model):
@@ -41,7 +42,7 @@ class Guest(models.Model):
 
     first_name = models.CharField("prénom", max_length=100)
     last_name = models.CharField("nom", max_length=100, blank=True)
-    email = models.EmailField("email", unique=True, null=True, blank=True)
+    email = models.EmailField("email", null=True, blank=True)
     pending_email = models.EmailField("nouvel email à vérifier", blank=True)
     email_verified_at = models.DateTimeField(
         "email vérifié le",
@@ -135,6 +136,11 @@ class Guest(models.Model):
         verbose_name = "invité"
         verbose_name_plural = "invités"
         constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                condition=models.Q(email__isnull=False),
+                name="unique_guest_email_case_insensitive",
+            ),
             models.CheckConstraint(
                 condition=(
                     models.Q(invitation_kind="single", party_size_limit=1)
@@ -169,6 +175,11 @@ class Guest(models.Model):
     def clean(self):
         super().clean()
         errors = {}
+
+        if self.email:
+            self.email = self.email.strip().casefold()
+        if self.pending_email:
+            self.pending_email = self.pending_email.strip().casefold()
 
         if self.invitation_owner_id and self.invitation_owner_id == self.pk:
             errors["invitation_owner"] = "Un invité ne peut pas être son propre accompagnant."
