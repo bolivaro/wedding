@@ -1,0 +1,71 @@
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+
+from guests.models import Guest, GuestEventInvitation
+from guests.services.deadline import is_rsvp_open
+
+
+@transaction.atomic
+def update_rsvp(*, guest, status, event_responses=None, source=Guest.RSVPSource.GUEST, at=None):
+    response_time = at or timezone.now()
+    if source == Guest.RSVPSource.GUEST and not is_rsvp_open(at=response_time):
+        raise ValidationError("La date limite RSVP est dépassée.")
+    if status not in Guest.RSVPStatus.values or status == Guest.RSVPStatus.PENDING:
+        raise ValidationError("Statut RSVP invalide.")
+
+    guest = Guest.objects.select_for_update().get(pk=guest.pk)
+    invitations = {
+        invitation.event.code: invitation
+        for invitation in guest.event_invitations.select_for_update().select_related("event")
+    }
+    required_invitations = {
+        code: invitation
+        for code, invitation in invitations.items()
+        if invitation.event.is_active and invitation.event.requires_rsvp
+    }
+    event_responses = event_responses or {}
+
+    if status == Guest.RSVPStatus.NOT_ATTENDING:
+        for invitation in invitations.values():
+            invitation.attendance_status = Guest.RSVPStatus.NOT_ATTENDING
+            invitation.response_source = source
+            invitation.responded_at = response_time
+            invitation.save(update_fields=["attendance_status", "response_source", "responded_at"])
+    else:
+        attending_any_event = False
+        for code, invitation in required_invitations.items():
+            if not invitation.is_eligible:
+                if event_responses.get(code) == Guest.RSVPStatus.ATTENDING:
+                    raise ValidationError(f"L'invité n'est pas éligible à l'événement {invitation.event.name}.")
+                continue
+            event_status = event_responses.get(code)
+            if event_status not in [Guest.RSVPStatus.ATTENDING, Guest.RSVPStatus.NOT_ATTENDING]:
+                raise ValidationError(f"Une réponse est requise pour {invitation.event.name}.")
+            attending_any_event = attending_any_event or event_status == Guest.RSVPStatus.ATTENDING
+            invitation.attendance_status = event_status
+            invitation.response_source = source
+            invitation.responded_at = response_time
+            invitation.save(update_fields=["attendance_status", "response_source", "responded_at"])
+        if required_invitations and not attending_any_event:
+            raise ValidationError("Au moins un événement doit être accepté pour confirmer une présence.")
+
+        church = invitations.get("church")
+        cocktail = invitations.get("cocktail")
+        if church and cocktail and not cocktail.event.requires_rsvp:
+            cocktail.attendance_status = (
+                church.attendance_status
+                if cocktail.is_eligible
+                else Guest.RSVPStatus.NOT_ATTENDING
+            )
+            cocktail.response_source = source
+            cocktail.responded_at = response_time
+            cocktail.save(
+                update_fields=["attendance_status", "response_source", "responded_at"]
+            )
+
+    guest.rsvp_status = status
+    guest.rsvp_source = source
+    guest.rsvp_responded_at = response_time
+    guest.save(update_fields=["rsvp_status", "rsvp_source", "rsvp_responded_at", "updated_at"])
+    return guest

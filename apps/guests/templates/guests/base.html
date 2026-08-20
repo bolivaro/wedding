@@ -1,0 +1,32 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="same-origin">
+    <title>{% block title %}Leslie &amp; Bolivar{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'guests/css/guests.css' %}">
+    <script src="{% static 'guests/js/theme.js' %}" defer></script>
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="{% url 'guests:rsvp_dashboard' %}">
+        <span>Leslie</span><span class="brand-amp">&amp;</span><span>Bolivar</span>
+      </a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Changer de thème">
+        <span aria-hidden="true">◐</span><span class="theme-label">Thème</span>
+      </button>
+    </header>
+    <main class="page-shell">
+      {% if messages %}
+        <div class="messages" aria-live="polite">
+          {% for message in messages %}<div class="message message-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">Avec affection, Leslie &amp; Bolivar</footer>
+  </body>
+</html>

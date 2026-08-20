@@ -1,0 +1,3 @@
+{% extends "guests/base.html" %}
+{% block title %}Vérification email{% endblock %}
+{% block content %}<section class="centered-card"><div class="icon-disc">{% if success %}✓{% else %}!{% endif %}</div>{% if success %}<h1>Votre email est vérifié</h1><p>Vous pourrez désormais l'utiliser pour récupérer votre accès et recevoir les prochaines informations.</p>{% else %}<h1>Ce lien n'est plus valide</h1><p>Il a expiré, a déjà été utilisé ou a été remplacé.</p>{% endif %}<a class="button button-primary" href="{% url 'guests:rsvp_dashboard' %}">Revenir au RSVP</a></section>{% endblock %}

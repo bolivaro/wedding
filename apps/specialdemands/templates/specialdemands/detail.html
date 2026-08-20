@@ -16,6 +16,7 @@
       rel="stylesheet"
       href="{% static 'specialdemands/css/styles.css' %}"
     />
+    <script src="{% static 'guests/js/theme.js' %}" defer></script>
 
     <title>Demande spéciale</title>
   </head>
@@ -39,9 +40,10 @@
           <span class="site-logo-amp">&amp;</span>
           <span class="site-logo-name">Bolivar</span>
         </a>
-        <nav class="text-base font-bold text-[var(--beige)]">
-          Demande spéciale
-        </nav>
+        <div class="header-actions">
+          <nav class="text-base font-bold text-[var(--beige)]">Demande spéciale</nav>
+          <button class="special-theme-toggle" type="button" data-theme-toggle aria-label="Changer de thème">◐</button>
+        </div>
       </div>
     </header>
 
@@ -248,7 +250,7 @@
                   type="submit"
                   name="decision"
                   value="declined"
-                  class="decision-btn bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 transition"
+                  class="decision-btn decline-btn text-white px-6 py-3 rounded-xl transition"
                 >
                   Je ne peux pas…
                 </button>

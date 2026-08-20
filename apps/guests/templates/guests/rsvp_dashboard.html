@@ -1,0 +1,97 @@
+{% extends "guests/base.html" %}
+{% load static %}
+
+{% block title %}Votre RSVP — Leslie & Bolivar{% endblock %}
+{% block extra_head %}<script src="{% static 'guests/js/rsvp.js' %}" defer></script>{% endblock %}
+
+{% block content %}
+<section class="hero-card">
+  <p class="eyebrow">Votre invitation</p>
+  <h1>Bonjour {{ guest.first_name }}</h1>
+  <p>Nous sommes heureux de vous compter parmi les personnes qui partageront cette journée avec nous.</p>
+  <div class="countdown" data-countdown data-deadline="{{ deadline|date:'c' }}">
+    <div><strong data-days>—</strong><span>Jours</span></div>
+    <div><strong data-hours>—</strong><span>Heures</span></div>
+    <div><strong data-minutes>—</strong><span>Minutes</span></div>
+    <div><strong data-seconds>—</strong><span>Secondes</span></div>
+  </div>
+  <p class="deadline-copy">Réponse modifiable jusqu'au {{ deadline|date:"j F Y à H:i" }}.</p>
+</section>
+
+{% if not rsvp_open %}
+<aside class="notice notice-warning">
+  <strong>Les réponses en ligne sont désormais closes.</strong>
+  <span>Pour toute modification, écrivez-nous à <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</span>
+</aside>
+{% endif %}
+
+<div class="dashboard-grid">
+  <section class="card card-wide">
+    <div class="section-heading"><div><p class="eyebrow">Étape 1</p><h2>Votre présence</h2></div><span class="status-pill status-{{ guest.rsvp_status }}">{{ guest.get_rsvp_status_display }}</span></div>
+    <form method="post" action="{% url 'guests:rsvp_respond' %}" data-rsvp-form>
+      {% csrf_token %}
+      {{ rsvp_form.non_field_errors }}
+      <fieldset {% if not rsvp_open %}disabled{% endif %}>
+        <legend>{{ rsvp_form.status.label }}</legend>
+        <div class="choice-grid">{{ rsvp_form.status }}</div>
+        {{ rsvp_form.status.errors }}
+      </fieldset>
+      <fieldset class="events-fieldset" data-events-fieldset {% if not rsvp_open %}disabled{% endif %}>
+        <legend>À quelles étapes serez-vous présent(e) ?</legend>
+        <div class="event-list">
+          {% for field in rsvp_form %}
+            {% if field.name != "status" %}
+            <div class="event-choice"><div><strong>{{ field.label }}</strong><span>Réponse indépendante</span></div><div class="inline-choices">{{ field }}</div>{{ field.errors }}</div>
+            {% endif %}
+          {% endfor %}
+          {% for invitation in event_invitations %}
+            {% if not invitation.is_eligible %}
+            <div class="event-choice event-disabled"><div><strong>{{ invitation.event.name }}</strong><span>Cette étape ne fait pas partie de votre invitation.</span></div><span class="lock-label">Non proposée</span></div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% if rsvp_open %}<button class="button button-primary" type="submit">Enregistrer mes réponses</button>{% endif %}
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="section-heading"><div><p class="eyebrow">Étape 2</p><h2>Vos accompagnants</h2></div><span class="counter-pill">{{ active_companions|length }} / {{ guest.companion_limit }}</span></div>
+    {% if active_companions %}
+    <div class="companion-list">
+      {% for companion in active_companions %}
+      <div class="companion-row"><div class="avatar">{{ companion.first_name|first }}{{ companion.last_name|first }}</div><div><strong>{{ companion.salutation }} {{ companion.full_name }}</strong><span>Accompagnant</span></div>
+        {% if rsvp_open %}<form method="post" action="{% url 'guests:companion_remove' companion.pk %}">{% csrf_token %}<button class="button-link danger" type="submit">Retirer</button></form>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">Aucun accompagnant renseigné.</p>{% endif %}
+
+    {% if rsvp_open and active_companions|length < guest.companion_limit %}
+    <form class="compact-form" method="post" action="{% url 'guests:companion_add' %}">
+      {% csrf_token %}
+      <div class="form-grid">
+        {% for field in companion_form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+      </div>
+      <button class="button button-secondary" type="submit">Ajouter cet accompagnant</button>
+    </form>
+    {% elif guest.companion_limit == 0 %}<p class="muted">Votre invitation est individuelle.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-heading"><div><p class="eyebrow">Étape 3</p><h2>Votre email</h2></div>{% if guest.email_verified_at %}<span class="verified">Vérifié</span>{% endif %}</div>
+    <p class="muted">Cette adresse permettra de recevoir les informations utiles et, plus tard, votre billet.</p>
+    {% if guest.pending_email %}<p class="notice-inline">Vérification en attente pour <strong>{{ guest.pending_email }}</strong>.</p>{% endif %}
+    <form class="compact-form" method="post" action="{% url 'guests:email_update' %}">
+      {% csrf_token %}
+      <div class="field"><label for="{{ email_form.email.id_for_label }}">{{ email_form.email.label }}</label>{{ email_form.email }}</div>
+      {% if rsvp_open %}<button class="button button-secondary" type="submit">Vérifier mon email</button>{% endif %}
+    </form>
+  </section>
+
+  <section class="card ticket-callout">
+    <div><p class="eyebrow">Billet</p><h2>Votre billet de groupe</h2><p class="muted">Un JPG ou PDF unique réunit tous les membres de votre invitation autour d'un seul QR.</p></div>
+    {% if rsvp_complete %}<a class="button button-primary" href="{% url 'guests:ticket_preview' %}">Gérer mon billet</a>{% else %}<span class="lock-label">Disponible après le RSVP complet</span>{% endif %}
+  </section>
+</div>
+{% endblock %}

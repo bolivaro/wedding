@@ -1,14 +1,13 @@
-import json
 import logging
 from urllib.parse import quote
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
 
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.conf import settings
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+
+from lesbon.email import get_brevo_sender, send_brevo_email
 
 from .models import SpecialDemand
 
@@ -101,86 +100,6 @@ def special_demand_respond(request, token):
         )
 
     return redirect("specialdemands:detail", token=demand.token)
-
-
-def get_brevo_sender():
-    sender_email = getattr(settings, "BREVO_SENDER_EMAIL", None) or getattr(
-        settings,
-        "DEFAULT_FROM_EMAIL_ADDRESS",
-        None,
-    ) or getattr(settings, "DEFAULT_FROM_EMAIL", None)
-
-    sender_name = getattr(settings, "BREVO_SENDER_NAME", "Leslie & Bolivar")
-
-    if not sender_email:
-        raise ValueError("BREVO_SENDER_EMAIL manquant dans les settings.")
-
-    return {
-        "email": sender_email,
-        "name": sender_name,
-    }
-
-
-def send_brevo_email(
-    *,
-    to,
-    subject,
-    text_content=None,
-    html_content=None,
-    reply_to=None,
-    cc=None,
-    bcc=None,
-):
-    api_key = getattr(settings, "BREVO_API_KEY", None)
-    if not api_key:
-        raise ValueError("BREVO_API_KEY manquant dans les settings.")
-
-    if not to:
-        raise ValueError("Aucun destinataire fourni.")
-
-    payload = {
-        "sender": get_brevo_sender(),
-        "to": to,
-        "subject": subject,
-    }
-
-    if text_content:
-        payload["textContent"] = text_content
-
-    if html_content:
-        payload["htmlContent"] = html_content
-
-    if reply_to:
-        payload["replyTo"] = reply_to
-
-    if cc:
-        payload["cc"] = cc
-
-    if bcc:
-        payload["bcc"] = bcc
-
-    request = Request(
-        url="https://api.brevo.com/v3/smtp/email",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "accept": "application/json",
-            "content-type": "application/json",
-            "api-key": api_key,
-        },
-        method="POST",
-    )
-
-    try:
-        with urlopen(request, timeout=15) as response:
-            body = response.read().decode("utf-8")
-            return json.loads(body) if body else {}
-    except HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="replace")
-        logger.error("Brevo HTTPError %s: %s", exc.code, error_body)
-        raise
-    except URLError:
-        logger.exception("Brevo URLError lors de l'envoi d'email")
-        raise
 
 
 def send_notification_email_to_couple(demand):

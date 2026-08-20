@@ -1,0 +1,52 @@
+{% extends "guests/base.html" %}
+{% load static %}
+
+{% block title %}Votre billet de groupe{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <p class="eyebrow">Billet de groupe</p>
+  <h1>Un billet pour toute votre invitation</h1>
+  <p>Votre billet réunit l'invité principal et tous ses accompagnants autour d'un seul QR code permanent.</p>
+</section>
+
+<aside class="notice ticket-security-note">
+  <strong>Un QR unique pour votre groupe</strong>
+  <span>À l'accueil, le personnel autorisé pourra retrouver chaque membre et sa table sans que ces informations soient inscrites dans le QR.</span>
+</aside>
+
+<div class="ticket-toolbar card">
+  <div>
+    <h2>Membres associés au billet</h2>
+    <ul class="ticket-member-list">
+      {% for member in members %}<li><span class="avatar">{{ member.first_name|first }}{{ member.last_name|first }}</span><span><strong>{{ member.salutation }} {{ member.full_name }}</strong>{% if member.pk == guest.pk %}<small>Invité principal</small>{% else %}<small>Accompagnant</small>{% endif %}</span></li>{% endfor %}
+    </ul>
+  </div>
+  <div class="ticket-actions">
+    <form method="post" action="{% url 'guests:ticket_generate' guest.pk %}">{% csrf_token %}<button class="button button-secondary" type="submit">{% if ticket_is_current %}Actualiser le billet{% else %}Générer le billet{% endif %}</button></form>
+    <form method="post" action="{% url 'guests:party_ticket_download' %}">{% csrf_token %}<button class="button button-primary" type="submit">Télécharger le PDF (2 pages)</button></form>
+    {% if can_email %}
+    <form method="post" action="{% url 'guests:ticket_email' %}">{% csrf_token %}<button class="button button-secondary" type="submit">Envoyer par email</button></form>
+    {% else %}<span class="lock-label">Email vérifié requis pour l'envoi</span>{% endif %}
+  </div>
+</div>
+
+<div class="ticket-group-layout">
+  <article class="ticket-person-card ticket-group-card card">
+    <div class="ticket-image-frame">
+      {% if ticket_is_current %}
+      <img src="{% url 'guests:ticket_image' guest.pk %}" alt="Billet de groupe de {{ guest.full_name }} et ses accompagnants">
+      {% else %}
+      <img src="{% static 'guests/images/billet-template-v1.jpg' %}" alt="Gabarit du billet de groupe">
+      <span class="ticket-image-badge">À générer</span>
+      {% endif %}
+    </div>
+    <div class="ticket-person-heading"><div><p class="eyebrow">Invitation complète</p><h2>{{ guest.full_name }} et ses accompagnants</h2></div>{% if ticket_is_current %}<span class="verified">Prêt</span>{% endif %}</div>
+    <p class="muted">Le QR opaque du groupe reste identique même si les tables ou les informations des membres changent. Le PDF contient une deuxième page avec le programme et un aperçu du dress code.</p>
+    <div class="ticket-actions">
+      {% if ticket_is_current %}<a class="button button-primary" href="{% url 'guests:ticket_download' guest.pk 'jpg' %}">Billet en JPG</a><a class="button button-secondary" href="{% url 'guests:ticket_information_download' %}">Informations en JPG</a><a class="button button-primary" href="{% url 'guests:ticket_download' guest.pk 'pdf' %}">PDF complet (2 pages)</a>{% endif %}
+    </div>
+  </article>
+</div>
+
+<p class="ticket-back"><a class="button button-secondary" href="{% url 'guests:rsvp_dashboard' %}">Retour au RSVP</a></p>
+{% endblock %}

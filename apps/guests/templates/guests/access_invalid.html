@@ -1,0 +1,3 @@
+{% extends "guests/base.html" %}
+{% block title %}Accès indisponible{% endblock %}
+{% block content %}<section class="centered-card"><div class="icon-disc">!</div><p class="eyebrow">Accès privé</p><h1>Ce lien n'est plus valide</h1><p>Il a peut-être expiré ou été remplacé. Si votre email a déjà été vérifié, vous pouvez demander un nouveau lien.</p><a class="button button-primary" href="{% url 'guests:recovery_request' %}">Retrouver mon accès</a><p class="muted">Sans email vérifié, contactez <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p></section>{% endblock %}
