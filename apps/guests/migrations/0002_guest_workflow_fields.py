@@ -4,6 +4,13 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def populate_unique_qr_tokens(apps, schema_editor):
+    Guest = apps.get_model("guests", "Guest")
+    for guest in Guest.objects.filter(qr_token__isnull=True).iterator():
+        guest.qr_token = uuid.uuid4()
+        guest.save(update_fields=["qr_token"])
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("guests", "0001_initial"),
@@ -72,6 +79,15 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(model_name="guest", name="rsvp_responded_at", field=models.DateTimeField(blank=True, null=True, verbose_name="RSVP répondu le")),
         migrations.AddField(
+            model_name="guest",
+            name="qr_token",
+            field=models.UUIDField(blank=True, editable=False, null=True, verbose_name="identifiant QR permanent"),
+        ),
+        migrations.RunPython(
+            populate_unique_qr_tokens,
+            migrations.RunPython.noop,
+        ),
+        migrations.AlterField(
             model_name="guest",
             name="qr_token",
             field=models.UUIDField(default=uuid.uuid4, editable=False, unique=True, verbose_name="identifiant QR permanent"),
