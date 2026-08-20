@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image
+from PIL import Image, ImageDraw
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -17,6 +17,7 @@ from guests.services.access import issue_guest_access
 from guests.services.notifications import send_ticket_email
 from guests.services.ticket import (
     _make_qr_image,
+    _draw_event_icon,
     build_information_jpg,
     build_party_pdf,
     generate_ticket,
@@ -125,10 +126,21 @@ class TicketGenerationTests(TestCase):
     def test_program_change_invalidates_existing_ticket(self):
         ticket = generate_ticket(self.primary)
         event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
-        event.address = "Nouvelle adresse"
-        event.save(update_fields=["address"])
+        event.icon = WeddingEvent.EventIcon.PARTY
+        event.save(update_fields=["icon"])
 
         self.assertFalse(ticket_is_current(ticket, self.primary))
+
+    def test_each_program_icon_has_a_deterministic_vector_render(self):
+        for icon in WeddingEvent.EventIcon.values:
+            with self.subTest(icon=icon):
+                image = Image.new("RGB", (120, 120), "#FFEEEC")
+                draw = ImageDraw.Draw(image)
+
+                rendered = _draw_event_icon(draw, icon, (5, 5, 115, 115))
+
+                self.assertTrue(rendered)
+                self.assertGreater(len(image.getcolors(maxcolors=20)), 1)
 
     def test_information_jpg_uses_reference_dimensions(self):
         content = build_information_jpg()

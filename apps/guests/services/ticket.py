@@ -235,6 +235,7 @@ def _program_snapshot():
             "venue_name": event.venue_name,
             "address": event.address,
             "map_url": event.map_url,
+            "icon": event.icon,
             "starts_at": event.starts_at.isoformat() if event.starts_at else None,
             "display_order": event.display_order,
         }
@@ -271,6 +272,96 @@ def _event_time_label(event):
 def _centered_text(draw, *, width, y, text, font, fill):
     bounds = draw.textbbox((0, 0), text, font=font)
     draw.text(((width - (bounds[2] - bounds[0])) / 2, y), text, font=font, fill=fill)
+
+
+def _draw_event_icon(draw, icon, box, *, color=INFO_GOLD):
+    left, top, right, bottom = box
+    width = right - left
+    height = bottom - top
+    stroke = max(4, round(min(width, height) * 0.055))
+
+    def point(x, y):
+        return (left + width * x / 100, top + height * y / 100)
+
+    def line(points, line_width=stroke):
+        draw.line(
+            [point(x, y) for x, y in points],
+            fill=color,
+            width=line_width,
+            joint="curve",
+        )
+
+    def ellipse(bounds, line_width=stroke):
+        x1, y1, x2, y2 = bounds
+        draw.ellipse(
+            (*point(x1, y1), *point(x2, y2)),
+            outline=color,
+            width=line_width,
+        )
+
+    if icon == WeddingEvent.EventIcon.CITY_HALL:
+        line([(8, 34), (50, 12), (92, 34), (92, 43), (8, 43), (8, 34)])
+        ellipse((44, 20, 56, 32), max(3, stroke - 1))
+        line([(16, 45), (16, 84), (84, 84), (84, 45)])
+        for column_x in (28, 43, 57, 72):
+            line([(column_x, 46), (column_x, 83)], max(3, stroke - 1))
+        line([(10, 85), (90, 85), (90, 94), (10, 94), (10, 85)])
+        return True
+
+    if icon == WeddingEvent.EventIcon.CHURCH:
+        line([(50, 4), (50, 20)])
+        line([(44, 10), (56, 10)])
+        line([(28, 35), (50, 18), (72, 35)])
+        line([(33, 34), (33, 88), (67, 88), (67, 34)])
+        line([(8, 52), (28, 40), (33, 48)])
+        line([(67, 48), (72, 40), (92, 52)])
+        line([(12, 51), (12, 88), (88, 88), (88, 51)])
+        ellipse((44, 38, 56, 50), max(3, stroke - 1))
+        draw.rounded_rectangle(
+            (*point(43, 67), *point(57, 88)),
+            radius=max(4, round(width * 0.07)),
+            outline=color,
+            width=max(3, stroke - 1),
+        )
+        line([(7, 90), (93, 90)])
+        return True
+
+    if icon == WeddingEvent.EventIcon.TOAST:
+        line([(14, 18), (43, 28), (47, 48), (42, 62), (33, 70), (23, 68), (16, 58), (12, 40), (14, 18)])
+        line([(86, 18), (57, 28), (53, 48), (58, 62), (67, 70), (77, 68), (84, 58), (88, 40), (86, 18)])
+        line([(19, 44), (45, 44)])
+        line([(55, 44), (81, 44)])
+        line([(33, 70), (26, 91)])
+        line([(67, 70), (74, 91)])
+        line([(18, 93), (31, 93)])
+        line([(69, 93), (82, 93)])
+        line([(50, 5), (50, 15)])
+        line([(40, 10), (45, 16)], max(3, stroke - 1))
+        line([(60, 10), (55, 16)], max(3, stroke - 1))
+        return True
+
+    if icon == WeddingEvent.EventIcon.DINNER:
+        ellipse((25, 15, 78, 82))
+        ellipse((35, 27, 68, 70), max(3, stroke - 1))
+        line([(10, 18), (10, 78), (7, 92), (13, 92), (10, 78)])
+        for tine_x in (5, 10, 15):
+            line([(tine_x, 18), (tine_x, 36)], max(2, stroke - 2))
+        line([(89, 18), (89, 92)])
+        line([(89, 18), (82, 48), (89, 48)])
+        line([(44, 45), (50, 40), (56, 45), (56, 51), (50, 58), (44, 51), (44, 45)], max(3, stroke - 1))
+        return True
+
+    if icon == WeddingEvent.EventIcon.PARTY:
+        ellipse((12, 28, 60, 82))
+        line([(36, 28), (36, 82)], max(3, stroke - 1))
+        line([(13, 55), (59, 55)], max(3, stroke - 1))
+        line([(70, 25), (70, 70), (83, 66)])
+        ellipse((62, 65, 72, 76), max(3, stroke - 1))
+        ellipse((81, 60, 91, 71), max(3, stroke - 1))
+        line([(70, 25), (88, 21), (88, 66)])
+        return True
+
+    return False
 
 
 def _render_information_image(events=None):
@@ -328,22 +419,28 @@ def _render_information_image(events=None):
         map_links = []
         for index, event in enumerate(events):
             row_top = round(rows_top + index * row_height)
-            circle_size = max(58, min(80, round(row_height * 0.45)))
-            circle_box = (220, row_top, 220 + circle_size, row_top + circle_size)
-            draw.ellipse(circle_box, fill=INFO_TERRACOTTA)
-            number = f"{index + 1:02d}"
-            number_font = font(max(22, round(circle_size * 0.36)))
-            number_bounds = draw.textbbox((0, 0), number, font=number_font)
-            draw.text(
-                (
-                    220 + (circle_size - (number_bounds[2] - number_bounds[0])) / 2,
-                    row_top + (circle_size - (number_bounds[3] - number_bounds[1])) / 2 - 5,
-                ),
-                number,
-                font=number_font,
-                fill=INFO_BACKGROUND,
+            icon_drawn = _draw_event_icon(
+                draw,
+                getattr(event, "icon", ""),
+                (205, row_top - 6, 320, row_top + 116),
             )
-            text_x = 345
+            if not icon_drawn:
+                circle_size = max(58, min(80, round(row_height * 0.45)))
+                circle_box = (220, row_top, 220 + circle_size, row_top + circle_size)
+                draw.ellipse(circle_box, fill=INFO_TERRACOTTA)
+                number = f"{index + 1:02d}"
+                number_font = font(max(22, round(circle_size * 0.36)))
+                number_bounds = draw.textbbox((0, 0), number, font=number_font)
+                draw.text(
+                    (
+                        220 + (circle_size - (number_bounds[2] - number_bounds[0])) / 2,
+                        row_top + (circle_size - (number_bounds[3] - number_bounds[1])) / 2 - 5,
+                    ),
+                    number,
+                    font=number_font,
+                    fill=INFO_BACKGROUND,
+                )
+            text_x = 355
             event_title = f"{_event_time_label(event)} · {event.name}"
             draw.text(
                 (text_x, row_top - 3),
