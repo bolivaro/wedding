@@ -90,6 +90,7 @@ class TicketGenerationTests(TestCase):
         self.assertEqual(len(re.findall(rb"/Type\s*/Page(?!s)", pdf_content)), 2)
         self.assertIn(b"https://example.test/programme/", pdf_content)
         self.assertIn(b"https://example.test/dress-code/", pdf_content)
+        self.assertIn(b"https://www.google.com/maps/", pdf_content)
         self.assertEqual(template_before, hashlib.sha256(self._template_bytes()).hexdigest())
 
     def test_five_names_fit_on_the_real_template(self):
@@ -124,8 +125,8 @@ class TicketGenerationTests(TestCase):
     def test_program_change_invalidates_existing_ticket(self):
         ticket = generate_ticket(self.primary)
         event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
-        event.name = "Grande soirée"
-        event.save(update_fields=["name"])
+        event.address = "Nouvelle adresse"
+        event.save(update_fields=["address"])
 
         self.assertFalse(ticket_is_current(ticket, self.primary))
 

@@ -232,6 +232,9 @@ def _program_snapshot():
         {
             "code": event.code,
             "name": event.name,
+            "venue_name": event.venue_name,
+            "address": event.address,
+            "map_url": event.map_url,
             "starts_at": event.starts_at.isoformat() if event.starts_at else None,
             "display_order": event.display_order,
         }
@@ -260,9 +263,9 @@ def _format_wedding_date():
 
 def _event_time_label(event):
     if event.starts_at is None:
-        return "Horaire et détails à confirmer"
+        return "Horaire à confirmer"
     local_start = timezone.localtime(event.starts_at)
-    return f"{local_start:%H} h {local_start:%M} · détails à confirmer"
+    return f"{local_start:%H} h {local_start:%M}"
 
 
 def _centered_text(draw, *, width, y, text, font, fill):
@@ -300,7 +303,7 @@ def _render_information_image(events=None):
         draw,
         width=width,
         y=278,
-        text="Les horaires et adresses manquants seront mis à jour en ligne",
+        text="Les dernières informations resteront mises à jour en ligne",
         font=title(30),
         fill=INFO_TEXT,
     )
@@ -320,8 +323,9 @@ def _render_information_image(events=None):
         rows_top = 555
         rows_bottom = 1285
         row_height = (rows_bottom - rows_top) / max(1, len(events))
-        event_title_size = max(30, min(43, round(row_height * 0.24)))
-        event_detail_size = max(25, min(34, round(row_height * 0.19)))
+        event_title_size = max(28, min(39, round(row_height * 0.22)))
+        event_detail_size = max(23, min(30, round(row_height * 0.16)))
+        map_links = []
         for index, event in enumerate(events):
             row_top = round(rows_top + index * row_height)
             circle_size = max(58, min(80, round(row_height * 0.45)))
@@ -340,18 +344,40 @@ def _render_information_image(events=None):
                 fill=INFO_BACKGROUND,
             )
             text_x = 345
+            event_title = f"{_event_time_label(event)} · {event.name}"
             draw.text(
                 (text_x, row_top - 3),
-                event.name,
+                event_title,
                 font=font(event_title_size),
                 fill=INFO_TEXT,
             )
+            venue_name = event.venue_name or "Lieu à confirmer"
             draw.text(
-                (text_x, row_top + event_title_size + 16),
-                _event_time_label(event),
+                (text_x, row_top + event_title_size + 10),
+                venue_name,
                 font=font(event_detail_size),
                 fill=INFO_TEXT,
             )
+            address = event.address or "Adresse à confirmer"
+            address_y = row_top + event_title_size + event_detail_size + 22
+            draw.text(
+                (text_x, address_y),
+                address,
+                font=font(max(22, event_detail_size - 2)),
+                fill=INFO_TERRACOTTA if event.map_url else INFO_TEXT,
+            )
+            if event.map_url and event.address:
+                map_links.append(
+                    {
+                        "box": (
+                            text_x,
+                            address_y,
+                            1550,
+                            address_y + event_detail_size + 12,
+                        ),
+                        "url": event.map_url,
+                    }
+                )
             if index < len(events) - 1:
                 line_y = round(row_top + row_height - 24)
                 draw.line((text_x, line_y, 1550, line_y), fill=INFO_GOLD, width=2)
@@ -440,6 +466,7 @@ def _render_information_image(events=None):
     return buffer.getvalue(), {
         "program": program_button,
         "dress_code": dress_button,
+        "maps": map_links if events else [],
     }
 
 
@@ -488,6 +515,13 @@ def _build_two_page_pdf(ticket_jpg, information_jpg, link_boxes):
         relative=0,
         thickness=0,
     )
+    for map_link in link_boxes.get("maps", []):
+        pdf.linkURL(
+            map_link["url"],
+            _pdf_link_box(map_link["box"]),
+            relative=0,
+            thickness=0,
+        )
     pdf.showPage()
     pdf.save()
     return buffer.getvalue()
