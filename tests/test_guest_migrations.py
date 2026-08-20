@@ -135,3 +135,46 @@ class WeddingEventDetailsMigrationTests(TransactionTestCase):
             self.assertEqual(event.address, address)
             self.assertEqual((local_start.hour, local_start.minute), (hour, minute))
             self.assertTrue(event.map_url.startswith("https://www.google.com/maps/"))
+
+
+class WeddingEventIconMigrationTests(TransactionTestCase):
+    migrate_from = [("guests", "0010_weddingevent_location_details")]
+    migrate_to = [("guests", "0011_weddingevent_icon")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        WeddingEvent = old_apps.get_model("guests", "WeddingEvent")
+        for code, name, display_order in (
+            ("city_hall", "Cérémonie civile", 10),
+            ("church", "Cérémonie religieuse", 20),
+            ("cocktail", "Vin d'honneur", 30),
+            ("reception", "Dîner", 40),
+        ):
+            WeddingEvent.objects.get_or_create(
+                code=code,
+                defaults={"name": name, "display_order": display_order},
+            )
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_default_program_icons_are_populated(self):
+        WeddingEvent = self.apps.get_model("guests", "WeddingEvent")
+
+        self.assertEqual(
+            dict(WeddingEvent.objects.values_list("code", "icon")),
+            {
+                "city_hall": "city_hall",
+                "church": "church",
+                "cocktail": "toast",
+                "reception": "dinner",
+            },
+        )

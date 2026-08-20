@@ -345,6 +345,7 @@ class WeddingEventAdmin(admin.ModelAdmin):
         "code",
         "starts_at",
         "venue_name",
+        "icon",
         "display_order",
         "requires_rsvp",
         "capacity",
@@ -352,6 +353,7 @@ class WeddingEventAdmin(admin.ModelAdmin):
     )
     list_editable = (
         "starts_at",
+        "icon",
         "display_order",
         "requires_rsvp",
         "capacity",

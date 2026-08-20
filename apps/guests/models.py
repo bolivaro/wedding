@@ -202,11 +202,24 @@ class WeddingEvent(models.Model):
         COCKTAIL = "cocktail", "Vin d'honneur"
         RECEPTION = "reception", "Soirée"
 
+    class EventIcon(models.TextChoices):
+        CITY_HALL = "city_hall", "Mairie / édifice civil"
+        CHURCH = "church", "Église"
+        TOAST = "toast", "Vin d'honneur / flûtes"
+        DINNER = "dinner", "Repas / dîner"
+        PARTY = "party", "Soirée dansante"
+
     code = models.CharField("code", max_length=30, choices=Code.choices, unique=True)
     name = models.CharField("nom", max_length=100)
     venue_name = models.CharField("lieu", max_length=200, blank=True)
     address = models.CharField("adresse", max_length=255, blank=True)
     map_url = models.URLField("lien cartographique", max_length=1000, blank=True)
+    icon = models.CharField(
+        "pictogramme",
+        max_length=20,
+        choices=[("", "Aucun pictogramme"), *EventIcon.choices],
+        blank=True,
+    )
     starts_at = models.DateTimeField("début", null=True, blank=True)
     capacity = models.PositiveIntegerField("capacité", null=True, blank=True)
     display_order = models.PositiveSmallIntegerField("ordre", default=0)
