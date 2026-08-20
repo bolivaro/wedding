@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import sys
 import environ
@@ -16,6 +16,15 @@ env = environ.Env(
 environ.Env.read_env(BASE_DIR / ".env")
 
 SITE_BASE_URL = env("SITE_BASE_URL", default="http://127.0.0.1:8000")
+WEDDING_DATE = date.fromisoformat(env("WEDDING_DATE", default="2026-10-17"))
+WEDDING_PROGRAM_URL = env(
+    "WEDDING_PROGRAM_URL",
+    default=f"{SITE_BASE_URL.rstrip('/')}/programme/",
+)
+WEDDING_DRESS_CODE_URL = env(
+    "WEDDING_DRESS_CODE_URL",
+    default=f"{SITE_BASE_URL.rstrip('/')}/dress-code/",
+)
 RSVP_DEADLINE = datetime.fromisoformat(
     env("RSVP_DEADLINE", default="2026-09-15T23:59:59+02:00")
 )
@@ -25,23 +34,38 @@ GUEST_ACCESS_MAX_FAILURES = env.int("GUEST_ACCESS_MAX_FAILURES", default=5)
 GUEST_ACCESS_LOCK_MINUTES = env.int("GUEST_ACCESS_LOCK_MINUTES", default=15)
 GUEST_EMAIL_TOKEN_MINUTES = env.int("GUEST_EMAIL_TOKEN_MINUTES", default=30)
 
-# Toutes les positions sont des proportions du gabarit (0 à 1). Le remplacement
-# futur du visuel et le calage final n'imposeront donc aucun changement du service.
 TICKET_TEMPLATE_STATIC_PATH = env(
     "TICKET_TEMPLATE_STATIC_PATH",
-    default="guests/images/ticket-preview-placeholder.png",
+    default="guests/images/billet-template-v1.jpg",
 )
-TICKET_TEMPLATE_VERSION = env("TICKET_TEMPLATE_VERSION", default="placeholder-v1")
+TICKET_TEMPLATE_VERSION = env("TICKET_TEMPLATE_VERSION", default="billet-v1")
 TICKET_FONT_STATIC_PATH = env(
     "TICKET_FONT_STATIC_PATH",
+    default="guests/fonts/STIXGeneralItalic.otf",
+)
+TICKET_INFO_FONT_STATIC_PATH = env(
+    "TICKET_INFO_FONT_STATIC_PATH",
     default="guests/fonts/CormorantGaramond.ttf",
 )
-TICKET_NAME_CENTER_X = env.float("TICKET_NAME_CENTER_X", default=0.5)
-TICKET_NAME_TOP_Y = env.float("TICKET_NAME_TOP_Y", default=0.39)
-TICKET_NAME_FONT_RATIO = env.float("TICKET_NAME_FONT_RATIO", default=0.042)
-TICKET_QR_CENTER_X = env.float("TICKET_QR_CENTER_X", default=0.5)
-TICKET_QR_TOP_Y = env.float("TICKET_QR_TOP_Y", default=0.57)
-TICKET_QR_SIZE_RATIO = env.float("TICKET_QR_SIZE_RATIO", default=0.22)
+TICKET_REFERENCE_WIDTH = env.int("TICKET_REFERENCE_WIDTH", default=1796)
+TICKET_REFERENCE_HEIGHT = env.int("TICKET_REFERENCE_HEIGHT", default=2528)
+TICKET_NAME_BOX = (
+    env.int("TICKET_NAME_LEFT", default=100),
+    env.int("TICKET_NAME_TOP", default=100),
+    env.int("TICKET_NAME_RIGHT", default=1696),
+    env.int("TICKET_NAME_BOTTOM", default=480),
+)
+TICKET_NAME_FONT_POINTS = env.int("TICKET_NAME_FONT_POINTS", default=14)
+TICKET_NAME_COLOR = env("TICKET_NAME_COLOR", default="#CD9241")
+TICKET_QR_BOX = (
+    env.int("TICKET_QR_LEFT", default=180),
+    env.int("TICKET_QR_TOP", default=1410),
+    env.int("TICKET_QR_RIGHT", default=420),
+    env.int("TICKET_QR_BOTTOM", default=1650),
+)
+TICKET_QR_FOREGROUND = env("TICKET_QR_FOREGROUND", default="#B12200")
+TICKET_QR_BACKGROUND = env("TICKET_QR_BACKGROUND", default="#FFEEEC")
+TICKET_OUTPUT_DPI = env.int("TICKET_OUTPUT_DPI", default=300)
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG", default=False)

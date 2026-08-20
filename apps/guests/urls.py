@@ -42,6 +42,11 @@ urlpatterns = [
         name="ticket_download",
     ),
     path("ticket/party/pdf/", views.party_ticket_download, name="party_ticket_download"),
+    path(
+        "ticket/informations/jpg/",
+        views.ticket_information_download,
+        name="ticket_information_download",
+    ),
     path("ticket/email/", views.ticket_email, name="ticket_email"),
     path("q/<uuid:token>/", views.public_qr_landing, name="public_qr_landing"),
 ]

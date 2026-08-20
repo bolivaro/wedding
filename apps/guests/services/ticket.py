@@ -10,8 +10,20 @@ from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.urls import reverse
 from django.utils import timezone
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
-from ..models import Guest, Ticket
+from ..models import Guest, Ticket, WeddingEvent
+
+
+INFO_BACKGROUND = "#FFEEEC"
+INFO_TERRACOTTA = "#B12200"
+INFO_TERRACOTTA_DARK = "#781700"
+INFO_GOLD = "#CD9241"
+INFO_MUSTARD = "#D39B15"
+INFO_TEXT = "#4B4035"
+INFO_WARM_GRAY = "#6B625D"
 
 
 class TicketGenerationError(Exception):
@@ -38,6 +50,7 @@ def party_rsvp_complete(primary_guest):
     eligible = primary_guest.event_invitations.filter(
         is_eligible=True,
         event__is_active=True,
+        event__requires_rsvp=True,
     )
     return eligible.exists() and not eligible.filter(
         attendance_status=Guest.RSVPStatus.PENDING,
@@ -68,6 +81,15 @@ def _font_path():
     return Path(resolved)
 
 
+def _info_font_path():
+    resolved = finders.find(settings.TICKET_INFO_FONT_STATIC_PATH)
+    if not resolved:
+        raise TicketGenerationError(
+            f"Police d'informations introuvable : {settings.TICKET_INFO_FONT_STATIC_PATH}"
+        )
+    return Path(resolved)
+
+
 def _template_checksum(template_path):
     digest = hashlib.sha256()
     with template_path.open("rb") as template_file:
@@ -93,12 +115,23 @@ def _render_signature(guest):
         "qr_token": str(guest.qr_token),
         "font_static_path": settings.TICKET_FONT_STATIC_PATH,
         "font_checksum": _template_checksum(_font_path()),
-        "name_center_x": settings.TICKET_NAME_CENTER_X,
-        "name_top_y": settings.TICKET_NAME_TOP_Y,
-        "name_font_ratio": settings.TICKET_NAME_FONT_RATIO,
-        "qr_center_x": settings.TICKET_QR_CENTER_X,
-        "qr_top_y": settings.TICKET_QR_TOP_Y,
-        "qr_size_ratio": settings.TICKET_QR_SIZE_RATIO,
+        "info_font_static_path": settings.TICKET_INFO_FONT_STATIC_PATH,
+        "info_font_checksum": _template_checksum(_info_font_path()),
+        "reference_size": [
+            settings.TICKET_REFERENCE_WIDTH,
+            settings.TICKET_REFERENCE_HEIGHT,
+        ],
+        "name_box": settings.TICKET_NAME_BOX,
+        "name_font_points": settings.TICKET_NAME_FONT_POINTS,
+        "name_color": settings.TICKET_NAME_COLOR,
+        "qr_box": settings.TICKET_QR_BOX,
+        "qr_foreground": settings.TICKET_QR_FOREGROUND,
+        "qr_background": settings.TICKET_QR_BACKGROUND,
+        "output_dpi": settings.TICKET_OUTPUT_DPI,
+        "wedding_date": settings.WEDDING_DATE.isoformat(),
+        "program_url": settings.WEDDING_PROGRAM_URL,
+        "dress_code_url": settings.WEDDING_DRESS_CODE_URL,
+        "program": _program_snapshot(),
     }
     serialized = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(serialized).hexdigest()
@@ -117,11 +150,36 @@ def ticket_is_current(ticket, guest, *, template_checksum=None):
     )
 
 
+def _scaled_box(box, *, width, height):
+    scale_x = width / settings.TICKET_REFERENCE_WIDTH
+    scale_y = height / settings.TICKET_REFERENCE_HEIGHT
+    left, top, right, bottom = box
+    return (
+        round(left * scale_x),
+        round(top * scale_y),
+        round(right * scale_x),
+        round(bottom * scale_y),
+    )
+
+
+def _initial_name_font_size(member_count, *, height):
+    base_size = round(
+        settings.TICKET_NAME_FONT_POINTS
+        * settings.TICKET_OUTPUT_DPI
+        / 72
+        * height
+        / settings.TICKET_REFERENCE_HEIGHT
+    )
+    reductions = {1: 0, 2: 4, 3: 8, 4: 12, 5: 16}
+    reduction = reductions.get(member_count, 16 + (member_count - 5) * 2)
+    return max(24, base_size - reduction)
+
+
 def _fit_font(draw, text, max_width, max_height, initial_size, font_path):
-    size = max(18, initial_size)
-    while size > 18:
+    size = max(12, initial_size)
+    while size >= 12:
         font = ImageFont.truetype(font_path, size=size)
-        spacing = max(4, int(size * 0.18))
+        spacing = max(4, round(size * 0.2))
         bounds = draw.multiline_textbbox(
             (0, 0),
             text,
@@ -130,9 +188,11 @@ def _fit_font(draw, text, max_width, max_height, initial_size, font_path):
             align="center",
         )
         if bounds[2] - bounds[0] <= max_width and bounds[3] - bounds[1] <= max_height:
-            return font, spacing
-        size -= 2
-    return ImageFont.truetype(font_path, size=18), 4
+            return font, spacing, bounds
+        size -= 1
+    raise TicketGenerationError(
+        "Les identités des invités ne peuvent pas tenir dans la zone du billet."
+    )
 
 
 def _member_display_name(member):
@@ -143,6 +203,296 @@ def _member_display_name(member):
     )
 
 
+def _make_qr_image(payload, *, max_size):
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=1,
+        border=4,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+    total_modules = qr.modules_count + (qr.border * 2)
+    module_size = max_size // total_modules
+    if module_size < 2:
+        raise TicketGenerationError("La zone réservée au QR code est trop petite.")
+    qr.box_size = module_size
+    return qr.make_image(
+        fill_color=settings.TICKET_QR_FOREGROUND,
+        back_color=settings.TICKET_QR_BACKGROUND,
+    ).convert("RGB")
+
+
+def _program_events():
+    return list(WeddingEvent.objects.filter(is_active=True).order_by("display_order", "name"))
+
+
+def _program_snapshot():
+    return [
+        {
+            "code": event.code,
+            "name": event.name,
+            "starts_at": event.starts_at.isoformat() if event.starts_at else None,
+            "display_order": event.display_order,
+        }
+        for event in _program_events()
+    ]
+
+
+def _format_wedding_date():
+    months = (
+        "janvier",
+        "février",
+        "mars",
+        "avril",
+        "mai",
+        "juin",
+        "juillet",
+        "août",
+        "septembre",
+        "octobre",
+        "novembre",
+        "décembre",
+    )
+    wedding_date = settings.WEDDING_DATE
+    return f"{wedding_date.day} {months[wedding_date.month - 1]} {wedding_date.year}"
+
+
+def _event_time_label(event):
+    if event.starts_at is None:
+        return "Horaire et détails à confirmer"
+    local_start = timezone.localtime(event.starts_at)
+    return f"{local_start:%H} h {local_start:%M} · détails à confirmer"
+
+
+def _centered_text(draw, *, width, y, text, font, fill):
+    bounds = draw.textbbox((0, 0), text, font=font)
+    draw.text(((width - (bounds[2] - bounds[0])) / 2, y), text, font=font, fill=fill)
+
+
+def _render_information_image(events=None):
+    width = settings.TICKET_REFERENCE_WIDTH
+    height = settings.TICKET_REFERENCE_HEIGHT
+    image = Image.new("RGB", (width, height), INFO_BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    info_font = _info_font_path()
+    title_font = _font_path()
+    font = lambda size: ImageFont.truetype(info_font, size=size)
+    title = lambda size: ImageFont.truetype(title_font, size=size)
+
+    _centered_text(
+        draw,
+        width=width,
+        y=105,
+        text="Informations pratiques",
+        font=title(90),
+        fill=INFO_TERRACOTTA,
+    )
+    _centered_text(
+        draw,
+        width=width,
+        y=215,
+        text=f"Leslie & Bolivar · {_format_wedding_date()}",
+        font=font(40),
+        fill=INFO_GOLD,
+    )
+    _centered_text(
+        draw,
+        width=width,
+        y=278,
+        text="Les horaires et adresses manquants seront mis à jour en ligne",
+        font=title(30),
+        fill=INFO_TEXT,
+    )
+
+    planning_box = (145, 375, 1651, 1365)
+    draw.rounded_rectangle(planning_box, radius=36, outline=INFO_GOLD, width=4)
+    draw.text((220, 430), "Le programme", font=title(62), fill=INFO_TERRACOTTA_DARK)
+    events = list(events if events is not None else _program_events())
+    if not events:
+        draw.text(
+            (220, 590),
+            "Le programme sera publié prochainement.",
+            font=font(40),
+            fill=INFO_TEXT,
+        )
+    else:
+        rows_top = 555
+        rows_bottom = 1285
+        row_height = (rows_bottom - rows_top) / max(1, len(events))
+        event_title_size = max(30, min(43, round(row_height * 0.24)))
+        event_detail_size = max(25, min(34, round(row_height * 0.19)))
+        for index, event in enumerate(events):
+            row_top = round(rows_top + index * row_height)
+            circle_size = max(58, min(80, round(row_height * 0.45)))
+            circle_box = (220, row_top, 220 + circle_size, row_top + circle_size)
+            draw.ellipse(circle_box, fill=INFO_TERRACOTTA)
+            number = f"{index + 1:02d}"
+            number_font = font(max(22, round(circle_size * 0.36)))
+            number_bounds = draw.textbbox((0, 0), number, font=number_font)
+            draw.text(
+                (
+                    220 + (circle_size - (number_bounds[2] - number_bounds[0])) / 2,
+                    row_top + (circle_size - (number_bounds[3] - number_bounds[1])) / 2 - 5,
+                ),
+                number,
+                font=number_font,
+                fill=INFO_BACKGROUND,
+            )
+            text_x = 345
+            draw.text(
+                (text_x, row_top - 3),
+                event.name,
+                font=font(event_title_size),
+                fill=INFO_TEXT,
+            )
+            draw.text(
+                (text_x, row_top + event_title_size + 16),
+                _event_time_label(event),
+                font=font(event_detail_size),
+                fill=INFO_TEXT,
+            )
+            if index < len(events) - 1:
+                line_y = round(row_top + row_height - 24)
+                draw.line((text_x, line_y, 1550, line_y), fill=INFO_GOLD, width=2)
+
+    dress_box = (145, 1425, 1651, 2045)
+    draw.rounded_rectangle(dress_box, radius=36, outline=INFO_TERRACOTTA, width=4)
+    draw.text((220, 1480), "Le dress code", font=title(62), fill=INFO_TERRACOTTA_DARK)
+    draw.text(
+        (220, 1565),
+        "Une tenue élégante, festive et chaleureuse",
+        font=font(38),
+        fill=INFO_TEXT,
+    )
+    draw.text((220, 1640), "Aperçu de la palette", font=font(35), fill=INFO_GOLD)
+    swatches = (
+        ("Terracotta", INFO_TERRACOTTA),
+        ("Sable doré", INFO_GOLD),
+        ("Moutarde", INFO_MUSTARD),
+        ("Blanc cassé", INFO_BACKGROUND),
+        ("Gris chaud", INFO_WARM_GRAY),
+    )
+    for index, (label, color) in enumerate(swatches):
+        left = 220 + index * 268
+        swatch_box = (left, 1720, left + 190, 1875)
+        draw.rounded_rectangle(
+            swatch_box,
+            radius=24,
+            fill=color,
+            outline=INFO_TERRACOTTA_DARK if color == INFO_BACKGROUND else color,
+            width=3,
+        )
+        label_font = font(28)
+        label_bounds = draw.textbbox((0, 0), label, font=label_font)
+        draw.text(
+            (left + 95 - (label_bounds[2] - label_bounds[0]) / 2, 1900),
+            label,
+            font=label_font,
+            fill=INFO_TEXT,
+        )
+    _centered_text(
+        draw,
+        width=width,
+        y=1970,
+        text="La page complète du dress code sera publiée prochainement.",
+        font=title(30),
+        fill=INFO_TEXT,
+    )
+
+    program_button = (170, 2140, 858, 2285)
+    dress_button = (938, 2140, 1626, 2285)
+    buttons = (
+        (program_button, "Consulter le programme", INFO_TERRACOTTA),
+        (dress_button, "Découvrir le dress code", INFO_TERRACOTTA_DARK),
+    )
+    for box, label, color in buttons:
+        draw.rounded_rectangle(box, radius=34, fill=color)
+        button_font = font(35)
+        label_bounds = draw.textbbox((0, 0), label, font=button_font)
+        draw.text(
+            (
+                (box[0] + box[2] - (label_bounds[2] - label_bounds[0])) / 2,
+                (box[1] + box[3] - (label_bounds[3] - label_bounds[1])) / 2 - 7,
+            ),
+            label,
+            font=button_font,
+            fill=INFO_BACKGROUND,
+        )
+    _centered_text(
+        draw,
+        width=width,
+        y=2365,
+        text="Les informations définitives resteront disponibles en ligne.",
+        font=title(28),
+        fill=INFO_TEXT,
+    )
+
+    buffer = io.BytesIO()
+    image.save(
+        buffer,
+        format="JPEG",
+        quality=96,
+        subsampling=0,
+        optimize=True,
+        dpi=(settings.TICKET_OUTPUT_DPI, settings.TICKET_OUTPUT_DPI),
+    )
+    return buffer.getvalue(), {
+        "program": program_button,
+        "dress_code": dress_button,
+    }
+
+
+def _pdf_link_box(pixel_box):
+    page_width, page_height = A4
+    reference_width = settings.TICKET_REFERENCE_WIDTH
+    reference_height = settings.TICKET_REFERENCE_HEIGHT
+    left, top, right, bottom = pixel_box
+    return (
+        left / reference_width * page_width,
+        (reference_height - bottom) / reference_height * page_height,
+        right / reference_width * page_width,
+        (reference_height - top) / reference_height * page_height,
+    )
+
+
+def _build_two_page_pdf(ticket_jpg, information_jpg, link_boxes):
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4, pageCompression=1)
+    page_width, page_height = A4
+    pdf.setTitle("Billet de mariage — Leslie & Bolivar")
+    pdf.drawImage(
+        ImageReader(io.BytesIO(ticket_jpg)),
+        0,
+        0,
+        width=page_width,
+        height=page_height,
+    )
+    pdf.showPage()
+    pdf.drawImage(
+        ImageReader(io.BytesIO(information_jpg)),
+        0,
+        0,
+        width=page_width,
+        height=page_height,
+    )
+    pdf.linkURL(
+        settings.WEDDING_PROGRAM_URL,
+        _pdf_link_box(link_boxes["program"]),
+        relative=0,
+        thickness=0,
+    )
+    pdf.linkURL(
+        settings.WEDDING_DRESS_CODE_URL,
+        _pdf_link_box(link_boxes["dress_code"]),
+        relative=0,
+        thickness=0,
+    )
+    pdf.showPage()
+    pdf.save()
+    return buffer.getvalue()
+
+
 def _render_ticket_images(guest, template_path):
     guest = get_primary_guest(guest)
     with Image.open(template_path) as source:
@@ -150,50 +500,54 @@ def _render_ticket_images(guest, template_path):
 
     width, height = image.size
     draw = ImageDraw.Draw(image)
-    display_names = "\n".join(_member_display_name(member) for member in party_members(guest))
-    max_names_height = int(
-        height * max(0.1, settings.TICKET_QR_TOP_Y - settings.TICKET_NAME_TOP_Y - 0.035)
-    )
-    font, spacing = _fit_font(
+    members = party_members(guest)
+    display_names = "\n".join(_member_display_name(member) for member in members)
+    name_box = _scaled_box(settings.TICKET_NAME_BOX, width=width, height=height)
+    inner_width = max(1, name_box[2] - name_box[0] - round(width * 0.045))
+    inner_height = max(1, name_box[3] - name_box[1] - round(height * 0.016))
+    font, spacing, bounds = _fit_font(
         draw,
         display_names,
-        int(width * 0.76),
-        max_names_height,
-        int(height * settings.TICKET_NAME_FONT_RATIO),
+        inner_width,
+        inner_height,
+        _initial_name_font_size(len(members), height=height),
         _font_path(),
     )
-    name_x = int(width * settings.TICKET_NAME_CENTER_X)
-    name_y = int(height * settings.TICKET_NAME_TOP_Y)
+    name_center_x = (name_box[0] + name_box[2]) / 2
+    name_center_y = (name_box[1] + name_box[3]) / 2
+    name_x = name_center_x - (bounds[0] + bounds[2]) / 2
+    name_y = name_center_y - (bounds[1] + bounds[3]) / 2
     draw.multiline_text(
         (name_x, name_y),
         display_names,
         font=font,
-        fill="#4b4035",
-        anchor="ma",
+        fill=settings.TICKET_NAME_COLOR,
         align="center",
         spacing=spacing,
     )
 
-    qr = qrcode.QRCode(
-        version=None,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=12,
-        border=4,
+    qr_box = _scaled_box(settings.TICKET_QR_BOX, width=width, height=height)
+    qr_image = _make_qr_image(
+        qr_payload(guest),
+        max_size=min(qr_box[2] - qr_box[0], qr_box[3] - qr_box[1]),
     )
-    qr.add_data(qr_payload(guest))
-    qr.make(fit=True)
-    qr_image = qr.make_image(fill_color="#4b4035", back_color="#fffaf1").convert("RGB")
-    qr_size = int(min(width, height) * settings.TICKET_QR_SIZE_RATIO)
-    qr_image = qr_image.resize((qr_size, qr_size), Image.Resampling.NEAREST)
-    qr_x = int(width * settings.TICKET_QR_CENTER_X - qr_size / 2)
-    qr_y = int(height * settings.TICKET_QR_TOP_Y)
+    qr_x = qr_box[0] + (qr_box[2] - qr_box[0] - qr_image.width) // 2
+    qr_y = qr_box[1] + (qr_box[3] - qr_box[1] - qr_image.height) // 2
     image.paste(qr_image, (qr_x, qr_y))
 
     jpg_buffer = io.BytesIO()
-    image.save(jpg_buffer, format="JPEG", quality=94, optimize=True, dpi=(300, 300))
-    pdf_buffer = io.BytesIO()
-    image.save(pdf_buffer, format="PDF", resolution=300.0)
-    return jpg_buffer.getvalue(), pdf_buffer.getvalue()
+    image.save(
+        jpg_buffer,
+        format="JPEG",
+        quality=96,
+        subsampling=0,
+        optimize=True,
+        dpi=(settings.TICKET_OUTPUT_DPI, settings.TICKET_OUTPUT_DPI),
+    )
+    jpg_content = jpg_buffer.getvalue()
+    information_jpg, link_boxes = _render_information_image()
+    pdf_content = _build_two_page_pdf(jpg_content, information_jpg, link_boxes)
+    return jpg_content, pdf_content
 
 
 def generate_ticket(guest, *, force=False):
@@ -243,3 +597,8 @@ def build_party_pdf(primary_guest):
         return ticket.pdf_file.read()
     finally:
         ticket.pdf_file.close()
+
+
+def build_information_jpg():
+    information_jpg, _ = _render_information_image()
+    return information_jpg

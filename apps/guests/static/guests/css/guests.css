@@ -137,8 +137,8 @@ input[type='radio'] { accent-color: var(--primary); }
 .ticket-member-list span, .ticket-member-list small { display: block; }
 .ticket-member-list small { color: var(--muted); }
 .ticket-person-card { display: flex; flex-direction: column; gap: 18px; }
-.ticket-image-frame { position: relative; overflow: hidden; aspect-ratio: 3 / 4; background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius-md); }
-.ticket-image-frame img { width: 100%; height: 100%; object-fit: cover; }
+.ticket-image-frame { position: relative; overflow: hidden; aspect-ratio: 1796 / 2528; background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.ticket-image-frame img { width: 100%; height: 100%; object-fit: contain; }
 .ticket-image-badge { position: absolute; right: 12px; bottom: 12px; padding: 6px 11px; color: var(--primary-text); background: var(--primary); border-radius: 999px; font-size: .75rem; font-weight: 800; }
 .ticket-person-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .ticket-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }

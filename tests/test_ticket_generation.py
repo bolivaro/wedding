@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import io
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -15,6 +16,8 @@ from guests.models import Guest, GuestEventInvitation, Ticket, WeddingEvent
 from guests.services.access import issue_guest_access
 from guests.services.notifications import send_ticket_email
 from guests.services.ticket import (
+    _make_qr_image,
+    build_information_jpg,
     build_party_pdf,
     generate_ticket,
     qr_payload,
@@ -33,6 +36,8 @@ OPEN_DEADLINE = datetime(2099, 9, 15, 23, 59, tzinfo=timezone.utc)
     RSVP_DEADLINE=OPEN_DEADLINE,
     SECURE_SSL_REDIRECT=False,
     SITE_BASE_URL="https://example.test",
+    WEDDING_PROGRAM_URL="https://example.test/programme/",
+    WEDDING_DRESS_CODE_URL="https://example.test/dress-code/",
     STORAGES=TEST_STORAGES,
 )
 class TicketGenerationTests(TestCase):
@@ -61,7 +66,7 @@ class TicketGenerationTests(TestCase):
 
     def _template_bytes(self):
         template = Path(__file__).parents[1] / (
-            "apps/guests/static/guests/images/ticket-preview-placeholder.png"
+            "apps/guests/static/guests/images/billet-template-v1.jpg"
         )
         return template.read_bytes()
 
@@ -76,12 +81,60 @@ class TicketGenerationTests(TestCase):
         ticket.jpg_file.close()
         with Image.open(io.BytesIO(jpg_content)) as image:
             self.assertEqual(image.format, "JPEG")
-            self.assertEqual(image.size, (1086, 1448))
-        self.assertEqual(ticket.template_version, "placeholder-v1")
+            self.assertEqual(image.size, (1796, 2528))
+        self.assertEqual(ticket.template_version, "billet-v1")
         ticket.pdf_file.open("rb")
-        self.assertTrue(ticket.pdf_file.read(5).startswith(b"%PDF"))
+        pdf_content = ticket.pdf_file.read()
         ticket.pdf_file.close()
+        self.assertTrue(pdf_content.startswith(b"%PDF"))
+        self.assertEqual(len(re.findall(rb"/Type\s*/Page(?!s)", pdf_content)), 2)
+        self.assertIn(b"https://example.test/programme/", pdf_content)
+        self.assertIn(b"https://example.test/dress-code/", pdf_content)
         self.assertEqual(template_before, hashlib.sha256(self._template_bytes()).hexdigest())
+
+    def test_five_names_fit_on_the_real_template(self):
+        self.primary.invitation_kind = Guest.InvitationKind.FAMILY
+        self.primary.party_size_limit = 5
+        self.primary.save(update_fields=["invitation_kind", "party_size_limit", "updated_at"])
+        for first_name in ("Anaïs", "Alexandre", "Joséphine"):
+            Guest.objects.create(
+                first_name=first_name,
+                last_name="De La Tour-Dupont",
+                invitation_owner=self.primary,
+            )
+
+        ticket = generate_ticket(self.primary, force=True)
+
+        ticket.jpg_file.open("rb")
+        with Image.open(ticket.jpg_file) as image:
+            names_area = image.crop((100, 100, 1696, 480)).convert("RGB")
+            self.assertGreater(len(names_area.getcolors(maxcolors=1_000_000)), 1)
+        ticket.jpg_file.close()
+
+    def test_qr_uses_exact_terracotta_modules_without_interpolation(self):
+        qr_image = _make_qr_image(qr_payload(self.primary), max_size=240)
+
+        self.assertLessEqual(qr_image.width, 240)
+        self.assertEqual(qr_image.width, qr_image.height)
+        self.assertEqual(
+            set(qr_image.getdata()),
+            {(177, 34, 0), (255, 238, 236)},
+        )
+
+    def test_program_change_invalidates_existing_ticket(self):
+        ticket = generate_ticket(self.primary)
+        event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
+        event.name = "Grande soirée"
+        event.save(update_fields=["name"])
+
+        self.assertFalse(ticket_is_current(ticket, self.primary))
+
+    def test_information_jpg_uses_reference_dimensions(self):
+        content = build_information_jpg()
+
+        with Image.open(io.BytesIO(content)) as image:
+            self.assertEqual(image.format, "JPEG")
+            self.assertEqual(image.size, (1796, 2528))
 
     def test_qr_payload_is_opaque_and_stable_when_identity_changes(self):
         initial_payload = qr_payload(self.primary)
@@ -154,6 +207,8 @@ class TicketGenerationTests(TestCase):
     RSVP_DEADLINE=OPEN_DEADLINE,
     SECURE_SSL_REDIRECT=False,
     SITE_BASE_URL="https://example.test",
+    WEDDING_PROGRAM_URL="https://example.test/programme/",
+    WEDDING_DRESS_CODE_URL="https://example.test/dress-code/",
     STORAGES=TEST_STORAGES,
 )
 class TicketViewsTests(TestCase):
@@ -213,6 +268,15 @@ class TicketViewsTests(TestCase):
             'class="ticket-person-card ticket-group-card card"',
             count=1,
         )
+
+    def test_information_jpg_can_be_downloaded_separately(self):
+        response = self.client.get(reverse("guests:ticket_information_download"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertIn("programme-et-dress-code.jpg", response["Content-Disposition"])
+        with Image.open(io.BytesIO(response.content)) as image:
+            self.assertEqual(image.size, (1796, 2528))
 
     def test_primary_cannot_reach_unrelated_ticket(self):
         response = self.client.post(

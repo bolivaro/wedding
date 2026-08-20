@@ -10,5 +10,6 @@ psycopg==3.3.3
 psycopg-binary==3.3.3
 openpyxl==3.1.5
 qrcode[pil]==8.2
+reportlab==5.0.0
 sqlparse==0.5.5
 whitenoise==6.12.0

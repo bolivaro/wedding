@@ -31,6 +31,7 @@ from .services.notifications import (
 from .services.rsvp import update_rsvp
 from .services.ticket import (
     TicketGenerationError,
+    build_information_jpg,
     build_party_pdf,
     generate_ticket,
     party_members,
@@ -78,7 +79,10 @@ def rsvp_dashboard(request):
         "companions",
     ).get(pk=request.guest.pk)
     event_invitations = list(
-        guest.event_invitations.select_related("event").filter(event__is_active=True)
+        guest.event_invitations.select_related("event").filter(
+            event__is_active=True,
+            event__requires_rsvp=True,
+        )
     )
     eligible = [invitation for invitation in event_invitations if invitation.is_eligible]
     rsvp_complete = (
@@ -139,7 +143,8 @@ def _render_dashboard_with_form(request, form):
             "companion_form": CompanionForm(),
             "email_form": GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
             "event_invitations": guest.event_invitations.select_related("event").filter(
-                event__is_active=True
+                event__is_active=True,
+                event__requires_rsvp=True,
             ),
             "active_companions": guest.companions.filter(is_active=True),
             "rsvp_open": is_rsvp_open(),
@@ -392,6 +397,24 @@ def party_ticket_download(request):
         return redirect("guests:ticket_preview")
     response = HttpResponse(content, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="billet-groupe-mariage.pdf"'
+    return response
+
+
+@guest_access_required
+def ticket_information_download(request):
+    primary_guest = _ticket_primary(request)
+    if not _ensure_ticket_access(request, primary_guest):
+        return redirect("guests:rsvp_dashboard")
+    try:
+        content = build_information_jpg()
+    except TicketGenerationError:
+        logger.exception("Impossible de préparer la page d'informations du billet")
+        messages.error(request, "La page d'informations n'a pas pu être préparée.")
+        return redirect("guests:ticket_preview")
+    response = HttpResponse(content, content_type="image/jpeg")
+    response["Content-Disposition"] = (
+        'attachment; filename="programme-et-dress-code.jpg"'
+    )
     return response
 
 
