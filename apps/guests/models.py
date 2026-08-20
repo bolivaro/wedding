@@ -199,6 +199,7 @@ class WeddingEvent(models.Model):
     class Code(models.TextChoices):
         CITY_HALL = "city_hall", "Mairie"
         CHURCH = "church", "Église"
+        COCKTAIL = "cocktail", "Vin d'honneur"
         RECEPTION = "reception", "Soirée"
 
     code = models.CharField("code", max_length=30, choices=Code.choices, unique=True)
@@ -207,6 +208,11 @@ class WeddingEvent(models.Model):
     capacity = models.PositiveIntegerField("capacité", null=True, blank=True)
     display_order = models.PositiveSmallIntegerField("ordre", default=0)
     is_active = models.BooleanField("actif", default=True)
+    requires_rsvp = models.BooleanField(
+        "demande une réponse RSVP",
+        default=True,
+        help_text="Décochez pour afficher l'événement au programme sans question RSVP.",
+    )
 
     class Meta:
         ordering = ["display_order", "name"]

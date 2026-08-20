@@ -55,6 +55,7 @@ class RSVPForm(forms.Form):
         )
         for invitation in guest.event_invitations.select_related("event").filter(
             event__is_active=True,
+            event__requires_rsvp=True,
             is_eligible=True,
         ):
             field_name = f"event_{invitation.event.code}"

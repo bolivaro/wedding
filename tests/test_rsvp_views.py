@@ -122,6 +122,19 @@ class RSVPViewsTests(TestCase):
             self.guest.event_invitations.get(event__code=WeddingEvent.Code.CITY_HALL).attendance_status,
             Guest.RSVPStatus.PENDING,
         )
+        self.assertEqual(
+            self.guest.event_invitations.get(event__code=WeddingEvent.Code.COCKTAIL).attendance_status,
+            Guest.RSVPStatus.ATTENDING,
+        )
+
+    def test_cocktail_is_in_program_data_but_not_a_separate_rsvp_question(self):
+        self.login_guest()
+
+        response = self.client.get(reverse("guests:rsvp_dashboard"))
+
+        cocktail = WeddingEvent.objects.get(code=WeddingEvent.Code.COCKTAIL)
+        self.assertFalse(cocktail.requires_rsvp)
+        self.assertNotContains(response, 'name="event_cocktail"')
 
     def test_companion_limit_is_enforced_through_view(self):
         self.login_guest()

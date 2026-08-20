@@ -340,8 +340,22 @@ class GuestAdmin(admin.ModelAdmin):
 
 @admin.register(WeddingEvent)
 class WeddingEventAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "starts_at", "capacity", "is_active")
-    list_editable = ("capacity", "is_active")
+    list_display = (
+        "name",
+        "code",
+        "starts_at",
+        "display_order",
+        "requires_rsvp",
+        "capacity",
+        "is_active",
+    )
+    list_editable = (
+        "starts_at",
+        "display_order",
+        "requires_rsvp",
+        "capacity",
+        "is_active",
+    )
     ordering = ("display_order",)
 
 
