@@ -25,6 +25,25 @@ INFO_MUSTARD = "#D39B15"
 INFO_TEXT = "#4B4035"
 INFO_WARM_GRAY = "#6B625D"
 
+PROGRAM_ICON_ASSETS = {
+    WeddingEvent.EventIcon.CITY_HALL: {
+        "source": "guests/images/program-icons/city-hall.svg",
+        "raster": "guests/images/program-icons/city-hall.png",
+    },
+    WeddingEvent.EventIcon.CHURCH: {
+        "source": "guests/images/program-icons/church.svg",
+        "raster": "guests/images/program-icons/church.png",
+    },
+    WeddingEvent.EventIcon.TOAST: {
+        "source": "guests/images/program-icons/toast.svg",
+        "raster": "guests/images/program-icons/toast.png",
+    },
+    WeddingEvent.EventIcon.DINNER: {
+        "source": "guests/images/program-icons/dinner.svg",
+        "raster": "guests/images/program-icons/dinner.png",
+    },
+}
+
 
 class TicketGenerationError(Exception):
     pass
@@ -132,6 +151,7 @@ def _render_signature(guest):
         "program_url": settings.WEDDING_PROGRAM_URL,
         "dress_code_url": settings.WEDDING_DRESS_CODE_URL,
         "program": _program_snapshot(),
+        "program_icon_assets": _program_icon_assets_snapshot(),
     }
     serialized = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(serialized).hexdigest()
@@ -243,6 +263,36 @@ def _program_snapshot():
     ]
 
 
+def _program_icon_asset_path(icon, variant):
+    asset = PROGRAM_ICON_ASSETS.get(icon)
+    if not asset:
+        return None
+    static_path = asset[variant]
+    resolved = finders.find(static_path)
+    if not resolved:
+        raise TicketGenerationError(
+            f"Pictogramme de programme introuvable : {static_path}"
+        )
+    return Path(resolved)
+
+
+def _program_icon_assets_snapshot():
+    return [
+        {
+            "icon": icon,
+            "source": asset["source"],
+            "source_checksum": _template_checksum(
+                _program_icon_asset_path(icon, "source")
+            ),
+            "raster": asset["raster"],
+            "raster_checksum": _template_checksum(
+                _program_icon_asset_path(icon, "raster")
+            ),
+        }
+        for icon, asset in PROGRAM_ICON_ASSETS.items()
+    ]
+
+
 def _format_wedding_date():
     months = (
         "janvier",
@@ -272,6 +322,28 @@ def _event_time_label(event):
 def _centered_text(draw, *, width, y, text, font, fill):
     bounds = draw.textbbox((0, 0), text, font=font)
     draw.text(((width - (bounds[2] - bounds[0])) / 2, y), text, font=font, fill=fill)
+
+
+def _paste_event_icon(image, icon, box):
+    asset_path = _program_icon_asset_path(icon, "raster")
+    if asset_path is None:
+        return False
+
+    left, top, right, bottom = box
+    max_width = max(1, round(right - left))
+    max_height = max(1, round(bottom - top))
+    with Image.open(asset_path) as source:
+        rendered = source.convert("RGBA")
+        rendered.thumbnail(
+            (max_width, max_height),
+            resample=Image.Resampling.LANCZOS,
+        )
+    position = (
+        round(left + (max_width - rendered.width) / 2),
+        round(top + (max_height - rendered.height) / 2),
+    )
+    image.paste(rendered, position, rendered)
+    return True
 
 
 def _draw_event_icon(draw, icon, box, *, color=INFO_GOLD):
@@ -419,11 +491,18 @@ def _render_information_image(events=None):
         map_links = []
         for index, event in enumerate(events):
             row_top = round(rows_top + index * row_height)
-            icon_drawn = _draw_event_icon(
-                draw,
-                getattr(event, "icon", ""),
+            event_icon = getattr(event, "icon", "")
+            icon_drawn = _paste_event_icon(
+                image,
+                event_icon,
                 (205, row_top - 6, 320, row_top + 116),
             )
+            if not icon_drawn and event_icon == WeddingEvent.EventIcon.PARTY:
+                icon_drawn = _draw_event_icon(
+                    draw,
+                    event_icon,
+                    (205, row_top - 6, 320, row_top + 116),
+                )
             if not icon_drawn:
                 circle_size = max(58, min(80, round(row_height * 0.45)))
                 circle_box = (220, row_top, 220 + circle_size, row_top + circle_size)

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -16,8 +16,9 @@ from guests.models import Guest, GuestEventInvitation, Ticket, WeddingEvent
 from guests.services.access import issue_guest_access
 from guests.services.notifications import send_ticket_email
 from guests.services.ticket import (
+    PROGRAM_ICON_ASSETS,
     _make_qr_image,
-    _draw_event_icon,
+    _paste_event_icon,
     build_information_jpg,
     build_party_pdf,
     generate_ticket,
@@ -131,16 +132,53 @@ class TicketGenerationTests(TestCase):
 
         self.assertFalse(ticket_is_current(ticket, self.primary))
 
-    def test_each_program_icon_has_a_deterministic_vector_render(self):
-        for icon in WeddingEvent.EventIcon.values:
-            with self.subTest(icon=icon):
-                image = Image.new("RGB", (120, 120), "#FFEEEC")
-                draw = ImageDraw.Draw(image)
+    def test_program_icons_use_the_recolored_attached_vector_assets(self):
+        expected_icons = {
+            WeddingEvent.EventIcon.CITY_HALL,
+            WeddingEvent.EventIcon.CHURCH,
+            WeddingEvent.EventIcon.TOAST,
+            WeddingEvent.EventIcon.DINNER,
+        }
+        self.assertEqual(set(PROGRAM_ICON_ASSETS), expected_icons)
+        static_root = Path(__file__).parents[1] / "apps/guests/static"
 
-                rendered = _draw_event_icon(draw, icon, (5, 5, 115, 115))
+        for icon, assets in PROGRAM_ICON_ASSETS.items():
+            with self.subTest(icon=icon):
+                source = static_root / assets["source"]
+                raster = static_root / assets["raster"]
+                source_content = source.read_text(encoding="utf-8")
+                self.assertIn("#CD9241", source_content)
+                self.assertNotIn("#000000", source_content)
+
+                with Image.open(raster) as raster_image:
+                    self.assertEqual(raster_image.size, (1024, 1024))
+                    self.assertEqual(raster_image.mode, "RGBA")
+                    self.assertIn(
+                        (205, 146, 65),
+                        {
+                            pixel[:3]
+                            for pixel in raster_image.getdata()
+                            if pixel[3] == 255
+                        },
+                    )
+
+                background = Image.new("RGB", (120, 120), "#FFEEEC")
+                image = background.copy()
+                rendered = _paste_event_icon(image, icon, (5, 5, 115, 115))
 
                 self.assertTrue(rendered)
-                self.assertGreater(len(image.getcolors(maxcolors=20)), 1)
+                self.assertIsNotNone(ImageChops.difference(image, background).getbbox())
+
+    def test_party_icon_keeps_the_existing_fallback_without_an_asset(self):
+        image = Image.new("RGB", (120, 120), "#FFEEEC")
+
+        self.assertFalse(
+            _paste_event_icon(
+                image,
+                WeddingEvent.EventIcon.PARTY,
+                (5, 5, 115, 115),
+            )
+        )
 
     def test_information_jpg_uses_reference_dimensions(self):
         content = build_information_jpg()
