@@ -344,6 +344,7 @@ class WeddingEventAdmin(admin.ModelAdmin):
         "name",
         "code",
         "starts_at",
+        "venue_name",
         "display_order",
         "requires_rsvp",
         "capacity",
@@ -357,6 +358,7 @@ class WeddingEventAdmin(admin.ModelAdmin):
         "is_active",
     )
     ordering = ("display_order",)
+    search_fields = ("name", "venue_name", "address")
 
 
 class GuestImportRowInline(admin.TabularInline):
