@@ -56,6 +56,20 @@ class PublicWebsiteTests(TestCase):
         for name in ("Terre brûlée", "Vert nature", "Sable doré", "Gris élégant"):
             self.assertContains(response, name)
 
+        for label, color in (
+            ("Brique", "#C04657"),
+            ("Brun clair", "#C8A27A"),
+            ("Olive", "#6F7050"),
+            ("Vert nature", "#3F5545"),
+            ("Beige sable", "#D6C3A5"),
+            ("Moutarde", "#C89A2B"),
+        ):
+            self.assertContains(response, label)
+            self.assertContains(response, color)
+
+        for removed_color in ("Terracotta", "Cuivre", "Rouille", "Vert sauvage", "Champagne"):
+            self.assertNotContains(response, removed_color)
+
     def test_unpublished_accommodation_is_not_displayed(self):
         Accommodation.objects.create(
             area=self.area,
