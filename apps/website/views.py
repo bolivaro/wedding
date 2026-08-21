@@ -42,6 +42,13 @@ DRESS_CODE_THEMES = [
     },
 ]
 
+PROGRAM_ICON_ASSETS = {
+    WeddingEvent.EventIcon.CITY_HALL: "guests/images/program-icons/city-hall.svg",
+    WeddingEvent.EventIcon.CHURCH: "guests/images/program-icons/church.svg",
+    WeddingEvent.EventIcon.TOAST: "guests/images/program-icons/toast.svg",
+    WeddingEvent.EventIcon.DINNER: "guests/images/program-icons/dinner.svg",
+}
+
 
 def _public_context(request, **extra):
     guest = get_session_guest(request)
@@ -50,9 +57,8 @@ def _public_context(request, **extra):
 
 def _events():
     events = list(WeddingEvent.objects.filter(is_active=True).order_by("display_order", "starts_at", "name"))
-    available_icons = {"city_hall", "church", "toast", "dinner"}
     for event in events:
-        event.icon_asset = f"guests/images/program-icons/{event.icon}.svg" if event.icon in available_icons else ""
+        event.icon_asset = PROGRAM_ICON_ASSETS.get(event.icon, "")
     return events
 
 
