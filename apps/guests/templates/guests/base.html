@@ -5,21 +5,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="same-origin">
+    <meta name="theme-color" content="#f8f3eb">
     <title>{% block title %}Leslie &amp; Bolivar{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'website/css/website.css' %}">
     <link rel="stylesheet" href="{% static 'guests/css/guests.css' %}">
     <script src="{% static 'guests/js/theme.js' %}" defer></script>
+    <script src="{% static 'website/js/navigation.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
   </head>
   <body>
-    <header class="site-header">
-      <a class="brand" href="{% url 'guests:rsvp_dashboard' %}">
-        <span>Leslie</span><span class="brand-amp">&amp;</span><span>Bolivar</span>
-      </a>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Changer de thème">
-        <span aria-hidden="true">◐</span><span class="theme-label">Thème</span>
-      </button>
-    </header>
-    <main class="page-shell">
+    <a class="skip-link" href="#main-content">Aller au contenu</a>
+    {% include "website/partials/public_header.html" %}
+    <main class="page-shell" id="main-content">
       {% if messages %}
         <div class="messages" aria-live="polite">
           {% for message in messages %}<div class="message message-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}

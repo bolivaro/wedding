@@ -1,0 +1,18 @@
+<header class="public-header" data-site-header>
+  <div class="header-inner">
+    <a class="public-brand" href="{% url 'website:home' %}" aria-label="Accueil Leslie et Bolivar">
+      <span>Leslie</span><span class="brand-amp">&amp;</span><span>Bolivar</span>
+    </a>
+    <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="public-navigation">
+      <span class="menu-toggle-lines" aria-hidden="true"></span><span class="sr-only">Ouvrir le menu</span>
+    </button>
+    <nav class="public-nav" id="public-navigation" data-menu aria-label="Navigation principale">
+      <a href="{% url 'website:home' %}" {% if request.resolver_match.namespace == 'website' and request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>Accueil</a>
+      <a href="{% url 'website:program' %}" {% if request.resolver_match.url_name == 'program' %}aria-current="page"{% endif %}>Programme</a>
+      <a href="{% url 'website:dress_code' %}" {% if request.resolver_match.url_name == 'dress_code' %}aria-current="page"{% endif %}>Dress code</a>
+      <a href="{% url 'website:stay' %}" {% if request.resolver_match.url_name == 'stay' %}aria-current="page"{% endif %}>Séjour</a>
+      <a class="nav-invitation" href="{% url 'website:my_invitation' %}" {% if request.resolver_match.namespace == 'guests' %}aria-current="page"{% endif %}>{% if session_guest or request.resolver_match.namespace == 'guests' %}Mon RSVP{% else %}Mon invitation{% endif %}</a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Changer de thème"><span aria-hidden="true">◐</span><span>Thème</span></button>
+    </nav>
+  </div>
+</header>

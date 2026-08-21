@@ -56,6 +56,18 @@ class RSVPViewsTests(TestCase):
         self.assertNotContains(dashboard, self.issued.secret)
         self.assertEqual(dashboard.headers["Referrer-Policy"], "same-origin")
 
+    def test_rsvp_dashboard_keeps_public_navigation(self):
+        self.login_guest()
+
+        response = self.client.get(reverse("guests:rsvp_dashboard"))
+
+        self.assertContains(response, reverse("website:home"))
+        self.assertContains(response, reverse("website:program"))
+        self.assertContains(response, reverse("website:dress_code"))
+        self.assertContains(response, reverse("website:stay"))
+        self.assertContains(response, "Mon RSVP")
+        self.assertContains(response, 'data-menu-toggle')
+
     def test_rsvp_post_passes_real_csrf_origin_check(self):
         client = Client(enforce_csrf_checks=True)
         client.get(
