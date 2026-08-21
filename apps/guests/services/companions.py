@@ -6,12 +6,14 @@ from guests.services.deadline import is_rsvp_open
 
 
 @transaction.atomic
-def add_companion(*, primary_guest, first_name, last_name, gender):
+def add_companion(*, primary_guest, first_name, last_name, gender, age_category):
     if not is_rsvp_open():
         raise ValidationError("La date limite RSVP est dépassée.")
     primary_guest = Guest.objects.select_for_update().get(pk=primary_guest.pk)
     if primary_guest.invitation_owner_id:
         raise ValidationError("Seul un invité principal peut ajouter des accompagnants.")
+    if age_category not in Guest.AgeCategory.values:
+        raise ValidationError("La tranche d’âge de l’accompagnant est invalide.")
 
     active_count = primary_guest.companions.filter(is_active=True).count()
     if active_count >= primary_guest.companion_limit:
@@ -21,6 +23,7 @@ def add_companion(*, primary_guest, first_name, last_name, gender):
         first_name=first_name.strip(),
         last_name=last_name.strip(),
         gender=gender,
+        age_category=age_category,
         guest_type=Guest.GuestType.REGULAR,
         guest_group=primary_guest.guest_group,
         invitation_owner=primary_guest,
@@ -47,6 +50,28 @@ def add_companion(*, primary_guest, first_name, last_name, gender):
             )
         )
     GuestEventInvitation.objects.bulk_create(event_invitations)
+    return companion
+
+
+@transaction.atomic
+def update_companion(*, primary_guest, companion, first_name, last_name, gender, age_category):
+    if not is_rsvp_open():
+        raise ValidationError("La date limite RSVP est dépassée.")
+    if age_category not in Guest.AgeCategory.values:
+        raise ValidationError("La tranche d’âge de l’accompagnant est invalide.")
+
+    companion = Guest.objects.select_for_update().get(
+        pk=companion.pk,
+        invitation_owner=primary_guest,
+        is_active=True,
+    )
+    companion.first_name = first_name.strip()
+    companion.last_name = last_name.strip()
+    companion.gender = gender
+    companion.age_category = age_category
+    companion.save(
+        update_fields=["first_name", "last_name", "gender", "age_category", "updated_at"]
+    )
     return companion
 
 

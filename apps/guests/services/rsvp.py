@@ -7,12 +7,22 @@ from guests.services.deadline import is_rsvp_open
 
 
 @transaction.atomic
-def update_rsvp(*, guest, status, event_responses=None, source=Guest.RSVPSource.GUEST, at=None):
+def update_rsvp(
+    *,
+    guest,
+    status,
+    age_category=None,
+    event_responses=None,
+    source=Guest.RSVPSource.GUEST,
+    at=None,
+):
     response_time = at or timezone.now()
     if source == Guest.RSVPSource.GUEST and not is_rsvp_open(at=response_time):
         raise ValidationError("La date limite RSVP est dépassée.")
     if status not in Guest.RSVPStatus.values or status == Guest.RSVPStatus.PENDING:
         raise ValidationError("Statut RSVP invalide.")
+    if age_category is not None and age_category not in Guest.AgeCategory.values:
+        raise ValidationError("La tranche d’âge de l’invité est invalide.")
 
     guest = Guest.objects.select_for_update().get(pk=guest.pk)
     invitations = {
@@ -67,5 +77,9 @@ def update_rsvp(*, guest, status, event_responses=None, source=Guest.RSVPSource.
     guest.rsvp_status = status
     guest.rsvp_source = source
     guest.rsvp_responded_at = response_time
-    guest.save(update_fields=["rsvp_status", "rsvp_source", "rsvp_responded_at", "updated_at"])
+    update_fields = ["rsvp_status", "rsvp_source", "rsvp_responded_at", "updated_at"]
+    if age_category is not None:
+        guest.age_category = age_category
+        update_fields.append("age_category")
+    guest.save(update_fields=update_fields)
     return guest

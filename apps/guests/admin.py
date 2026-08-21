@@ -30,7 +30,7 @@ class CompanionInline(admin.TabularInline):
     model = Guest
     fk_name = "invitation_owner"
     extra = 0
-    fields = ("first_name", "last_name", "gender", "is_active", "rsvp_status")
+    fields = ("first_name", "last_name", "gender", "age_category", "is_active", "rsvp_status")
     show_change_link = True
 
 

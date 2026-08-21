@@ -18,6 +18,11 @@ urlpatterns = [
     path("rsvp/respond/", views.rsvp_respond, name="rsvp_respond"),
     path("rsvp/companions/add/", views.companion_add, name="companion_add"),
     path(
+        "rsvp/companions/<int:companion_id>/update/",
+        views.companion_update,
+        name="companion_update",
+    ),
+    path(
         "rsvp/companions/<int:companion_id>/remove/",
         views.companion_remove,
         name="companion_remove",

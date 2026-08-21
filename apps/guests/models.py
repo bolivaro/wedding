@@ -40,6 +40,14 @@ class Guest(models.Model):
         GUEST = "guest", "Invité"
         ADMIN = "admin", "Administration"
 
+    class AgeCategory(models.TextChoices):
+        BABY = "baby_0_2", "Bébé (0–2)"
+        CHILD = "child_3_12", "Enfant (3–12)"
+        TEENAGER = "teenager_13_17", "Adolescent (13–17)"
+        ADULT = "adult_18_44", "Adulte (18–44)"
+        CONFIRMED_ADULT = "adult_45_59", "Adulte confirmé (45–59)"
+        SENIOR = "senior_60_plus", "Senior (60+)"
+
     first_name = models.CharField("prénom", max_length=100)
     last_name = models.CharField("nom", max_length=100, blank=True)
     email = models.EmailField("email", null=True, blank=True)
@@ -94,7 +102,12 @@ class Guest(models.Model):
 
     has_been_contacted = models.BooleanField("contacté", null=True, blank=True)
     requires_visa = models.BooleanField("soumis au visa", null=True, blank=True)
-    age_category = models.CharField("catégorie d'âge", max_length=50, blank=True)
+    age_category = models.CharField(
+        "catégorie d'âge",
+        max_length=50,
+        choices=AgeCategory.choices,
+        blank=True,
+    )
     origin_country = models.CharField("origine", max_length=100, blank=True)
     travel_origin_country = models.CharField(
         "provenance",
@@ -165,6 +178,15 @@ class Guest(models.Model):
         if self.gender == self.Gender.FEMALE:
             return "Mme"
         return ""
+
+    @property
+    def age_category_label(self):
+        if not self.age_category:
+            return ""
+        try:
+            return self.AgeCategory(self.age_category).label
+        except ValueError:
+            return self.age_category
 
     @property
     def companion_limit(self):

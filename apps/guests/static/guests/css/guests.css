@@ -104,12 +104,16 @@ input[type='radio'] { accent-color: var(--primary); }
 .danger { color: var(--danger); }
 .muted { color: var(--muted); }
 .companion-list { display: grid; gap: 10px; margin-bottom: 24px; }
+.companion-entry { overflow: hidden; background: var(--surface-soft); border-radius: var(--radius-md); }
 .companion-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 12px; background: var(--surface-soft); border-radius: var(--radius-md); }
 .companion-row strong, .companion-row span { display: block; }
 .companion-row span { color: var(--muted); font-size: .82rem; }
+.companion-editor { padding: 0 12px 14px; border-top: 1px solid var(--border); }
+.companion-editor summary { width: fit-content; padding: 10px 2px 2px; color: var(--primary); font-size: .86rem; font-weight: 750; cursor: pointer; }
+.companion-editor .compact-form { margin-top: 14px; }
 .avatar { display: grid; width: 42px; height: 42px; place-items: center; color: var(--primary-text); background: var(--primary); border-radius: 50%; font-weight: 800; }
 .compact-form { display: grid; gap: 16px; margin-top: 20px; }
-.form-grid { display: grid; grid-template-columns: .65fr 1fr 1fr; gap: 12px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .field { display: grid; gap: 6px; }
 .field label { font-size: .86rem; font-weight: 750; }
 .field input, .field select { width: 100%; min-height: 46px; padding: 10px 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }

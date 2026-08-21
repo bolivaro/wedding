@@ -17,7 +17,7 @@ from .services.access import (
     issue_guest_access,
     start_guest_session,
 )
-from .services.companions import add_companion, deactivate_companion
+from .services.companions import add_companion, deactivate_companion, update_companion
 from .services.deadline import is_rsvp_open
 from .services.email_access import (
     consume_email_token,
@@ -27,6 +27,7 @@ from .services.email_access import (
 from .services.notifications import (
     send_access_recovery,
     send_email_verification,
+    send_rsvp_notification,
     send_ticket_email,
 )
 from .services.rsvp import update_rsvp
@@ -78,7 +79,15 @@ def rsvp_dashboard(request):
     return render(request, "guests/rsvp_dashboard.html", _dashboard_context(request.guest))
 
 
-def _dashboard_context(guest, *, rsvp_form=None, companion_form=None, email_form=None):
+def _dashboard_context(
+    guest,
+    *,
+    rsvp_form=None,
+    companion_form=None,
+    companion_edit_form=None,
+    companion_edit_id=None,
+    email_form=None,
+):
     guest = Guest.objects.prefetch_related(
         "event_invitations__event",
         "companions",
@@ -98,13 +107,32 @@ def _dashboard_context(guest, *, rsvp_form=None, companion_form=None, email_form
             for invitation in eligible
         )
     )
+    active_companions = list(guest.companions.filter(is_active=True))
+    companion_rows = []
+    for companion in active_companions:
+        edit_form = (
+            companion_edit_form
+            if companion_edit_form is not None and companion.pk == companion_edit_id
+            else CompanionForm(
+                auto_id=f"id_companion_{companion.pk}_%s",
+                initial={
+                    "gender": companion.gender,
+                    "first_name": companion.first_name,
+                    "last_name": companion.last_name,
+                    "age_category": companion.age_category,
+                }
+            )
+        )
+        companion_rows.append((companion, edit_form))
+
     context = {
         "guest": guest,
         "rsvp_form": rsvp_form if rsvp_form is not None else RSVPForm(guest=guest),
         "companion_form": companion_form if companion_form is not None else CompanionForm(),
         "email_form": email_form if email_form is not None else GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
         "event_invitations": event_invitations,
-        "active_companions": guest.companions.filter(is_active=True),
+        "active_companions": active_companions,
+        "companion_rows": companion_rows,
         "rsvp_open": is_rsvp_open(),
         "rsvp_complete": rsvp_complete,
         "deadline": settings.RSVP_DEADLINE,
@@ -141,15 +169,23 @@ def rsvp_respond(request):
     form = RSVPForm(request.POST, guest=request.guest)
     if form.is_valid():
         try:
-            update_rsvp(
+            updated_guest = update_rsvp(
                 guest=request.guest,
                 status=form.cleaned_data["status"],
+                age_category=form.cleaned_data["age_category"],
                 event_responses=form.event_responses(),
             )
         except ValidationError as exc:
             for error in exc.messages:
                 form.add_error(None, error)
         else:
+            try:
+                send_rsvp_notification(guest=updated_guest)
+            except Exception:
+                logger.exception(
+                    "Impossible d’envoyer la notification RSVP pour l’invité %s",
+                    updated_guest.pk,
+                )
             if _is_async_request(request):
                 return _fragment_response(
                     request,
@@ -214,6 +250,55 @@ def companion_add(request):
     messages.error(
         request,
         "; ".join(form.non_field_errors()) or "Les informations de l'accompagnant sont invalides.",
+    )
+    return redirect("guests:rsvp_dashboard")
+
+
+@require_POST
+@guest_access_required
+def companion_update(request, companion_id):
+    companion = get_object_or_404(
+        Guest,
+        pk=companion_id,
+        invitation_owner=request.guest,
+        is_active=True,
+    )
+    form = CompanionForm(request.POST, auto_id=f"id_companion_{companion.pk}_%s")
+    if form.is_valid():
+        try:
+            update_companion(
+                primary_guest=request.guest,
+                companion=companion,
+                **form.cleaned_data,
+            )
+        except ValidationError as exc:
+            for error in exc.messages:
+                form.add_error(None, error)
+        else:
+            if _is_async_request(request):
+                return _fragment_response(
+                    request,
+                    guest=request.guest,
+                    components=("companions",),
+                    message="Les informations de l'accompagnant ont été mises à jour.",
+                )
+            messages.success(request, "Les informations de l'accompagnant ont été mises à jour.")
+            return redirect("guests:rsvp_dashboard")
+
+    if _is_async_request(request):
+        return _fragment_response(
+            request,
+            guest=request.guest,
+            components=("companions",),
+            message="Les informations de l'accompagnant sont invalides.",
+            status=422,
+            companion_edit_form=form,
+            companion_edit_id=companion.pk,
+        )
+    messages.error(
+        request,
+        "; ".join(form.non_field_errors())
+        or "Les informations de l'accompagnant sont invalides.",
     )
     return redirect("guests:rsvp_dashboard")
 
