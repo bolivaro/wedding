@@ -469,7 +469,7 @@ html[data-theme='dark'] #intro > div {
 .site-logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0;
   text-decoration: none;
   color: var(--cream);
   line-height: 1;
@@ -483,6 +483,7 @@ html[data-theme='dark'] #intro > div {
   width: 2.25rem;
   height: 2.25rem;
   flex: 0 0 auto;
+  margin-right: 0.2rem;
   object-fit: contain;
 }
 
@@ -511,7 +512,7 @@ html[data-theme='dark'] #intro > div {
   font-size: 1.8rem;
   font-weight: 400;
   color: #f3dfcf;
-  margin: 0 0.05rem;
+  margin: 0;
   transform: translateY(-0.02em);
 }
 
