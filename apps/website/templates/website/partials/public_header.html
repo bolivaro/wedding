@@ -1,7 +1,9 @@
+{% load static %}
 <header class="public-header" data-site-header>
   <div class="header-inner">
     <a class="public-brand" href="{% url 'website:home' %}" aria-label="Accueil Leslie et Bolivar">
-      <span>Leslie</span><span class="brand-amp">&amp;</span><span>Bolivar</span>
+      <img class="public-brand-icon" src="{% static 'website/images/favicon.svg' %}" alt="" aria-hidden="true">
+      <span class="public-brand-name"><span>Leslie</span><span class="brand-amp">&amp;</span><span>Bolivar</span></span>
     </a>
     <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="public-navigation">
       <span class="menu-toggle-lines" aria-hidden="true"></span><span class="sr-only">Ouvrir le menu</span>

@@ -4,6 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="{% static 'website/images/favicon.svg' %}" type="image/svg+xml" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -36,6 +37,12 @@
           class="site-logo"
           aria-label="Revenir au début de la page"
         >
+          <img
+            class="site-logo-icon"
+            src="{% static 'website/images/favicon.svg' %}"
+            alt=""
+            aria-hidden="true"
+          />
           <span class="site-logo-name">Leslie</span>
           <span class="site-logo-amp">&amp;</span>
           <span class="site-logo-name">Bolivar</span>

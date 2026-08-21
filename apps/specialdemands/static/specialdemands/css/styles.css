@@ -468,7 +468,7 @@ html[data-theme='dark'] #intro > div {
 /* Logo */
 .site-logo {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.35rem;
   text-decoration: none;
   color: var(--cream);
@@ -477,6 +477,13 @@ html[data-theme='dark'] #intro > div {
     transform 180ms ease,
     opacity 180ms ease,
     text-shadow 180ms ease;
+}
+
+.site-logo-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .site-logo:hover {
@@ -509,6 +516,11 @@ html[data-theme='dark'] #intro > div {
 }
 
 @media (max-width: 640px) {
+  .site-logo-icon {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
   .site-logo-name {
     font-size: 1.55rem;
   }
