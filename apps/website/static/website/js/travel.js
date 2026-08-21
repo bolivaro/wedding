@@ -9,6 +9,8 @@
     const updateOrigin = () => {
       const usesAddress = planner.querySelector('input[name="origin-kind"]:checked').value === 'address';
       addressField.hidden = !usesAddress;
+      addressField.style.display = usesAddress ? 'grid' : 'none';
+      addressInput.disabled = !usesAddress;
       if (usesAddress) addressInput.focus({ preventScroll: true });
       updateLinks();
     };
@@ -27,7 +29,7 @@
     originKinds.forEach((input) => input.addEventListener('change', updateOrigin));
     planner.querySelectorAll('input[name="travel-mode"]').forEach((input) => input.addEventListener('change', updateLinks));
     addressInput.addEventListener('input', updateLinks);
-    updateLinks();
+    updateOrigin();
   }
 
   const map = document.querySelector('[data-place-map]');
