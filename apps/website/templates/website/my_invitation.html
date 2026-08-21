@@ -1,0 +1,5 @@
+{% extends "website/base_public.html" %}
+{% block title %}Mon invitation — Leslie & Bolivar{% endblock %}
+{% block content %}
+<section class="page-hero invitation-hero"><p class="eyebrow">Accès personnel</p><h1>Votre invitation est privée</h1><p>Utilisez le lien personnel reçu avec votre invitation pour confirmer votre présence, renseigner vos accompagnants et récupérer vos billets.</p><div class="hero-actions"><a class="button button-primary" href="{% url 'guests:recovery_request' %}">Retrouver mon accès</a><a class="button button-secondary" href="mailto:{{ support_email }}">Contacter le couple</a></div><p class="privacy-note">Pour votre sécurité, une invitation ne peut pas être recherchée par nom.</p></section>
+{% endblock %}

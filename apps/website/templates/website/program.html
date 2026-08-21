@@ -1,0 +1,24 @@
+{% extends "website/base_public.html" %}
+{% load static %}
+{% block title %}Programme — Leslie & Bolivar{% endblock %}
+{% block content %}
+<header class="page-hero compact-hero"><p class="eyebrow">17 octobre 2026</p><h1>Le programme</h1><p>Les rendez-vous de notre journée, dans l'ordre, avec toutes les informations pour nous rejoindre.</p></header>
+<section class="content-section timeline" aria-label="Programme du mariage">
+  {% for event in events %}
+    <article class="timeline-event">
+      <div class="timeline-time">{% if event.starts_at %}<time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:'H\hi' }}</time>{% else %}<span>À venir</span>{% endif %}</div>
+      <div class="timeline-marker"><span>{% if event.icon_asset %}<img src="{% static event.icon_asset %}" alt="">{% else %}◇{% endif %}</span></div>
+      <div class="timeline-card">
+        <p class="eyebrow">Étape {{ forloop.counter }}</p><h2>{{ event.name }}</h2>
+        {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+        {% if event.venue_name or event.address %}<address><strong>{{ event.venue_name }}</strong>{% if event.address %}<span>{{ event.address }}</span>{% endif %}</address>{% endif %}
+        <div class="card-actions">
+          {% if event.map_url %}<a class="button button-secondary" href="{{ event.map_url }}" target="_blank" rel="noopener">Voir sur la carte</a>{% endif %}
+          {% if event.address %}<a class="button button-link" href="{% url 'website:stay' %}#trajets">Calculer mon trajet</a>{% endif %}
+        </div>
+      </div>
+    </article>
+  {% empty %}<div class="empty-state"><h2>Le programme arrive bientôt</h2><p>Revenez prochainement pour découvrir les horaires.</p></div>{% endfor %}
+</section>
+<aside class="content-section warm-callout"><div><p class="eyebrow">Organiser votre venue</p><h2>Vous cherchez encore où dormir ?</h2><p>Comparez les différentes zones selon les étapes auxquelles vous assisterez.</p></div><a class="button button-primary" href="{% url 'website:stay' %}">Préparer mon séjour</a></aside>
+{% endblock %}

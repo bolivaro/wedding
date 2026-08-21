@@ -1,0 +1,47 @@
+{% extends "website/base_public.html" %}
+{% load static %}
+{% block title %}Leslie & Bolivar — 17 octobre 2026{% endblock %}
+{% block extra_head %}<script src="{% static 'website/js/carousel.js' %}" defer></script>{% endblock %}
+{% block content %}
+<section class="hero-carousel" data-carousel aria-roledescription="carrousel" aria-label="Bienvenue">
+  <div class="carousel-track" data-carousel-track>
+    {% for slide in slides %}
+      <article class="carousel-slide carousel-slide-{{ forloop.counter }}" data-carousel-slide {% if not forloop.first %}hidden{% endif %}>
+        <div class="ornament" aria-hidden="true">◇</div>
+        <div class="carousel-copy">
+          <p class="eyebrow">{{ slide.eyebrow }}</p>
+          <h1>{{ slide.title }}</h1>
+          <p>{{ slide.text }}</p>
+          {% if forloop.first %}<a class="button button-primary" href="{% url 'website:program' %}">Découvrir le programme</a>{% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+  <div class="carousel-controls">
+    <button type="button" data-carousel-previous aria-label="Image précédente">←</button>
+    <div class="carousel-dots" aria-label="Choisir une image">
+      {% for slide in slides %}<button type="button" data-carousel-dot="{{ forloop.counter0 }}" aria-label="Afficher l’image {{ forloop.counter }}" {% if forloop.first %}aria-current="true"{% endif %}></button>{% endfor %}
+    </div>
+    <button type="button" data-carousel-next aria-label="Image suivante">→</button>
+  </div>
+</section>
+
+<section class="content-section intro-section">
+  <p class="eyebrow">Votre espace mariage</p>
+  <h2>Préparer la journée, simplement</h2>
+  <p class="section-lead">Retrouvez au même endroit les informations qui vous accompagnent, de votre réponse jusqu'à votre arrivée.</p>
+  <ol class="workflow-list">
+    <li><span>01</span><div><h3>Invitation</h3><p>Ouvrez votre accès personnel depuis le lien reçu.</p></div></li>
+    <li><span>02</span><div><h3>RSVP</h3><p>Confirmez votre présence et celle de vos accompagnants.</p></div></li>
+    <li><span>03</span><div><h3>Préparation</h3><p>Consultez le programme, le dress code et préparez votre séjour.</p></div></li>
+    <li><span>04</span><div><h3>Billet</h3><p>Récupérez votre billet et son QR code sécurisé.</p></div></li>
+    <li><span>05</span><div><h3>Jour J</h3><p>Présentez-vous sereinement pour célébrer avec nous.</p></div></li>
+  </ol>
+</section>
+
+<section class="content-section feature-grid" aria-label="Informations pratiques">
+  <a class="feature-card feature-program" href="{% url 'website:program' %}"><span>La journée</span><h2>Le programme</h2><p>Horaires, lieux et détails de chaque rendez-vous.</p><strong>Voir le programme →</strong></a>
+  <a class="feature-card feature-dress" href="{% url 'website:dress_code' %}"><span>Élégance d'automne</span><h2>Le dress code</h2><p>Palettes, nuances et inspirations vestimentaires.</p><strong>Découvrir les couleurs →</strong></a>
+  <a class="feature-card feature-stay" href="{% url 'website:stay' %}"><span>Venir sereinement</span><h2>Séjour & déplacements</h2><p>Comparez les lieux et choisissez une zone adaptée.</p><strong>Préparer mon séjour →</strong></a>
+</section>
+{% endblock %}
