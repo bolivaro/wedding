@@ -178,3 +178,51 @@ class WeddingEventIconMigrationTests(TransactionTestCase):
                 "reception": "dinner",
             },
         )
+
+
+class GuestAgeCategoryMigrationTests(TransactionTestCase):
+    migrate_from = [("guests", "0012_weddingevent_description")]
+    migrate_to = [("guests", "0013_structured_guest_age_categories")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        Guest = old_apps.get_model("guests", "Guest")
+        self.guest_ids = {
+            value: Guest.objects.create(first_name=value, age_category=value).pk
+            for value in (
+                "Bébé (0–2)",
+                "Enfant (3–12)",
+                "Adolescent (13–17)",
+                "Adulte (18–44)",
+                "Adulte confirmé (45–59)",
+                "Senior (60+)",
+            )
+        }
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_excel_age_labels_are_normalized_without_losing_guests(self):
+        Guest = self.apps.get_model("guests", "Guest")
+        expected = {
+            "Bébé (0–2)": "baby_0_2",
+            "Enfant (3–12)": "child_3_12",
+            "Adolescent (13–17)": "teenager_13_17",
+            "Adulte (18–44)": "adult_18_44",
+            "Adulte confirmé (45–59)": "adult_45_59",
+            "Senior (60+)": "senior_60_plus",
+        }
+        for source_value, normalized_value in expected.items():
+            self.assertEqual(
+                Guest.objects.get(pk=self.guest_ids[source_value]).age_category,
+                normalized_value,
+            )

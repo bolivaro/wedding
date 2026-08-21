@@ -8,11 +8,19 @@
       <div class="choice-grid">{{ rsvp_form.status }}</div>
       {{ rsvp_form.status.errors }}
     </fieldset>
+    <fieldset {% if not rsvp_open %}disabled{% endif %}>
+      <legend>À propos de vous</legend>
+      <div class="field">
+        <label for="{{ rsvp_form.age_category.id_for_label }}">{{ rsvp_form.age_category.label }}</label>
+        {{ rsvp_form.age_category }}
+        {{ rsvp_form.age_category.errors }}
+      </div>
+    </fieldset>
     <fieldset class="events-fieldset" data-events-fieldset {% if not rsvp_open %}disabled{% endif %}>
       <legend>À quelles étapes serez-vous présent(e) ?</legend>
       <div class="event-list">
         {% for field in rsvp_form %}
-          {% if field.name != "status" %}
+          {% if field.name != "status" and field.name != "age_category" %}
           <div class="event-choice"><div><strong>{{ field.label }}</strong><span>Réponse indépendante</span></div><div class="inline-choices">{{ field }}</div>{{ field.errors }}</div>
           {% endif %}
         {% endfor %}

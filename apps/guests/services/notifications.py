@@ -4,6 +4,8 @@ from django.conf import settings
 
 from lesbon.email import get_brevo_sender, send_brevo_email
 
+from guests.models import Guest
+
 
 def _absolute_url(path):
     return f"{settings.SITE_BASE_URL.rstrip('/')}{path}"
@@ -38,6 +40,54 @@ def send_access_recovery(*, issued_token):
             "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email."
         ),
         reply_to=get_brevo_sender(),
+    )
+
+
+def send_rsvp_notification(*, guest):
+    guest = Guest.objects.prefetch_related(
+        "companions",
+        "event_invitations__event",
+    ).get(pk=guest.pk)
+    attending = guest.rsvp_status == Guest.RSVPStatus.ATTENDING
+    response_label = "Présence confirmée" if attending else "Absence confirmée"
+
+    event_lines = []
+    for invitation in guest.event_invitations.all():
+        if not invitation.event.is_active or not invitation.event.requires_rsvp:
+            continue
+        event_lines.append(
+            f"- {invitation.event.name} : {invitation.get_attendance_status_display()}"
+        )
+    companion_lines = [
+        f"- {companion.full_name} — {companion.age_category_label or 'tranche d’âge non renseignée'}"
+        for companion in guest.companions.all()
+        if companion.is_active
+    ]
+    text_content = (
+        f"{response_label} pour {guest.full_name}.\n\n"
+        f"Réponse globale : {guest.get_rsvp_status_display()}\n\n"
+        f"Tranche d’âge : {guest.age_category_label or 'non renseignée'}\n\n"
+        "Réponses par événement :\n"
+        f"{chr(10).join(event_lines) or '- Aucun événement soumis au RSVP'}\n\n"
+        "Accompagnants :\n"
+        f"{chr(10).join(companion_lines) or '- Aucun accompagnant'}"
+    )
+    recipients = [
+        {"email": email}
+        for email in settings.RSVP_NOTIFICATION_EMAILS
+        if email
+    ]
+    if not recipients:
+        return None
+    return send_brevo_email(
+        to=recipients,
+        subject=f"[RSVP] {response_label} — {guest.full_name}",
+        text_content=text_content,
+        reply_to=(
+            {"email": guest.email, "name": guest.full_name}
+            if guest.email and guest.email_verified_at
+            else get_brevo_sender()
+        ),
     )
 
 

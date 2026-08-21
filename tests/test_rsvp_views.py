@@ -17,6 +17,7 @@ TEST_STORAGES = {
 
 @override_settings(
     RSVP_DEADLINE=OPEN_DEADLINE,
+    RSVP_NOTIFICATION_EMAILS=[],
     SECURE_SSL_REDIRECT=False,
     STORAGES=TEST_STORAGES,
 )
@@ -71,6 +72,15 @@ class RSVPViewsTests(TestCase):
         self.assertContains(response, 'aria-live="polite"')
         self.assertContains(response, 'data-async-dashboard="2"')
         self.assertContains(response, '?v=async-rsvp-2')
+        for age_label in (
+            "Bébé (0–2)",
+            "Enfant (3–12)",
+            "Adolescent (13–17)",
+            "Adulte (18–44)",
+            "Adulte confirmé (45–59)",
+            "Senior (60+)",
+        ):
+            self.assertContains(response, age_label)
 
     def test_rsvp_post_passes_real_csrf_origin_check(self):
         client = Client(enforce_csrf_checks=True)
@@ -91,6 +101,7 @@ class RSVPViewsTests(TestCase):
             {
                 "csrfmiddlewaretoken": csrf_token,
                 "status": Guest.RSVPStatus.NOT_ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
             },
             HTTP_ORIGIN="http://testserver",
         )
@@ -118,6 +129,7 @@ class RSVPViewsTests(TestCase):
             reverse("guests:rsvp_respond"),
             {
                 "status": Guest.RSVPStatus.ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
             },
@@ -126,6 +138,7 @@ class RSVPViewsTests(TestCase):
         self.assertRedirects(response, reverse("guests:rsvp_dashboard"))
         self.guest.refresh_from_db()
         self.assertEqual(self.guest.rsvp_status, Guest.RSVPStatus.ATTENDING)
+        self.assertEqual(self.guest.age_category, Guest.AgeCategory.ADULT)
         self.assertEqual(
             self.guest.event_invitations.get(event__code=WeddingEvent.Code.CHURCH).attendance_status,
             Guest.RSVPStatus.ATTENDING,
@@ -143,6 +156,52 @@ class RSVPViewsTests(TestCase):
             Guest.RSVPStatus.ATTENDING,
         )
 
+    @patch("guests.views.send_rsvp_notification")
+    def test_each_positive_or_negative_rsvp_sends_a_notification(self, send_notification):
+        self.login_guest()
+
+        positive_response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "status": Guest.RSVPStatus.ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
+                "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
+            },
+        )
+        negative_response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "status": Guest.RSVPStatus.NOT_ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
+            },
+        )
+
+        self.assertRedirects(positive_response, reverse("guests:rsvp_dashboard"))
+        self.assertRedirects(negative_response, reverse("guests:rsvp_dashboard"))
+        self.assertEqual(send_notification.call_count, 2)
+        self.assertEqual(
+            [call.kwargs["guest"].rsvp_status for call in send_notification.call_args_list],
+            [Guest.RSVPStatus.ATTENDING, Guest.RSVPStatus.NOT_ATTENDING],
+        )
+
+    @patch("guests.views.send_rsvp_notification", side_effect=RuntimeError("Brevo indisponible"))
+    def test_notification_failure_does_not_rollback_rsvp(self, send_notification):
+        self.login_guest()
+
+        response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "status": Guest.RSVPStatus.NOT_ATTENDING,
+                "age_category": Guest.AgeCategory.CONFIRMED_ADULT,
+            },
+        )
+
+        self.assertRedirects(response, reverse("guests:rsvp_dashboard"))
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.rsvp_status, Guest.RSVPStatus.NOT_ATTENDING)
+        send_notification.assert_called_once()
+
     def test_rsvp_can_update_only_affected_fragments_asynchronously(self):
         self.login_guest()
 
@@ -150,6 +209,7 @@ class RSVPViewsTests(TestCase):
             reverse("guests:rsvp_respond"),
             {
                 "status": Guest.RSVPStatus.ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
             },
@@ -169,7 +229,10 @@ class RSVPViewsTests(TestCase):
 
         response = self.client.post(
             reverse("guests:rsvp_respond"),
-            {"status": Guest.RSVPStatus.ATTENDING},
+            {
+                "status": Guest.RSVPStatus.ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
+            },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
@@ -190,7 +253,12 @@ class RSVPViewsTests(TestCase):
 
     def test_companion_limit_is_enforced_through_view(self):
         self.login_guest()
-        data = {"gender": Guest.Gender.MALE, "first_name": "Jean", "last_name": "Dupont"}
+        data = {
+            "gender": Guest.Gender.MALE,
+            "first_name": "Jean",
+            "last_name": "Dupont",
+            "age_category": Guest.AgeCategory.ADULT,
+        }
 
         self.client.post(reverse("guests:companion_add"), data)
         self.client.post(reverse("guests:companion_add"), data)
@@ -201,13 +269,44 @@ class RSVPViewsTests(TestCase):
         self.login_guest()
         response = self.client.post(
             reverse("guests:companion_add"),
-            {"gender": Guest.Gender.MALE, "first_name": "Jean", "last_name": "Dupont"},
+            {
+                "gender": Guest.Gender.MALE,
+                "first_name": "Jean",
+                "last_name": "Dupont",
+                "age_category": Guest.AgeCategory.CHILD,
+            },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Jean Dupont", response.json()["fragments"]["companions"])
+        self.assertIn("Enfant (3–12)", response.json()["fragments"]["companions"])
         companion = self.guest.companions.get(first_name="Jean")
+        self.assertEqual(companion.age_category, Guest.AgeCategory.CHILD)
+
+        invitation_ids = list(
+            companion.event_invitations.order_by("pk").values_list("pk", flat=True)
+        )
+        response = self.client.post(
+            reverse("guests:companion_update", kwargs={"companion_id": companion.pk}),
+            {
+                "gender": Guest.Gender.MALE,
+                "first_name": "Jean-Pierre",
+                "last_name": "Dupont",
+                "age_category": Guest.AgeCategory.SENIOR,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Jean-Pierre Dupont", response.json()["fragments"]["companions"])
+        self.assertIn("Senior (60+)", response.json()["fragments"]["companions"])
+        companion.refresh_from_db()
+        self.assertEqual(companion.age_category, Guest.AgeCategory.SENIOR)
+        self.assertEqual(
+            list(companion.event_invitations.order_by("pk").values_list("pk", flat=True)),
+            invitation_ids,
+        )
 
         response = self.client.post(
             reverse("guests:companion_remove", kwargs={"companion_id": companion.pk}),
@@ -228,6 +327,7 @@ class RSVPViewsTests(TestCase):
             reverse("guests:rsvp_respond"),
             {
                 "status": Guest.RSVPStatus.ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.ATTENDING,
             },
@@ -300,7 +400,10 @@ class ClosedRSVPViewsTests(TestCase):
 
         response = self.client.post(
             reverse("guests:rsvp_respond"),
-            {"status": Guest.RSVPStatus.NOT_ATTENDING},
+            {
+                "status": Guest.RSVPStatus.NOT_ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
+            },
         )
 
         self.assertEqual(response.status_code, 400)

@@ -22,6 +22,7 @@ class CompanionForm(forms.Form):
     gender = forms.ChoiceField(label="Civilité", choices=[])
     first_name = forms.CharField(label="Prénom", max_length=100)
     last_name = forms.CharField(label="Nom", max_length=100)
+    age_category = forms.ChoiceField(label="Tranche d’âge", choices=[])
 
     def __init__(self, *args, **kwargs):
         from guests.models import Guest
@@ -32,6 +33,10 @@ class CompanionForm(forms.Form):
             (Guest.Gender.MALE, "M."),
             (Guest.Gender.OTHER, "Autre"),
         ]
+        self.fields["age_category"].choices = [
+            ("", "Sélectionnez une tranche d’âge"),
+            *Guest.AgeCategory.choices,
+        ]
 
 
 class RSVPForm(forms.Form):
@@ -40,6 +45,7 @@ class RSVPForm(forms.Form):
         choices=[],
         widget=forms.RadioSelect,
     )
+    age_category = forms.ChoiceField(label="Votre tranche d’âge", choices=[])
 
     def __init__(self, *args, guest, **kwargs):
         from guests.models import Guest
@@ -50,6 +56,11 @@ class RSVPForm(forms.Form):
             (Guest.RSVPStatus.ATTENDING, "Oui, avec joie"),
             (Guest.RSVPStatus.NOT_ATTENDING, "Non, je ne pourrai pas être présent(e)"),
         ]
+        self.fields["age_category"].choices = [
+            ("", "Sélectionnez une tranche d’âge"),
+            *Guest.AgeCategory.choices,
+        ]
+        self.initial["age_category"] = guest.age_category
         self.initial["status"] = (
             guest.rsvp_status if guest.rsvp_status != Guest.RSVPStatus.PENDING else ""
         )

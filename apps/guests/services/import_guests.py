@@ -72,6 +72,25 @@ def _normalized_email(value):
     return str(value or "").strip().casefold()
 
 
+def _parse_age_category(value):
+    normalized = normalize_identity(value)
+    aliases = {
+        normalize_identity("Bébé (0–2)"): Guest.AgeCategory.BABY,
+        normalize_identity("Bébé (0–2 ans)"): Guest.AgeCategory.BABY,
+        normalize_identity("Enfant (3–12)"): Guest.AgeCategory.CHILD,
+        normalize_identity("Enfant (3–12 ans)"): Guest.AgeCategory.CHILD,
+        normalize_identity("Adolescent (13–17)"): Guest.AgeCategory.TEENAGER,
+        normalize_identity("Adolescent (13–17 ans)"): Guest.AgeCategory.TEENAGER,
+        normalize_identity("Adulte (18–44)"): Guest.AgeCategory.ADULT,
+        normalize_identity("Adulte (18–44 ans)"): Guest.AgeCategory.ADULT,
+        normalize_identity("Adulte confirmé (45–59)"): Guest.AgeCategory.CONFIRMED_ADULT,
+        normalize_identity("Adulte confirmé (45–59 ans)"): Guest.AgeCategory.CONFIRMED_ADULT,
+        normalize_identity("Senior (60+)"): Guest.AgeCategory.SENIOR,
+        normalize_identity("Senior (60 ans et plus)"): Guest.AgeCategory.SENIOR,
+    }
+    return aliases.get(normalized)
+
+
 def _source_key(sheet_name, first_name, last_name):
     return f"{sheet_name}|{normalize_identity(first_name)}|{normalize_identity(last_name)}"
 
@@ -86,6 +105,7 @@ def _parse_row(sheet_name, row_number, raw):
     presence = str(data["Présence (P/A)"] or "").upper()
     city_hall = str(data["Mairie"] or "").casefold()
     gender = str(data["Genre"] or "").upper()
+    age_category = _parse_age_category(data["Catégorie d’âge"])
 
     if not first_name or not last_name:
         messages.append("Le nom et le prénom sont obligatoires.")
@@ -112,6 +132,8 @@ def _parse_row(sheet_name, row_number, raw):
         messages.append("La valeur Mairie doit être oui ou non.")
     if gender not in {"H", "F"}:
         messages.append("Le genre doit être H ou F.")
+    if age_category is None:
+        messages.append("La catégorie d’âge ne correspond pas aux tranches autorisées.")
 
     yes_no = {}
     for column in ["contact", "visa"]:
@@ -137,7 +159,7 @@ def _parse_row(sheet_name, row_number, raw):
         }.get(presence),
         "has_been_contacted": yes_no["contact"],
         "requires_visa": yes_no["visa"],
-        "age_category": str(data["Catégorie d’âge"] or ""),
+        "age_category": age_category,
         "origin_country": str(data["Origine"] or ""),
         "travel_origin_country": str(data["Provenance"] or ""),
         "gender": {

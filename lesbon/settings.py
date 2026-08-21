@@ -189,6 +189,10 @@ EMAIL_TIMEOUT = 10
 BREVO_API_KEY = env("BREVO_API_KEY")
 BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL", default="nous@leslieniboli.fr")
 BREVO_SENDER_NAME = env("BREVO_SENDER_NAME", default="Leslie & Bolivar")
+RSVP_NOTIFICATION_EMAILS = env.list(
+    "RSVP_NOTIFICATION_EMAILS",
+    default=[EMAIL_HOST_USER],
+)
 
 # optionnel si tu veux garder un from email cohérent ailleurs
 DEFAULT_FROM_EMAIL = f"{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>"

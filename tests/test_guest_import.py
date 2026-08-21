@@ -82,6 +82,7 @@ class GuestImportServiceTests(TestCase):
         self.assertEqual(batch.rows.get().matched_guest, guest)
         self.assertEqual(guest.invitation_kind, Guest.InvitationKind.COUPLE)
         self.assertEqual(guest.rsvp_status, Guest.RSVPStatus.ATTENDING)
+        self.assertEqual(guest.age_category, Guest.AgeCategory.ADULT)
         self.assertIsNone(guest.email)
         city_hall = guest.event_invitations.get(event__code=WeddingEvent.Code.CITY_HALL)
         self.assertFalse(city_hall.is_eligible)

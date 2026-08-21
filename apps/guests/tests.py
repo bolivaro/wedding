@@ -1,11 +1,13 @@
 from datetime import datetime, timezone as datetime_timezone
+from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 
 from .models import Guest, GuestEventInvitation, WeddingEvent
-from .services.companions import add_companion, deactivate_companion
+from .services.companions import add_companion, deactivate_companion, update_companion
+from .services.notifications import send_rsvp_notification
 from .services.rsvp import update_rsvp
 
 
@@ -69,15 +71,18 @@ class CompanionServiceTests(TestCase):
             first_name="Jean",
             last_name="Dupont",
             gender=Guest.Gender.MALE,
+            age_category=Guest.AgeCategory.ADULT,
         )
 
         self.assertEqual(companion.invitation_owner, primary)
+        self.assertEqual(companion.age_category, Guest.AgeCategory.ADULT)
         with self.assertRaises(ValidationError):
             add_companion(
                 primary_guest=primary,
                 first_name="Anne",
                 last_name="Dupont",
                 gender=Guest.Gender.FEMALE,
+                age_category=Guest.AgeCategory.ADULT,
             )
 
     def test_remove_companion_preserves_guest_record(self):
@@ -91,6 +96,7 @@ class CompanionServiceTests(TestCase):
             first_name="Jean",
             last_name="Dupont",
             gender=Guest.Gender.MALE,
+            age_category=Guest.AgeCategory.ADULT,
         )
 
         deactivate_companion(primary_guest=primary, companion=companion)
@@ -98,6 +104,65 @@ class CompanionServiceTests(TestCase):
         companion.refresh_from_db()
         self.assertFalse(companion.is_active)
         self.assertEqual(companion.rsvp_status, Guest.RSVPStatus.NOT_ATTENDING)
+
+    def test_update_existing_companion_preserves_record_and_event_invitations(self):
+        primary = Guest.objects.create(
+            first_name="Marie",
+            invitation_kind=Guest.InvitationKind.COUPLE,
+            party_size_limit=2,
+        )
+        event = WeddingEvent.objects.get(code=WeddingEvent.Code.CHURCH)
+        companion = Guest.objects.create(
+            first_name="Jean",
+            last_name="Dupont",
+            gender=Guest.Gender.MALE,
+            invitation_owner=primary,
+            age_category="",
+        )
+        invitation = GuestEventInvitation.objects.create(guest=companion, event=event)
+
+        updated = update_companion(
+            primary_guest=primary,
+            companion=companion,
+            first_name="Jeanne",
+            last_name="Dupont",
+            gender=Guest.Gender.FEMALE,
+            age_category=Guest.AgeCategory.SENIOR,
+        )
+
+        self.assertEqual(updated.pk, companion.pk)
+        self.assertEqual(updated.first_name, "Jeanne")
+        self.assertEqual(updated.age_category, Guest.AgeCategory.SENIOR)
+        self.assertTrue(
+            GuestEventInvitation.objects.filter(pk=invitation.pk, guest=updated).exists()
+        )
+
+
+class RSVPNotificationTests(TestCase):
+    @override_settings(RSVP_NOTIFICATION_EMAILS=["couple@example.com"])
+    @patch("guests.services.notifications.send_brevo_email")
+    def test_notification_contains_response_and_age_categories(self, send_email):
+        primary = Guest.objects.create(
+            first_name="Marie",
+            last_name="Dupont",
+            age_category=Guest.AgeCategory.CONFIRMED_ADULT,
+            rsvp_status=Guest.RSVPStatus.NOT_ATTENDING,
+        )
+        Guest.objects.create(
+            first_name="Léa",
+            last_name="Dupont",
+            age_category=Guest.AgeCategory.TEENAGER,
+            invitation_owner=primary,
+        )
+
+        send_rsvp_notification(guest=primary)
+
+        send_email.assert_called_once()
+        kwargs = send_email.call_args.kwargs
+        self.assertEqual(kwargs["to"], [{"email": "couple@example.com"}])
+        self.assertIn("Absence confirmée", kwargs["subject"])
+        self.assertIn("Adulte confirmé (45–59)", kwargs["text_content"])
+        self.assertIn("Adolescent (13–17)", kwargs["text_content"])
 
 
 class RSVPServiceTests(TestCase):
