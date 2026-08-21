@@ -4,8 +4,9 @@ from functools import wraps
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 from .forms import AccessRecoveryForm, CompanionForm, GuestEmailForm, RSVPForm
@@ -74,10 +75,14 @@ def access_invalid(request):
 
 @guest_access_required
 def rsvp_dashboard(request):
+    return render(request, "guests/rsvp_dashboard.html", _dashboard_context(request.guest))
+
+
+def _dashboard_context(guest, *, rsvp_form=None, companion_form=None, email_form=None):
     guest = Guest.objects.prefetch_related(
         "event_invitations__event",
         "companions",
-    ).get(pk=request.guest.pk)
+    ).get(pk=guest.pk)
     event_invitations = list(
         guest.event_invitations.select_related("event").filter(
             event__is_active=True,
@@ -95,9 +100,9 @@ def rsvp_dashboard(request):
     )
     context = {
         "guest": guest,
-        "rsvp_form": RSVPForm(guest=guest),
-        "companion_form": CompanionForm(),
-        "email_form": GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
+        "rsvp_form": rsvp_form if rsvp_form is not None else RSVPForm(guest=guest),
+        "companion_form": companion_form if companion_form is not None else CompanionForm(),
+        "email_form": email_form if email_form is not None else GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
         "event_invitations": event_invitations,
         "active_companions": guest.companions.filter(is_active=True),
         "rsvp_open": is_rsvp_open(),
@@ -105,7 +110,29 @@ def rsvp_dashboard(request):
         "deadline": settings.RSVP_DEADLINE,
         "support_email": settings.RSVP_SUPPORT_EMAIL,
     }
-    return render(request, "guests/rsvp_dashboard.html", context)
+    return context
+
+
+def _is_async_request(request):
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _fragment_response(request, *, guest, components, message, status=200, **forms):
+    context = _dashboard_context(guest, **forms)
+    templates = {
+        "rsvp": "guests/partials/rsvp_card.html",
+        "companions": "guests/partials/companions_card.html",
+        "email": "guests/partials/email_card.html",
+        "ticket": "guests/partials/ticket_callout.html",
+    }
+    fragments = {
+        component: render_to_string(templates[component], context, request=request)
+        for component in components
+    }
+    return JsonResponse(
+        {"ok": status < 400, "message": message, "fragments": fragments},
+        status=status,
+    )
 
 
 @require_POST
@@ -123,35 +150,34 @@ def rsvp_respond(request):
             for error in exc.messages:
                 form.add_error(None, error)
         else:
+            if _is_async_request(request):
+                return _fragment_response(
+                    request,
+                    guest=request.guest,
+                    components=("rsvp", "ticket"),
+                    message="Votre réponse a bien été enregistrée.",
+                )
             messages.success(request, "Votre réponse a bien été enregistrée.")
             return redirect("guests:rsvp_dashboard")
 
+    if _is_async_request(request):
+        return _fragment_response(
+            request,
+            guest=request.guest,
+            components=("rsvp",),
+            message="Certaines réponses doivent être corrigées.",
+            status=422,
+            rsvp_form=form,
+        )
     messages.error(request, "Certaines réponses doivent être corrigées.")
     return _render_dashboard_with_form(request, form)
 
 
 def _render_dashboard_with_form(request, form):
-    guest = Guest.objects.prefetch_related("event_invitations__event", "companions").get(
-        pk=request.guest.pk
-    )
     return render(
         request,
         "guests/rsvp_dashboard.html",
-        {
-            "guest": guest,
-            "rsvp_form": form,
-            "companion_form": CompanionForm(),
-            "email_form": GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
-            "event_invitations": guest.event_invitations.select_related("event").filter(
-                event__is_active=True,
-                event__requires_rsvp=True,
-            ),
-            "active_companions": guest.companions.filter(is_active=True),
-            "rsvp_open": is_rsvp_open(),
-            "rsvp_complete": False,
-            "deadline": settings.RSVP_DEADLINE,
-            "support_email": settings.RSVP_SUPPORT_EMAIL,
-        },
+        _dashboard_context(request.guest, rsvp_form=form),
         status=400,
     )
 
@@ -164,11 +190,31 @@ def companion_add(request):
         try:
             add_companion(primary_guest=request.guest, **form.cleaned_data)
         except ValidationError as exc:
-            messages.error(request, "; ".join(exc.messages))
+            for error in exc.messages:
+                form.add_error(None, error)
         else:
+            if _is_async_request(request):
+                return _fragment_response(
+                    request,
+                    guest=request.guest,
+                    components=("companions", "ticket"),
+                    message="L'accompagnant a été ajouté.",
+                )
             messages.success(request, "L'accompagnant a été ajouté.")
-    else:
-        messages.error(request, "Les informations de l'accompagnant sont invalides.")
+            return redirect("guests:rsvp_dashboard")
+    if _is_async_request(request):
+        return _fragment_response(
+            request,
+            guest=request.guest,
+            components=("companions",),
+            message="Les informations de l'accompagnant sont invalides.",
+            status=422,
+            companion_form=form,
+        )
+    messages.error(
+        request,
+        "; ".join(form.non_field_errors()) or "Les informations de l'accompagnant sont invalides.",
+    )
     return redirect("guests:rsvp_dashboard")
 
 
@@ -184,8 +230,23 @@ def companion_remove(request, companion_id):
     try:
         deactivate_companion(primary_guest=request.guest, companion=companion)
     except ValidationError as exc:
+        if _is_async_request(request):
+            return _fragment_response(
+                request,
+                guest=request.guest,
+                components=("companions",),
+                message="; ".join(exc.messages),
+                status=422,
+            )
         messages.error(request, "; ".join(exc.messages))
     else:
+        if _is_async_request(request):
+            return _fragment_response(
+                request,
+                guest=request.guest,
+                components=("companions", "ticket"),
+                message="L'accompagnant a été retiré.",
+            )
         messages.success(request, "L'accompagnant a été retiré.")
     return redirect("guests:rsvp_dashboard")
 
@@ -194,7 +255,16 @@ def companion_remove(request, companion_id):
 @guest_access_required
 def email_update(request):
     if not is_rsvp_open():
-        messages.error(request, "La date limite est dépassée. Contactez-nous pour modifier votre email.")
+        message = "La date limite est dépassée. Contactez-nous pour modifier votre email."
+        if _is_async_request(request):
+            return _fragment_response(
+                request,
+                guest=request.guest,
+                components=("email",),
+                message=message,
+                status=422,
+            )
+        messages.error(request, message)
         return redirect("guests:rsvp_dashboard")
     form = GuestEmailForm(request.POST)
     if form.is_valid():
@@ -205,14 +275,40 @@ def email_update(request):
             )
             send_email_verification(issued_token=issued)
         except ValidationError as exc:
-            messages.error(request, "; ".join(exc.messages))
+            for error in exc.messages:
+                form.add_error(None, error)
         except Exception:
             logger.exception("Impossible d'envoyer la vérification email du guest %s", request.guest.pk)
+            if _is_async_request(request):
+                return _fragment_response(
+                    request,
+                    guest=request.guest,
+                    components=("email",),
+                    message="L'email n'a pas pu être envoyé. Merci de réessayer.",
+                    status=502,
+                )
             messages.error(request, "L'email n'a pas pu être envoyé. Merci de réessayer.")
+            return redirect("guests:rsvp_dashboard")
         else:
+            if _is_async_request(request):
+                return _fragment_response(
+                    request,
+                    guest=request.guest,
+                    components=("email",),
+                    message="Un lien de vérification vient de vous être envoyé.",
+                )
             messages.success(request, "Un lien de vérification vient de vous être envoyé.")
-    else:
-        messages.error(request, "Saisissez une adresse email valide.")
+            return redirect("guests:rsvp_dashboard")
+    if _is_async_request(request):
+        return _fragment_response(
+            request,
+            guest=request.guest,
+            components=("email",),
+            message="Saisissez une adresse email valide.",
+            status=422,
+            email_form=form,
+        )
+    messages.error(request, "; ".join(form.non_field_errors()) or "Saisissez une adresse email valide.")
     return redirect("guests:rsvp_dashboard")
 
 

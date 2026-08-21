@@ -67,6 +67,10 @@ class RSVPViewsTests(TestCase):
         self.assertContains(response, reverse("website:stay"))
         self.assertContains(response, "Mon RSVP")
         self.assertContains(response, 'data-menu-toggle')
+        self.assertContains(response, 'data-async-feedback')
+        self.assertContains(response, 'aria-live="polite"')
+        self.assertContains(response, 'data-async-dashboard="2"')
+        self.assertContains(response, '?v=async-rsvp-2')
 
     def test_rsvp_post_passes_real_csrf_origin_check(self):
         client = Client(enforce_csrf_checks=True)
@@ -139,6 +143,42 @@ class RSVPViewsTests(TestCase):
             Guest.RSVPStatus.ATTENDING,
         )
 
+    def test_rsvp_can_update_only_affected_fragments_asynchronously(self):
+        self.login_guest()
+
+        response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "status": Guest.RSVPStatus.ATTENDING,
+                "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(set(payload["fragments"]), {"rsvp", "ticket"})
+        self.assertIn("Présent", payload["fragments"]["rsvp"])
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.rsvp_status, Guest.RSVPStatus.ATTENDING)
+
+    def test_async_rsvp_validation_preserves_submitted_component(self):
+        self.login_guest()
+
+        response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {"status": Guest.RSVPStatus.ATTENDING},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        payload = response.json()
+        self.assertFalse(payload["ok"])
+        self.assertEqual(set(payload["fragments"]), {"rsvp"})
+        self.assertIn("Choisissez une réponse", payload["fragments"]["rsvp"])
+
     def test_cocktail_is_in_program_data_but_not_a_separate_rsvp_question(self):
         self.login_guest()
 
@@ -156,6 +196,28 @@ class RSVPViewsTests(TestCase):
         self.client.post(reverse("guests:companion_add"), data)
 
         self.assertEqual(self.guest.companions.filter(is_active=True).count(), 1)
+
+    def test_companion_add_and_remove_can_refresh_fragments_asynchronously(self):
+        self.login_guest()
+        response = self.client.post(
+            reverse("guests:companion_add"),
+            {"gender": Guest.Gender.MALE, "first_name": "Jean", "last_name": "Dupont"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Jean Dupont", response.json()["fragments"]["companions"])
+        companion = self.guest.companions.get(first_name="Jean")
+
+        response = self.client.post(
+            reverse("guests:companion_remove", kwargs={"companion_id": companion.pk}),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Jean Dupont", response.json()["fragments"]["companions"])
+        companion.refresh_from_db()
+        self.assertFalse(companion.is_active)
 
     def test_ticket_preview_requires_completed_event_answers(self):
         self.login_guest()
@@ -201,6 +263,22 @@ class RSVPViewsTests(TestCase):
         self.guest.refresh_from_db()
         self.assertIsNone(self.guest.email)
         self.assertEqual(self.guest.pending_email, "marie@example.com")
+        send_verification.assert_called_once()
+
+    @patch("guests.views.send_email_verification")
+    def test_email_verification_can_refresh_its_component_asynchronously(self, send_verification):
+        self.login_guest()
+
+        response = self.client.post(
+            reverse("guests:email_update"),
+            {"email": "marie@example.com"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(set(payload["fragments"]), {"email"})
+        self.assertIn("marie@example.com", payload["fragments"]["email"])
         send_verification.assert_called_once()
 
 
