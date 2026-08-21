@@ -178,6 +178,12 @@ class GuestAccessAdminActionTests(TestCase):
             GuestAccessCredential.objects.filter(guest=self.companion).exists()
         )
 
+    def test_admin_uses_wedding_favicon(self):
+        response = self.client.get(reverse("admin:index"))
+
+        self.assertContains(response, "website/images/favicon.svg")
+        self.assertContains(response, 'rel="icon"')
+
     @override_settings(
         WEDDING_DATE=date(2026, 10, 17),
         RSVP_DEADLINE=datetime.fromisoformat("2026-09-15T23:59:00+02:00"),
