@@ -17,6 +17,7 @@ from .models import (
 )
 from .services.import_guests import analyze_batch, apply_batch, upload_checksum
 from .services.access import issue_guest_access, start_guest_session
+from .services.invitation_messages import build_invitation_share_text
 from .services.ticket import TicketGenerationError, generate_ticket
 
 
@@ -87,6 +88,9 @@ class GuestAdmin(admin.ModelAdmin):
     actions = ["regenerate_rsvp_access", "generate_selected_tickets"]
     list_select_related = ("invitation_owner",)
 
+    class Media:
+        js = ("guests/js/admin_invitation_share.js",)
+
     @admin.display(description="Accès RSVP")
     def access_status(self, obj):
         if obj.invitation_owner_id:
@@ -105,9 +109,14 @@ class GuestAdmin(admin.ModelAdmin):
         if not credential.is_usable(timezone.now()):
             return "Expiré, révoqué ou verrouillé"
         return format_html(
-            "Valide jusqu'au {} · <a href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir RSVP ↗</a>",
+            (
+                "Valide jusqu'au {} · "
+                "<a href=\"{}\" target=\"_blank\" rel=\"noopener\">Ouvrir RSVP ↗</a> · "
+                "<a href=\"{}\">Renouveler et partager</a>"
+            ),
             credential.expires_at.strftime("%d/%m/%Y"),
             reverse("admin:guests_guest_open_rsvp", kwargs={"guest_id": obj.pk}),
+            reverse("admin:guests_guest_renew_share", kwargs={"guest_id": obj.pk}),
         )
 
     @admin.display(description="Accès rapide au RSVP")
@@ -173,12 +182,29 @@ class GuestAdmin(admin.ModelAdmin):
             )
             links.append((guest.full_name, request.build_absolute_uri(path)))
         if links:
+            share_text = build_invitation_share_text()
             self.message_user(
                 request,
                 format_html_join(
                     "<br>",
-                    "{} : <a href=\"{}\">{}</a>",
-                    ((name, url, url) for name, url in links),
+                    (
+                        "{} : <a href=\"{}\">{}</a> "
+                        "<button type=\"button\" class=\"button\" "
+                        "data-invitation-share data-share-title=\"{}\" "
+                        "data-share-text=\"{}\" data-share-url=\"{}\">"
+                        "Partager l’invitation</button>"
+                    ),
+                    (
+                        (
+                            name,
+                            url,
+                            url,
+                            "Mariage de Leslie & Bolivar",
+                            share_text,
+                            url,
+                        )
+                        for name, url in links
+                    ),
                 ),
                 level=messages.WARNING,
             )
@@ -249,6 +275,11 @@ class GuestAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.open_rsvp_view),
                 name="guests_guest_open_rsvp",
             ),
+            path(
+                "<int:guest_id>/renew-share/",
+                self.admin_site.admin_view(self.renew_share_view),
+                name="guests_guest_renew_share",
+            ),
         ]
         return custom_urls + super().get_urls()
 
@@ -271,6 +302,42 @@ class GuestAdmin(admin.ModelAdmin):
             return redirect("admin:guests_guest_change", object_id=owner.pk)
         start_guest_session(request, credential)
         return redirect("guests:rsvp_dashboard")
+
+    def renew_share_view(self, request, guest_id):
+        guest = get_object_or_404(
+            Guest.objects.select_related("invitation_owner"),
+            pk=guest_id,
+            invitation_owner__isnull=True,
+            is_active=True,
+        )
+        if not self.has_change_permission(request, guest):
+            from django.core.exceptions import PermissionDenied
+
+            raise PermissionDenied
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "guest": guest,
+            "title": "Renouveler et partager l’invitation",
+        }
+        if request.method == "POST":
+            issued = issue_guest_access(guest=guest, created_by=request.user)
+            path = reverse(
+                "guests:access_entry",
+                kwargs={
+                    "selector": issued.credential.selector,
+                    "secret": issued.secret,
+                },
+            )
+            context.update(
+                {
+                    "invitation_url": request.build_absolute_uri(path),
+                    "share_title": "Mariage de Leslie & Bolivar",
+                    "share_text": build_invitation_share_text(),
+                }
+            )
+        return render(request, "admin/guests/guest/renew_share.html", context)
 
     def _ensure_import_permission(self, request):
         if not self.has_change_permission(request):
