@@ -65,6 +65,11 @@ class PublicWebsiteTests(TestCase):
         response = self.client.get(reverse("website:stay"))
         self.assertNotContains(response, "Brouillon secret")
 
+    def test_lodging_address_is_hidden_until_selected(self):
+        response = self.client.get(reverse("website:stay"))
+        self.assertContains(response, 'class="address-field" data-address-field hidden')
+        self.assertContains(response, 'name="origin-kind" value="position" checked')
+
     @override_settings(GUEST_ACCESS_LIFETIME_DAYS=120)
     def test_private_session_changes_invitation_link_and_prefills_events(self):
         guest = Guest.objects.create(first_name="Amina")

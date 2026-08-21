@@ -15,6 +15,7 @@ html[data-theme='dark'] {
   :root:not([data-theme='light']) { color-scheme: dark; --bg: #211d1a; --surface: #2d2723; --surface-soft: #3a3029; --text: #f5ece1; --muted: #c8b9aa; --border: #51443a; --primary: #d78660; --primary-hover: #e59b76; --primary-text: #211813; --sand: #b99464; --mustard: #d2a94e; --green: #9fbea4; --shadow: 0 20px 55px rgb(0 0 0 / 25%); }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-height) + 20px); }
 body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--text); background: var(--bg); font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 body::before { position: fixed; inset: 0; z-index: -1; content: ""; pointer-events: none; background: radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--sand) 18%, transparent), transparent 26rem), radial-gradient(circle at 92% 32%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 30rem); }
