@@ -214,6 +214,7 @@ class WeddingEvent(models.Model):
     venue_name = models.CharField("lieu", max_length=200, blank=True)
     address = models.CharField("adresse", max_length=255, blank=True)
     map_url = models.URLField("lien cartographique", max_length=1000, blank=True)
+    description = models.TextField("description courte", max_length=500, blank=True)
     icon = models.CharField(
         "pictogramme",
         max_length=20,

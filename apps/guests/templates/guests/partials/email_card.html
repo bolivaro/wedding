@@ -1,0 +1,11 @@
+<section class="card" data-dashboard-component="email">
+  <div class="section-heading"><div><p class="eyebrow">Étape 3</p><h2>Votre email</h2></div>{% if guest.email_verified_at %}<span class="verified">Vérifié</span>{% endif %}</div>
+  <p class="muted">Cette adresse permettra de recevoir les informations utiles et, plus tard, votre billet.</p>
+  {% if guest.pending_email %}<p class="notice-inline">Vérification en attente pour <strong>{{ guest.pending_email }}</strong>.</p>{% endif %}
+  <form class="compact-form" method="post" action="{% url 'guests:email_update' %}" data-async-form>
+    {% csrf_token %}
+    {{ email_form.non_field_errors }}
+    <div class="field"><label for="{{ email_form.email.id_for_label }}">{{ email_form.email.label }}</label>{{ email_form.email }}{{ email_form.email.errors }}</div>
+    {% if rsvp_open %}<button class="button button-secondary" type="submit" data-loading-label="Envoi…">Vérifier mon email</button>{% endif %}
+  </form>
+</section>

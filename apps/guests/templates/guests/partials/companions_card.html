@@ -1,0 +1,23 @@
+<section class="card" data-dashboard-component="companions">
+  <div class="section-heading"><div><p class="eyebrow">Étape 2</p><h2>Vos accompagnants</h2></div><span class="counter-pill">{{ active_companions|length }} / {{ guest.companion_limit }}</span></div>
+  {% if active_companions %}
+  <div class="companion-list">
+    {% for companion in active_companions %}
+    <div class="companion-row"><div class="avatar">{{ companion.first_name|first }}{{ companion.last_name|first }}</div><div><strong>{{ companion.salutation }} {{ companion.full_name }}</strong><span>Accompagnant</span></div>
+      {% if rsvp_open %}<form method="post" action="{% url 'guests:companion_remove' companion.pk %}" data-async-form data-confirm="Retirer {{ companion.first_name }} de votre invitation ?">{% csrf_token %}<button class="button-link danger" type="submit" data-loading-label="Retrait…">Retirer</button></form>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="muted">Aucun accompagnant renseigné.</p>{% endif %}
+
+  {% if rsvp_open and active_companions|length < guest.companion_limit %}
+  <form class="compact-form" method="post" action="{% url 'guests:companion_add' %}" data-async-form>
+    {% csrf_token %}
+    {{ companion_form.non_field_errors }}
+    <div class="form-grid">
+      {% for field in companion_form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+    </div>
+    <button class="button button-secondary" type="submit" data-loading-label="Ajout…">Ajouter cet accompagnant</button>
+  </form>
+  {% elif guest.companion_limit == 0 %}<p class="muted">Votre invitation est individuelle.</p>{% endif %}
+</section>

@@ -20,9 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.setInterval(renderCountdown, 1000);
   }
 
-  const form = document.querySelector('[data-rsvp-form]');
-  const events = document.querySelector('[data-events-fieldset]');
-  if (form && events) {
+  const syncRsvpVisibility = () => {
+    const form = document.querySelector('[data-rsvp-form]');
+    const events = form?.querySelector('[data-events-fieldset]');
+    if (!form || !events) return;
     const syncEvents = () => {
       const status = form.querySelector("input[name='status']:checked")?.value;
       events.hidden = status === 'not_attending';
@@ -34,5 +35,96 @@ document.addEventListener('DOMContentLoaded', () => {
       input.addEventListener('change', syncEvents);
     });
     syncEvents();
-  }
+  };
+
+  const feedback = document.querySelector('[data-async-feedback]');
+  let feedbackTimer;
+  const dismissFeedback = () => {
+    window.clearTimeout(feedbackTimer);
+    if (!feedback) return;
+    feedback.hidden = true;
+    feedback.replaceChildren();
+  };
+  const announce = (message, success) => {
+    if (!feedback) return;
+    window.clearTimeout(feedbackTimer);
+    feedback.hidden = false;
+    const notice = document.createElement('div');
+    notice.className = `message async-toast message-${success ? 'success' : 'error'}`;
+    notice.setAttribute('role', success ? 'status' : 'alert');
+    const copy = document.createElement('span');
+    copy.textContent = message;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'async-toast-close';
+    close.setAttribute('aria-label', 'Fermer la notification');
+    close.textContent = '×';
+    close.addEventListener('click', dismissFeedback);
+    notice.append(copy, close);
+    feedback.replaceChildren(notice);
+    feedbackTimer = window.setTimeout(dismissFeedback, success ? 6000 : 10000);
+  };
+
+  const replaceFragments = (fragments) => {
+    const scrollPosition = { left: window.scrollX, top: window.scrollY };
+    Object.entries(fragments || {}).forEach(([name, html]) => {
+      const current = document.querySelector(`[data-dashboard-component='${name}']`);
+      if (!current) return;
+      const template = document.createElement('template');
+      template.innerHTML = html.trim();
+      const replacement = template.content.firstElementChild;
+      if (replacement) current.replaceWith(replacement);
+    });
+    syncRsvpVisibility();
+    window.requestAnimationFrame(() => {
+      window.scrollTo(scrollPosition.left, scrollPosition.top);
+    });
+  };
+
+  document.addEventListener('submit', async (event) => {
+    const form = event.target.closest('[data-async-form]');
+    if (!form || !window.fetch) return;
+    event.preventDefault();
+
+    if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) return;
+    if (form.dataset.submitting === 'true') return;
+
+    const submitButton = event.submitter || form.querySelector("button[type='submit']");
+    const originalLabel = submitButton?.textContent;
+    form.dataset.submitting = 'true';
+    form.setAttribute('aria-busy', 'true');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = submitButton.dataset.loadingLabel || 'Envoi…';
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      if (response.redirected) {
+        window.location.assign(response.url);
+        return;
+      }
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) throw new Error('Réponse serveur inattendue');
+      const payload = await response.json();
+      replaceFragments(payload.fragments);
+      announce(payload.message || (response.ok ? 'Modification enregistrée.' : 'La modification a échoué.'), response.ok && payload.ok);
+    } catch (error) {
+      announce('La modification n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.', false);
+    } finally {
+      form.dataset.submitting = 'false';
+      form.removeAttribute('aria-busy');
+      if (submitButton?.isConnected) {
+        submitButton.disabled = false;
+        submitButton.textContent = originalLabel;
+      }
+    }
+  });
+
+  syncRsvpVisibility();
 });

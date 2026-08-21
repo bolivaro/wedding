@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'guests/js/admin_invitation_share.js' %}" defer></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Accueil</a>
+  &rsaquo; <a href="{% url 'admin:guests_guest_changelist' %}">Invités</a>
+  &rsaquo; Renouveler et partager
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <div class="module">
+    <h2>{{ guest.full_name }}</h2>
+    {% if invitation_url %}
+      <p class="success">Le nouvel accès est prêt. Tout lien RSVP précédent de cet invité est désormais invalide.</p>
+      <p><a href="{{ invitation_url }}" target="_blank" rel="noopener">{{ invitation_url }}</a></p>
+      <p>
+        <button
+          type="button"
+          class="button default"
+          data-invitation-share
+          data-share-title="{{ share_title }}"
+          data-share-text="{{ share_text }}"
+          data-share-url="{{ invitation_url }}"
+        >Partager l’invitation</button>
+      </p>
+      <p><a href="{% url 'admin:guests_guest_changelist' %}">Retour à la liste des invités</a></p>
+    {% else %}
+      <p class="warning">
+        Cette opération va créer un nouveau lien personnel et invalider immédiatement
+        tout lien RSVP précédemment généré pour cet invité.
+      </p>
+      <p>Assurez-vous que l’ancien lien n’est plus nécessaire avant de continuer.</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="submit-row">
+          <input type="submit" class="default" value="Renouveler le lien">
+          <a class="closelink" href="{% url 'admin:guests_guest_changelist' %}">Annuler</a>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

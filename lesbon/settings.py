@@ -25,6 +25,8 @@ WEDDING_DRESS_CODE_URL = env(
     "WEDDING_DRESS_CODE_URL",
     default=f"{SITE_BASE_URL.rstrip('/')}/dress-code/",
 )
+GOOGLE_MAPS_EMBED_API_KEY = env("GOOGLE_MAPS_EMBED_API_KEY", default="")
+GOOGLE_MY_MAPS_EMBED_URL = env("GOOGLE_MY_MAPS_EMBED_URL", default="")
 RSVP_DEADLINE = datetime.fromisoformat(
     env("RSVP_DEADLINE", default="2026-09-15T23:59:59+02:00")
 )
@@ -86,6 +88,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "guests",
     "specialdemands",
+    "website",
 ]
 
 MIDDLEWARE = [
@@ -104,7 +107,7 @@ ROOT_URLCONF = "lesbon.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

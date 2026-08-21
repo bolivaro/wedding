@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
@@ -178,6 +178,33 @@ class GuestAccessAdminActionTests(TestCase):
             GuestAccessCredential.objects.filter(guest=self.companion).exists()
         )
 
+    def test_admin_uses_wedding_favicon(self):
+        response = self.client.get(reverse("admin:index"))
+
+        self.assertContains(response, "website/images/favicon.svg")
+        self.assertContains(response, 'rel="icon"')
+
+    @override_settings(
+        WEDDING_DATE=date(2026, 10, 17),
+        RSVP_DEADLINE=datetime.fromisoformat("2026-09-15T23:59:00+02:00"),
+    )
+    def test_generated_access_offers_native_share_message(self):
+        response = self.client.post(
+            reverse("admin:guests_guest_changelist"),
+            {
+                "action": "regenerate_rsvp_access",
+                "_selected_action": [self.primary.pk],
+            },
+            follow=True,
+        )
+
+        self.assertContains(response, "data-invitation-share")
+        self.assertContains(response, "Partager l’invitation")
+        self.assertContains(response, "Leslie &amp; Bolivar ont l’immense plaisir")
+        self.assertContains(response, "17 octobre 2026")
+        self.assertContains(response, "15 septembre 2026")
+        self.assertContains(response, "guests/js/admin_invitation_share.js")
+
     def test_admin_opens_existing_rsvp_without_regenerating_access(self):
         issued = issue_guest_access(guest=self.primary, created_by=self.admin_user)
         initial_count = GuestAccessCredential.objects.filter(guest=self.primary).count()
@@ -230,6 +257,35 @@ class GuestAccessAdminActionTests(TestCase):
         response = self.client.get(reverse("admin:guests_guest_changelist"))
 
         self.assertContains(response, "Ouvrir RSVP")
+        self.assertContains(response, "Renouveler et partager")
+
+    def test_renew_share_requires_confirmation_and_revokes_previous_access(self):
+        previous = issue_guest_access(guest=self.primary, created_by=self.admin_user)
+        renew_url = reverse(
+            "admin:guests_guest_renew_share",
+            kwargs={"guest_id": self.primary.pk},
+        )
+
+        confirmation = self.client.get(renew_url)
+
+        self.assertContains(confirmation, "invalider immédiatement")
+        previous.credential.refresh_from_db()
+        self.assertIsNone(previous.credential.revoked_at)
+
+        result = self.client.post(renew_url)
+
+        self.assertContains(result, "Le nouvel accès est prêt")
+        self.assertContains(result, "data-invitation-share")
+        self.assertContains(result, "Partager l’invitation")
+        previous.credential.refresh_from_db()
+        self.assertIsNotNone(previous.credential.revoked_at)
+        self.assertEqual(
+            GuestAccessCredential.objects.filter(
+                guest=self.primary,
+                revoked_at__isnull=True,
+            ).count(),
+            1,
+        )
 
     def test_guest_changelist_displays_public_qr_test_link(self):
         response = self.client.get(reverse("admin:guests_guest_changelist"))

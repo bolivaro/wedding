@@ -1,0 +1,4 @@
+<section class="card ticket-callout" data-dashboard-component="ticket">
+  <div><p class="eyebrow">Billet</p><h2>Votre billet de groupe</h2><p class="muted">Un JPG ou PDF unique réunit tous les membres de votre invitation autour d'un seul QR.</p></div>
+  {% if rsvp_complete %}<a class="button button-primary" href="{% url 'guests:ticket_preview' %}">Gérer mon billet</a>{% else %}<span class="lock-label">Disponible après le RSVP complet</span>{% endif %}
+</section>
