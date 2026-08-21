@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageColor
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -16,6 +16,7 @@ from guests.models import Guest, GuestEventInvitation, Ticket, WeddingEvent
 from guests.services.access import issue_guest_access
 from guests.services.notifications import send_ticket_email
 from guests.services.ticket import (
+    DRESS_CODE_PALETTES,
     PROGRAM_ICON_ASSETS,
     _make_qr_image,
     _paste_event_icon,
@@ -186,6 +187,30 @@ class TicketGenerationTests(TestCase):
         with Image.open(io.BytesIO(content)) as image:
             self.assertEqual(image.format, "JPEG")
             self.assertEqual(image.size, (1796, 2528))
+
+    def test_information_page_uses_current_dress_code_palette(self):
+        self.assertEqual(
+            DRESS_CODE_PALETTES,
+            (
+                ("Terre brûlée", (("Brique", "#C04657"), ("Brun clair", "#C8A27A"))),
+                ("Vert nature", (("Olive", "#6F7050"), ("Vert nature", "#3F5545"))),
+                ("Sable doré", (("Beige sable", "#D6C3A5"), ("Moutarde", "#C89A2B"))),
+                ("Gris élégant", (("Perle", "#B8B3AA"), ("Anthracite", "#4B4B49"))),
+            ),
+        )
+
+        with Image.open(io.BytesIO(build_information_jpg())) as image:
+            for palette_index, (_, shades) in enumerate(DRESS_CODE_PALETTES):
+                row, column = divmod(palette_index, 2)
+                for shade_index, (_, color) in enumerate(shades):
+                    actual = image.getpixel(
+                        (335 + column * 680 + shade_index * 290, 1762 + row * 155)
+                    )
+                    expected = ImageColor.getrgb(color)
+                    self.assertLessEqual(
+                        max(abs(channel - target) for channel, target in zip(actual, expected)),
+                        12,
+                    )
 
     def test_qr_payload_is_opaque_and_stable_when_identity_changes(self):
         initial_payload = qr_payload(self.primary)

@@ -80,6 +80,13 @@ class PublicWebsiteTests(TestCase):
         )
         response = self.client.get(reverse("website:stay"))
         self.assertNotContains(response, "Brouillon secret")
+        self.assertNotContains(response, "Notre sélection vérifiée sera publiée prochainement.")
+
+    def test_public_footer_has_compact_ampersands(self):
+        response = self.client.get(reverse("website:home"))
+
+        self.assertContains(response, "L<i>&amp;</i>B")
+        self.assertContains(response, "Leslie&amp;Bolivar")
 
     def test_lodging_address_is_hidden_until_selected(self):
         response = self.client.get(reverse("website:stay"))
