@@ -21,9 +21,14 @@ INFO_BACKGROUND = "#FFEEEC"
 INFO_TERRACOTTA = "#B12200"
 INFO_TERRACOTTA_DARK = "#781700"
 INFO_GOLD = "#CD9241"
-INFO_MUSTARD = "#D39B15"
 INFO_TEXT = "#4B4035"
-INFO_WARM_GRAY = "#6B625D"
+
+DRESS_CODE_PALETTES = (
+    ("Terre brûlée", (("Brique", "#C04657"), ("Brun clair", "#C8A27A"))),
+    ("Vert nature", (("Olive", "#6F7050"), ("Vert nature", "#3F5545"))),
+    ("Sable doré", (("Beige sable", "#D6C3A5"), ("Moutarde", "#C89A2B"))),
+    ("Gris élégant", (("Perle", "#B8B3AA"), ("Anthracite", "#4B4B49"))),
+)
 
 PROGRAM_ICON_ASSETS = {
     WeddingEvent.EventIcon.CITY_HALL: {
@@ -150,6 +155,8 @@ def _render_signature(guest):
         "wedding_date": settings.WEDDING_DATE.isoformat(),
         "program_url": settings.WEDDING_PROGRAM_URL,
         "dress_code_url": settings.WEDDING_DRESS_CODE_URL,
+        "dress_code_palettes": DRESS_CODE_PALETTES,
+        "information_layout_version": 3,
         "program": _program_snapshot(),
         "program_icon_assets": _program_icon_assets_snapshot(),
     }
@@ -568,37 +575,41 @@ def _render_information_image(events=None):
         fill=INFO_TEXT,
     )
     draw.text((220, 1640), "Aperçu de la palette", font=font(35), fill=INFO_GOLD)
-    swatches = (
-        ("Terracotta", INFO_TERRACOTTA),
-        ("Sable doré", INFO_GOLD),
-        ("Moutarde", INFO_MUSTARD),
-        ("Blanc cassé", INFO_BACKGROUND),
-        ("Gris chaud", INFO_WARM_GRAY),
-    )
-    for index, (label, color) in enumerate(swatches):
-        left = 220 + index * 268
-        swatch_box = (left, 1720, left + 190, 1875)
-        draw.rounded_rectangle(
-            swatch_box,
-            radius=24,
-            fill=color,
-            outline=INFO_TERRACOTTA_DARK if color == INFO_BACKGROUND else color,
-            width=3,
-        )
-        label_font = font(28)
-        label_bounds = draw.textbbox((0, 0), label, font=label_font)
+    for palette_index, (palette_name, shades) in enumerate(DRESS_CODE_PALETTES):
+        row, column = divmod(palette_index, 2)
+        group_left = 220 + column * 680
+        group_top = 1690 + row * 155
         draw.text(
-            (left + 95 - (label_bounds[2] - label_bounds[0]) / 2, 1900),
-            label,
-            font=label_font,
-            fill=INFO_TEXT,
+            (group_left, group_top),
+            palette_name,
+            font=title(29),
+            fill=INFO_TERRACOTTA_DARK,
         )
+        for shade_index, (label, color) in enumerate(shades):
+            left = group_left + shade_index * 290
+            swatch_top = group_top + 43
+            swatch_box = (left, swatch_top, left + 230, swatch_top + 58)
+            draw.rounded_rectangle(
+                swatch_box,
+                radius=18,
+                fill=color,
+                outline=color,
+                width=3,
+            )
+            label_font = font(23)
+            label_bounds = draw.textbbox((0, 0), label, font=label_font)
+            draw.text(
+                (left + 115 - (label_bounds[2] - label_bounds[0]) / 2, swatch_top + 66),
+                label,
+                font=label_font,
+                fill=INFO_TEXT,
+            )
     _centered_text(
         draw,
         width=width,
-        y=1970,
-        text="La page complète du dress code sera publiée prochainement.",
-        font=title(30),
+        y=2005,
+        text="Retrouvez les inspirations de tenues sur la page Dress code.",
+        font=title(28),
         fill=INFO_TEXT,
     )
 
