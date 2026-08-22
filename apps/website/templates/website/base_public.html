@@ -20,7 +20,7 @@
       {% block content %}{% endblock %}
     </main>
     <footer class="public-footer">
-      <div><span class="footer-mark">L<i>&amp;</i>B</span><p>Avec affection, Leslie&amp;Bolivar</p></div>
+      <div><span class="footer-mark">L<i>&amp;</i>B</span><p>Avec affection, Leslie&amp;Bolivar · Version {{ application_version }}</p></div>
       <nav aria-label="Navigation de pied de page"><a href="{% url 'website:program' %}">Programme</a><a href="{% url 'website:dress_code' %}">Dress code</a><a href="{% url 'website:stay' %}">Séjour</a></nav>
     </footer>
     {% block scripts %}{% endblock %}

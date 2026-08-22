@@ -193,7 +193,7 @@ class TicketGenerationTests(TestCase):
             DRESS_CODE_PALETTES,
             (
                 ("Terre brûlée", (("Brique", "#C04657"), ("Brun clair", "#C8A27A"))),
-                ("Vert nature", (("Olive", "#6F7050"), ("Vert nature", "#3F5545"))),
+                ("Verdoyant", (("Olive", "#6F7050"), ("Vert nature", "#3F5545"))),
                 ("Sable doré", (("Beige sable", "#D6C3A5"), ("Moutarde", "#C89A2B"))),
                 ("Gris élégant", (("Perle", "#B8B3AA"), ("Anthracite", "#4B4B49"))),
             ),

@@ -21,7 +21,7 @@ DRESS_CODE_THEMES = [
     },
     {
         "slug": "vert-nature",
-        "name": "Vert nature",
+        "name": "Verdoyant",
         "subtitle": "Olive · Vert nature",
         "description": "Une palette végétale, élégante et facile à associer aux tons naturels.",
         "swatches": [("Olive", "#6F7050"), ("Vert nature", "#3F5545")],
