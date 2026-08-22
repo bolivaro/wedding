@@ -84,6 +84,14 @@ button, input, select { font: inherit; }
 .status-pill, .counter-pill, .verified, .lock-label { display: inline-flex; align-items: center; min-height: 30px; padding: 4px 11px; border-radius: 999px; background: var(--surface-soft); color: var(--muted); font-size: .76rem; font-weight: 750; white-space: nowrap; }
 .status-attending, .verified { color: var(--success); }
 .status-not_attending { color: var(--danger); }
+.rsvp-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.rsvp-summary > div { padding: 14px 16px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.rsvp-summary span, .rsvp-summary strong { display: block; }
+.rsvp-summary span { color: var(--muted); font-size: .78rem; }
+.rsvp-summary p { grid-column: 1 / -1; margin: 2px 0 0; color: var(--muted); font-size: .82rem; }
+.rsvp-editor { margin-top: 18px; }
+.rsvp-editor > summary { width: fit-content; padding: 10px 18px; color: var(--text); background: var(--surface-soft); border: 1px solid var(--border); border-radius: 999px; font-weight: 750; cursor: pointer; }
+.rsvp-editor[open] > summary { margin-bottom: 24px; }
 fieldset { padding: 0; margin: 0 0 26px; border: 0; }
 legend { width: 100%; margin-bottom: 13px; font-weight: 750; }
 .choice-grid > div, .inline-choices > div { display: flex; flex-wrap: wrap; gap: 10px; }

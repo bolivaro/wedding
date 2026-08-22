@@ -221,6 +221,9 @@ class RSVPViewsTests(TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(set(payload["fragments"]), {"rsvp", "ticket"})
         self.assertIn("Présent", payload["fragments"]["rsvp"])
+        self.assertIn("Modifier mes disponibilités", payload["fragments"]["rsvp"])
+        self.assertIn("Cérémonie", payload["fragments"]["rsvp"])
+        self.assertNotIn('<details class="rsvp-editor" open', payload["fragments"]["rsvp"])
         self.guest.refresh_from_db()
         self.assertEqual(self.guest.rsvp_status, Guest.RSVPStatus.ATTENDING)
 
@@ -241,6 +244,37 @@ class RSVPViewsTests(TestCase):
         self.assertFalse(payload["ok"])
         self.assertEqual(set(payload["fragments"]), {"rsvp"})
         self.assertIn("Choisissez une réponse", payload["fragments"]["rsvp"])
+
+    def test_invalid_update_keeps_answered_rsvp_editor_open(self):
+        self.login_guest()
+        self.guest.rsvp_status = Guest.RSVPStatus.ATTENDING
+        self.guest.rsvp_responded_at = datetime.now(timezone.utc)
+        self.guest.age_category = Guest.AgeCategory.ADULT
+        self.guest.save(
+            update_fields=[
+                "rsvp_status",
+                "rsvp_responded_at",
+                "age_category",
+                "updated_at",
+            ]
+        )
+        for invitation in self.guest.event_invitations.filter(is_eligible=True):
+            invitation.attendance_status = Guest.RSVPStatus.ATTENDING
+            invitation.save(update_fields=["attendance_status"])
+
+        response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "status": Guest.RSVPStatus.ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        fragment = response.json()["fragments"]["rsvp"]
+        self.assertIn('<details class="rsvp-editor" open', fragment)
+        self.assertIn("Choisissez une réponse", fragment)
 
     def test_cocktail_is_in_program_data_but_not_a_separate_rsvp_question(self):
         self.login_guest()

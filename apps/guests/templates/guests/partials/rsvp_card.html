@@ -1,5 +1,17 @@
 <section class="card card-wide" data-dashboard-component="rsvp">
   <div class="section-heading"><div><p class="eyebrow">Étape 1</p><h2>Votre présence</h2></div><span class="status-pill status-{{ guest.rsvp_status }}">{{ guest.get_rsvp_status_display }}</span></div>
+  {% if rsvp_answered %}
+  <div class="rsvp-summary" aria-label="Résumé de vos réponses">
+    <div><span>Réponse générale</span><strong>{{ guest.get_rsvp_status_display }}</strong></div>
+    <div><span>Tranche d’âge</span><strong>{{ guest.age_category_label }}</strong></div>
+    {% for invitation in event_invitations %}
+      {% if invitation.is_eligible %}<div><span>{{ invitation.event.name }}</span><strong>{{ invitation.get_attendance_status_display }}</strong></div>{% endif %}
+    {% endfor %}
+    {% if guest.rsvp_responded_at %}<p>Dernière mise à jour le {{ guest.rsvp_responded_at|date:"d/m/Y à H:i" }}</p>{% endif %}
+  </div>
+  <details class="rsvp-editor"{% if rsvp_editor_open %} open{% endif %}>
+    <summary>Modifier mes disponibilités</summary>
+  {% endif %}
   <form method="post" action="{% url 'guests:rsvp_respond' %}" data-async-form data-rsvp-form>
     {% csrf_token %}
     {{ rsvp_form.non_field_errors }}
@@ -33,4 +45,5 @@
     </fieldset>
     {% if rsvp_open %}<button class="button button-primary" type="submit" data-loading-label="Enregistrement…">Enregistrer mes réponses</button>{% endif %}
   </form>
+  {% if rsvp_answered %}</details>{% endif %}
 </section>
