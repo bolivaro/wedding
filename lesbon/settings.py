@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 import environ
 
+from lesbon.public_urls import normalize_public_base_url, normalize_public_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR / "apps"))
 
@@ -15,15 +17,23 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
-SITE_BASE_URL = env("SITE_BASE_URL", default="http://127.0.0.1:8000")
-WEDDING_DATE = date.fromisoformat(env("WEDDING_DATE", default="2026-10-17"))
-WEDDING_PROGRAM_URL = env(
-    "WEDDING_PROGRAM_URL",
-    default=f"{SITE_BASE_URL.rstrip('/')}/programme/",
+DEBUG = env("DEBUG", default=False)
+SITE_BASE_URL = normalize_public_base_url(
+    env("SITE_BASE_URL", default=""),
+    debug=DEBUG,
 )
-WEDDING_DRESS_CODE_URL = env(
-    "WEDDING_DRESS_CODE_URL",
-    default=f"{SITE_BASE_URL.rstrip('/')}/dress-code/",
+WEDDING_DATE = date.fromisoformat(env("WEDDING_DATE", default="2026-10-17"))
+WEDDING_PROGRAM_URL = normalize_public_url(
+    env("WEDDING_PROGRAM_URL", default=""),
+    fallback_path="programme/",
+    base_url=SITE_BASE_URL,
+    debug=DEBUG,
+)
+WEDDING_DRESS_CODE_URL = normalize_public_url(
+    env("WEDDING_DRESS_CODE_URL", default=""),
+    fallback_path="dress-code/",
+    base_url=SITE_BASE_URL,
+    debug=DEBUG,
 )
 GOOGLE_MAPS_EMBED_API_KEY = env("GOOGLE_MAPS_EMBED_API_KEY", default="")
 GOOGLE_MY_MAPS_EMBED_URL = env("GOOGLE_MY_MAPS_EMBED_URL", default="")
@@ -70,8 +80,6 @@ TICKET_QR_BACKGROUND = env("TICKET_QR_BACKGROUND", default="#FFEEEC")
 TICKET_OUTPUT_DPI = env.int("TICKET_OUTPUT_DPI", default=300)
 
 SECRET_KEY = env("SECRET_KEY")
-DEBUG = env("DEBUG", default=False)
-
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
