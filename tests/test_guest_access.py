@@ -137,7 +137,7 @@ class GuestEmailTokenTests(TestCase):
 
         kwargs = send_email.call_args.kwargs
         expected_url = (
-            "https://leslieniboli.fr/invites/email/verify/"
+            "https://www.leslieniboli.fr/invites/email/verify/"
             f"{issued.token.selector}/{issued.secret}/"
         )
         self.assertIn(f'href="{expected_url}"', kwargs["html_content"])
