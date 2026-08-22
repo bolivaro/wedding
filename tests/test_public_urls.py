@@ -12,7 +12,13 @@ class PublicURLTests(SimpleTestCase):
     def test_null_base_url_falls_back_to_canonical_production_domain(self):
         self.assertEqual(
             normalize_public_base_url("NULL", debug=False),
-            "https://leslieniboli.fr",
+            "https://www.leslieniboli.fr",
+        )
+
+    def test_apex_domain_is_canonicalized_to_working_www_domain(self):
+        self.assertEqual(
+            normalize_public_base_url("https://leslieniboli.fr", debug=False),
+            "https://www.leslieniboli.fr",
         )
 
     @patch.dict(
@@ -31,7 +37,7 @@ class PublicURLTests(SimpleTestCase):
     def test_email_verification_link_never_contains_null(self):
         self.assertEqual(
             _absolute_url("/invites/email/verify/selector/secret/"),
-            "https://leslieniboli.fr/invites/email/verify/selector/secret/",
+            "https://www.leslieniboli.fr/invites/email/verify/selector/secret/",
         )
 
     @override_settings(
@@ -41,5 +47,5 @@ class PublicURLTests(SimpleTestCase):
     def test_invalid_ticket_link_falls_back_to_public_page(self):
         self.assertEqual(
             _public_information_url("http://localhost:8000/programme/", "programme/"),
-            "https://leslieniboli.fr/programme/",
+            "https://www.leslieniboli.fr/programme/",
         )
