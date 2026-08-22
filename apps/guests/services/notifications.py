@@ -1,27 +1,50 @@
 import base64
 
 from django.conf import settings
+from django.utils.html import escape
 
 from lesbon.email import get_brevo_sender, send_brevo_email
+from lesbon.public_urls import build_public_url
 
 from guests.models import Guest
 
 
 def _absolute_url(path):
-    return f"{settings.SITE_BASE_URL.rstrip('/')}{path}"
+    return build_public_url(
+        path,
+        base_url=settings.SITE_BASE_URL,
+        debug=settings.DEBUG,
+    )
 
 
 def send_email_verification(*, issued_token):
     token = issued_token.token
     path = f"/invites/email/verify/{token.selector}/{issued_token.secret}/"
     link = _absolute_url(path)
+    escaped_name = escape(token.guest.first_name)
+    escaped_link = escape(link)
     send_brevo_email(
         to=[{"email": token.target_email, "name": token.guest.full_name}],
         subject="Vérifiez votre adresse email",
         text_content=(
             f"Bonjour {token.guest.first_name},\n\n"
-            f"Confirmez votre adresse email avec ce lien : {link}\n\n"
+            "Confirmez votre adresse email en ouvrant le lien ci-dessous :\n\n"
+            f"{link}\n\n"
             "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email."
+        ),
+        html_content=(
+            '<div style="font-family:Arial,sans-serif;color:#4a403b;line-height:1.6">'
+            f"<p>Bonjour {escaped_name},</p>"
+            "<p>Confirmez votre adresse email en cliquant sur ce bouton :</p>"
+            '<p style="margin:24px 0">'
+            f'<a href="{escaped_link}" '
+            'style="display:inline-block;padding:12px 20px;border-radius:10px;'
+            'background:#b65f45;color:#fff;text-decoration:none;font-weight:700">'
+            "Vérifier mon adresse email</a></p>"
+            "<p>Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :</p>"
+            f'<p><a href="{escaped_link}">{escaped_link}</a></p>'
+            "<p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>"
+            "</div>"
         ),
         reply_to=get_brevo_sender(),
     )

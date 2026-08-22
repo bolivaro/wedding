@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
@@ -18,6 +19,7 @@ from guests.services.email_access import (
     issue_recovery_token,
     request_email_verification,
 )
+from guests.services.notifications import send_email_verification
 
 
 class GuestAccessServiceTests(TestCase):
@@ -122,6 +124,25 @@ class GuestEmailTokenTests(TestCase):
         self.guest.refresh_from_db()
         self.assertEqual(self.guest.email, "marie@example.com")
         self.assertIsNotNone(self.guest.email_verified_at)
+
+    @override_settings(DEBUG=False, SITE_BASE_URL="https://leslieniboli.fr")
+    @patch("guests.services.notifications.send_brevo_email")
+    def test_verification_email_contains_an_explicit_html_link(self, send_email):
+        issued = request_email_verification(
+            guest=self.guest,
+            email="marie@example.com",
+        )
+
+        send_email_verification(issued_token=issued)
+
+        kwargs = send_email.call_args.kwargs
+        expected_url = (
+            "https://leslieniboli.fr/invites/email/verify/"
+            f"{issued.token.selector}/{issued.secret}/"
+        )
+        self.assertIn(f'href="{expected_url}"', kwargs["html_content"])
+        self.assertIn(f"\n{expected_url}\n", kwargs["text_content"])
+        self.assertNotIn('href="null"', kwargs["html_content"].lower())
 
     def test_recovery_requires_verified_email(self):
         self.guest.email = "marie@example.com"

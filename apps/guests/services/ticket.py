@@ -10,6 +10,8 @@ from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.urls import reverse
 from django.utils import timezone
+
+from lesbon.public_urls import build_public_url, normalize_public_url
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -84,7 +86,20 @@ def party_rsvp_complete(primary_guest):
 def qr_payload(guest):
     guest = get_primary_guest(guest)
     path = reverse("guests:public_qr_landing", kwargs={"token": guest.qr_token})
-    return f"{settings.SITE_BASE_URL.rstrip('/')}{path}"
+    return build_public_url(
+        path,
+        base_url=settings.SITE_BASE_URL,
+        debug=settings.DEBUG,
+    )
+
+
+def _public_information_url(configured_url, fallback_path):
+    return normalize_public_url(
+        configured_url,
+        fallback_path=fallback_path,
+        base_url=settings.SITE_BASE_URL,
+        debug=settings.DEBUG,
+    )
 
 
 def _template_path():
@@ -153,8 +168,14 @@ def _render_signature(guest):
         "qr_background": settings.TICKET_QR_BACKGROUND,
         "output_dpi": settings.TICKET_OUTPUT_DPI,
         "wedding_date": settings.WEDDING_DATE.isoformat(),
-        "program_url": settings.WEDDING_PROGRAM_URL,
-        "dress_code_url": settings.WEDDING_DRESS_CODE_URL,
+        "program_url": _public_information_url(
+            settings.WEDDING_PROGRAM_URL,
+            "programme/",
+        ),
+        "dress_code_url": _public_information_url(
+            settings.WEDDING_DRESS_CODE_URL,
+            "dress-code/",
+        ),
         "dress_code_palettes": DRESS_CODE_PALETTES,
         "information_layout_version": 3,
         "program": _program_snapshot(),
@@ -691,13 +712,13 @@ def _build_two_page_pdf(ticket_jpg, information_jpg, link_boxes):
         height=page_height,
     )
     pdf.linkURL(
-        settings.WEDDING_PROGRAM_URL,
+        _public_information_url(settings.WEDDING_PROGRAM_URL, "programme/"),
         _pdf_link_box(link_boxes["program"]),
         relative=0,
         thickness=0,
     )
     pdf.linkURL(
-        settings.WEDDING_DRESS_CODE_URL,
+        _public_information_url(settings.WEDDING_DRESS_CODE_URL, "dress-code/"),
         _pdf_link_box(link_boxes["dress_code"]),
         relative=0,
         thickness=0,
