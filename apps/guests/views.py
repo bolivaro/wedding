@@ -107,6 +107,18 @@ def _dashboard_context(
             for invitation in eligible
         )
     )
+    resolved_rsvp_form = rsvp_form if rsvp_form is not None else RSVPForm(guest=guest)
+    rsvp_answered = (
+        guest.rsvp_status != Guest.RSVPStatus.PENDING
+        and guest.age_category in Guest.AgeCategory.values
+        and (
+            guest.rsvp_status == Guest.RSVPStatus.NOT_ATTENDING
+            or all(
+                invitation.attendance_status != Guest.RSVPStatus.PENDING
+                for invitation in eligible
+            )
+        )
+    )
     active_companions = list(guest.companions.filter(is_active=True))
     companion_rows = []
     for companion in active_companions:
@@ -127,7 +139,7 @@ def _dashboard_context(
 
     context = {
         "guest": guest,
-        "rsvp_form": rsvp_form if rsvp_form is not None else RSVPForm(guest=guest),
+        "rsvp_form": resolved_rsvp_form,
         "companion_form": companion_form if companion_form is not None else CompanionForm(),
         "email_form": email_form if email_form is not None else GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
         "event_invitations": event_invitations,
@@ -135,6 +147,8 @@ def _dashboard_context(
         "companion_rows": companion_rows,
         "rsvp_open": is_rsvp_open(),
         "rsvp_complete": rsvp_complete,
+        "rsvp_answered": rsvp_answered,
+        "rsvp_editor_open": not rsvp_answered or bool(resolved_rsvp_form.errors),
         "deadline": settings.RSVP_DEADLINE,
         "support_email": settings.RSVP_SUPPORT_EMAIL,
     }

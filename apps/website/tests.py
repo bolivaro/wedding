@@ -53,7 +53,7 @@ class PublicWebsiteTests(TestCase):
 
     def test_dress_code_contains_four_palettes(self):
         response = self.client.get(reverse("website:dress_code"))
-        for name in ("Terre brûlée", "Vert nature", "Sable doré", "Gris élégant"):
+        for name in ("Terre brûlée", "Verdoyant", "Sable doré", "Gris élégant"):
             self.assertContains(response, name)
 
         for label, color in (
@@ -87,6 +87,7 @@ class PublicWebsiteTests(TestCase):
 
         self.assertContains(response, "L<i>&amp;</i>B")
         self.assertContains(response, "Leslie&amp;Bolivar")
+        self.assertContains(response, "Version 1.0.5")
 
     def test_lodging_address_is_hidden_until_selected(self):
         response = self.client.get(reverse("website:stay"))

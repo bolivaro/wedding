@@ -22,6 +22,7 @@ SITE_BASE_URL = normalize_public_base_url(
     env("SITE_BASE_URL", default=""),
     debug=DEBUG,
 )
+APP_VERSION = env("APP_VERSION", default="1.0.5")
 WEDDING_DATE = date.fromisoformat(env("WEDDING_DATE", default="2026-10-17"))
 WEDDING_PROGRAM_URL = normalize_public_url(
     env("WEDDING_PROGRAM_URL", default=""),
@@ -122,6 +123,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "lesbon.context_processors.application_version",
             ],
         },
     },
