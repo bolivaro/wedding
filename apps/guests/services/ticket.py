@@ -24,6 +24,10 @@ INFO_TERRACOTTA = "#B12200"
 INFO_TERRACOTTA_DARK = "#781700"
 INFO_GOLD = "#CD9241"
 INFO_TEXT = "#4B4035"
+CITY_HALL_PRIVACY_MESSAGE = (
+    "En raison de la capacité limitée de la salle, la cérémonie civile se déroulera "
+    "dans la stricte intimité familiale. Merci de vous référer à votre invitation."
+)
 
 DRESS_CODE_PALETTES = (
     ("Terre brûlée", (("Brique", "#C04657"), ("Brun clair", "#C8A27A"))),
@@ -177,7 +181,9 @@ def _render_signature(guest):
             "dress-code/",
         ),
         "dress_code_palettes": DRESS_CODE_PALETTES,
-        "information_layout_version": 4,
+        # Increment whenever the generated information-page geometry changes so
+        # already stored PDFs are regenerated instead of serving stale artwork.
+        "information_layout_version": 6,
         "program": _program_snapshot(_ticket_program_events(guest)),
         "program_icon_assets": _program_icon_assets_snapshot(),
     }
@@ -311,10 +317,7 @@ def _ticket_program_events(primary_guest):
         )
     for event_id, event in events_by_id.items():
         invited_names = names_by_event[event_id]
-        if len(invited_names) < len(members):
-            event.invitation_note = "Invités : " + ", ".join(invited_names)
-        else:
-            event.invitation_note = ""
+        event.invitation_note = "Pour : " + " · ".join(invited_names)
     return sorted(events_by_id.values(), key=lambda event: (event.display_order, event.name))
 
 
@@ -539,7 +542,8 @@ def _render_information_image(events=None):
         )
     else:
         rows_top = 555
-        rows_bottom = 1285
+        has_city_hall = any(event.code == WeddingEvent.Code.CITY_HALL for event in events)
+        rows_bottom = 1130 if has_city_hall else 1285
         row_height = (rows_bottom - rows_top) / max(1, len(events))
         event_title_size = max(28, min(39, round(row_height * 0.22)))
         event_detail_size = max(23, min(30, round(row_height * 0.16)))
@@ -599,10 +603,31 @@ def _render_information_image(events=None):
             )
             invitation_note = getattr(event, "invitation_note", "")
             if invitation_note:
-                draw.text(
-                    (text_x, address_y + event_detail_size + 8),
+                note_top = address_y + event_detail_size + 7
+                note_font, _, note_bounds = _fit_font(
+                    draw,
                     invitation_note,
-                    font=font(max(20, event_detail_size - 4)),
+                    1160,
+                    28,
+                    22,
+                    info_font,
+                )
+                note_width = note_bounds[2] - note_bounds[0]
+                note_box = (
+                    text_x - 10,
+                    note_top - 3,
+                    text_x + note_width + 18,
+                    note_top + 28,
+                )
+                draw.rounded_rectangle(
+                    note_box,
+                    radius=14,
+                    fill="#F3E5CF",
+                )
+                draw.text(
+                    (text_x, note_top),
+                    invitation_note,
+                    font=note_font,
                     fill=INFO_TERRACOTTA_DARK,
                 )
             if event.map_url and event.address:
@@ -618,8 +643,35 @@ def _render_information_image(events=None):
                     }
                 )
             if index < len(events) - 1:
-                line_y = round(row_top + row_height - 24)
+                # Keep the separator below the personalized “Pour : …” pill.
+                line_y = round(row_top + row_height - 4)
                 draw.line((text_x, line_y, 1550, line_y), fill=INFO_GOLD, width=2)
+
+    if events and any(event.code == WeddingEvent.Code.CITY_HALL for event in events):
+        privacy_box = (205, 1160, 1590, 1315)
+        draw.rounded_rectangle(
+            privacy_box,
+            radius=24,
+            fill="#F8DDD4",
+            outline="#E7B6A5",
+            width=2,
+        )
+        draw.text(
+            (245, 1183),
+            "À propos de la mairie",
+            font=title(27),
+            fill=INFO_TERRACOTTA_DARK,
+        )
+        draw.multiline_text(
+            (245, 1222),
+            CITY_HALL_PRIVACY_MESSAGE.replace(
+                " la cérémonie civile se déroulera ",
+                " la cérémonie civile\nse déroulera ",
+            ),
+            font=font(22),
+            fill=INFO_TEXT,
+            spacing=7,
+        )
 
     dress_box = (145, 1425, 1651, 2045)
     draw.rounded_rectangle(dress_box, radius=36, outline=INFO_TERRACOTTA, width=4)
