@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import AccessRecoveryForm, CompanionAttendanceForm, CompanionForm, GuestEmailForm, RSVPForm
@@ -122,6 +123,11 @@ def _dashboard_context(
         )
     )
     active_companions = list(guest.companions.filter(is_active=True))
+    current_party_size = 1 + len(active_companions)
+    composition_dirty = (
+        guest.confirmed_party_size is not None
+        and guest.confirmed_party_size != current_party_size
+    )
     companion_rows = []
     for companion in active_companions:
         edit_form = (
@@ -159,6 +165,8 @@ def _dashboard_context(
         "email_form": email_form if email_form is not None else GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
         "event_invitations": event_invitations,
         "active_companions": active_companions,
+        "current_party_size": current_party_size,
+        "composition_dirty": composition_dirty,
         "companion_rows": companion_rows,
         "rsvp_open": is_rsvp_open(),
         "response_open": response_open,
@@ -409,8 +417,9 @@ def companion_attendance(request, companion_id):
 @require_POST
 @guest_access_required
 def party_composition_confirm(request):
+    was_already_confirmed = request.guest.party_composition_confirmed_at is not None
     try:
-        confirm_party_composition(
+        confirmed_guest = confirm_party_composition(
             primary_guest=request.guest,
             come_alone=request.POST.get("come_alone") == "1",
         )
@@ -418,7 +427,22 @@ def party_composition_confirm(request):
         message = "; ".join(exc.messages)
         status = 422
     else:
-        message = "La composition de votre groupe est confirmée."
+        party_label = "personne" if confirmed_guest.confirmed_party_size == 1 else "personnes"
+        editable_until = timezone.localtime(
+            confirmed_guest.party_composition_editable_until
+        ).strftime("%d/%m/%Y à %H:%M")
+        if was_already_confirmed:
+            message = (
+                f"Composition mise à jour : {confirmed_guest.confirmed_party_size} "
+                f"{party_label} sur {confirmed_guest.party_size_limit}. "
+                f"La date limite reste fixée au {editable_until}."
+            )
+        else:
+            message = (
+                f"Composition confirmée : {confirmed_guest.confirmed_party_size} "
+                f"{party_label} sur {confirmed_guest.party_size_limit}. "
+                f"Modifiable jusqu’au {editable_until}."
+            )
         status = 200
     if _is_async_request(request):
         return _fragment_response(

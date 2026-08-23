@@ -55,9 +55,6 @@ def add_companion(*, primary_guest, first_name, last_name, gender, age_category)
             )
         )
     GuestEventInvitation.objects.bulk_create(event_invitations)
-    if primary_guest.confirmed_party_size is not None:
-        primary_guest.confirmed_party_size = 1 + primary_guest.companions.filter(is_active=True).count()
-        primary_guest.save(update_fields=["confirmed_party_size", "updated_at"])
     return companion
 
 
@@ -103,9 +100,6 @@ def deactivate_companion(*, primary_guest, companion):
         attendance_status=Guest.RSVPStatus.NOT_ATTENDING,
         response_source=Guest.RSVPSource.GUEST,
     )
-    if primary_guest.confirmed_party_size is not None:
-        primary_guest.confirmed_party_size = 1 + primary_guest.companions.filter(is_active=True).count()
-        primary_guest.save(update_fields=["confirmed_party_size", "updated_at"])
     return companion
 
 
