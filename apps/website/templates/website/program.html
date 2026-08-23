@@ -10,11 +10,18 @@
       <div class="timeline-marker"><span>{% if event.icon_asset %}<img src="{% static event.icon_asset %}" alt="">{% else %}◇{% endif %}</span></div>
       <div class="timeline-card">
         <p class="eyebrow">Étape {{ forloop.counter }}</p><h2>{{ event.name }}</h2>
+        {% if event.code == "city_hall" %}<p class="event-notice">En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.</p>{% endif %}
+        {% if session_guest %}
+          {% if event.is_in_group_invitation %}<p class="invitation-status"><strong>Sur votre invitation :</strong> {{ event.invited_members|join:", " }}</p>
+          {% else %}<p class="invitation-status invitation-status-locked">Cette étape ne fait pas partie de votre invitation.</p>{% endif %}
+        {% endif %}
         {% if event.description %}<p>{{ event.description }}</p>{% endif %}
         {% if event.venue_name or event.address %}<address><strong>{{ event.venue_name }}</strong>{% if event.address %}<span>{{ event.address }}</span>{% endif %}</address>{% endif %}
         <div class="card-actions">
-          {% if event.map_url %}<a class="button button-secondary" href="{{ event.map_url }}" target="_blank" rel="noopener">Voir sur la carte</a>{% endif %}
-          {% if event.address %}<a class="button button-link" href="{% url 'website:stay' %}#trajets">Calculer mon trajet</a>{% endif %}
+          {% if not session_guest or event.is_in_group_invitation %}
+            {% if event.map_url %}<a class="button button-secondary" href="{{ event.map_url }}" target="_blank" rel="noopener">Voir sur la carte</a>{% endif %}
+            {% if event.address %}<a class="button button-link" href="{% url 'website:stay' %}#trajets">Calculer mon trajet</a>{% endif %}
+          {% endif %}
         </div>
       </div>
     </article>

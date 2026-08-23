@@ -81,4 +81,8 @@ h1, h2, h3 { font-family: "Cormorant Wedding", Georgia, serif; }
 @media (max-width: 420px) {
   .carousel-copy h1 { font-size: 3.15rem; }.theme-toggle span:last-child { display: inline; }.timeline-card { padding: 20px 17px; }.card-actions .button { width: 100%; }.dress-visual { min-height: 360px; }.swatch-list { flex-direction: column; }.route-planner, .recommendation-section { padding: 24px 16px; }.choice { width: 100%; margin-right: 0; }.place-button { grid-template-columns: 46px 1fr; }.public-footer nav { display: grid; }
 }
+.timeline-card .event-notice, .timeline-card .invitation-status { padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-soft); }
+.timeline-card .event-notice { border-left: 3px solid var(--mustard); }
+.timeline-card .invitation-status { color: var(--text); }
+.timeline-card .invitation-status-locked { color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

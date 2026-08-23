@@ -133,6 +133,21 @@ class TicketGenerationTests(TestCase):
 
         self.assertFalse(ticket_is_current(ticket, self.primary))
 
+    def test_event_eligibility_change_invalidates_existing_ticket(self):
+        event = WeddingEvent.objects.get(code=WeddingEvent.Code.CITY_HALL)
+        invitation, _ = GuestEventInvitation.objects.update_or_create(
+            guest=self.primary,
+            event=event,
+            defaults={"is_eligible": True},
+        )
+        ticket = generate_ticket(self.primary)
+
+        invitation.is_eligible = False
+        invitation.attendance_status = Guest.RSVPStatus.NOT_ATTENDING
+        invitation.save(update_fields=["is_eligible", "attendance_status"])
+
+        self.assertFalse(ticket_is_current(ticket, self.primary))
+
     def test_program_icons_use_the_recolored_attached_vector_assets(self):
         expected_icons = {
             WeddingEvent.EventIcon.CITY_HALL,

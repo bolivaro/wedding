@@ -296,6 +296,12 @@ class WeddingEvent(models.Model):
 
 
 class GuestEventInvitation(models.Model):
+    class EligibilitySource(models.TextChoices):
+        LEGACY = "legacy", "Donnée existante"
+        POLICY = "policy", "Règle automatique"
+        IMPORT = "import", "Import"
+        ADMIN = "admin", "Administration"
+
     guest = models.ForeignKey(
         Guest,
         on_delete=models.CASCADE,
@@ -309,6 +315,12 @@ class GuestEventInvitation(models.Model):
         verbose_name="événement",
     )
     is_eligible = models.BooleanField("éligible", default=True)
+    eligibility_source = models.CharField(
+        "origine de l’éligibilité",
+        max_length=20,
+        choices=EligibilitySource.choices,
+        default=EligibilitySource.LEGACY,
+    )
     attendance_status = models.CharField(
         "présence",
         max_length=20,

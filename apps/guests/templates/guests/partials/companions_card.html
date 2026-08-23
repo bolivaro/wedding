@@ -28,6 +28,12 @@
           {% for field in attendance_form %}
             <fieldset{% if field.name != "attendance_mode" %} data-custom-attendance-field{% endif %}><legend>{{ field.label }}</legend><div class="inline-choices">{{ field }}</div>{{ field.errors }}</fieldset>
           {% endfor %}
+          {% if attendance_form.city_hall_restricted %}
+          <div class="event-choice event-disabled" data-custom-attendance-field title="Contactez les mariés pour toute situation particulière.">
+            <div><strong>Mairie</strong><span>En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.</span></div>
+            <span class="lock-label" aria-label="Mairie non proposée à cet accompagnant">Non proposée</span>
+          </div>
+          {% endif %}
           {% if attendance_form.has_open_events %}<button class="button button-secondary" type="submit" data-loading-label="Enregistrement…">Enregistrer les disponibilités</button>{% else %}<span class="lock-label">Disponibilités closes</span>{% endif %}
         </form>
       </details>

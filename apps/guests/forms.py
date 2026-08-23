@@ -117,6 +117,19 @@ class CompanionAttendanceForm(forms.Form):
 
         super().__init__(*args, **kwargs)
         self.companion = companion
+        city_hall = companion.event_invitations.select_related("event").filter(
+            event__code="city_hall",
+            event__is_active=True,
+            is_eligible=False,
+        ).first()
+        owner_city_hall_eligible = bool(
+            city_hall
+            and companion.invitation_owner.event_invitations.filter(
+                event=city_hall.event,
+                is_eligible=True,
+            ).exists()
+        )
+        self.city_hall_restricted = owner_city_hall_eligible
         self.fields["attendance_mode"].choices = Guest.AttendanceMode.choices
         self.initial["attendance_mode"] = companion.attendance_mode
         self.has_open_events = False
@@ -158,6 +171,34 @@ class CompanionAttendanceForm(forms.Form):
             for name, value in self.cleaned_data.items()
             if name.startswith("event_") and value
         }
+
+
+class GuestEventInvitationAdminForm(forms.ModelForm):
+    class Meta:
+        from guests.models import GuestEventInvitation
+
+        model = GuestEventInvitation
+        fields = "__all__"
+
+    def clean(self):
+        from guests.models import Guest
+
+        data = super().clean()
+        if data.get("is_eligible") is False:
+            data["attendance_status"] = Guest.RSVPStatus.NOT_ATTENDING
+            data["response_source"] = Guest.RSVPSource.ADMIN
+        return data
+
+    def save(self, commit=True):
+        from guests.models import GuestEventInvitation
+
+        instance = super().save(commit=False)
+        if "is_eligible" in self.changed_data:
+            instance.eligibility_source = GuestEventInvitation.EligibilitySource.ADMIN
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class AccessRecoveryForm(forms.Form):

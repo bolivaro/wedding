@@ -315,7 +315,10 @@ def _apply_event_invitations(guest, parsed, response_time):
     events = {event.code: event for event in WeddingEvent.objects.filter(is_active=True)}
     for code, event in events.items():
         eligibility = parsed["city_hall_eligible"] if code == WeddingEvent.Code.CITY_HALL else True
-        defaults = {"is_eligible": eligibility}
+        defaults = {
+            "is_eligible": eligibility,
+            "eligibility_source": GuestEventInvitation.EligibilitySource.IMPORT,
+        }
         if not eligibility:
             defaults.update(
                 attendance_status=Guest.RSVPStatus.PENDING,

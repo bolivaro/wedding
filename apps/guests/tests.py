@@ -9,6 +9,7 @@ from .models import Guest, GuestEventInvitation, WeddingEvent
 from .services.companions import add_companion, deactivate_companion, update_companion
 from .services.notifications import send_rsvp_notification
 from .services.rsvp import update_rsvp
+from .services.event_eligibility import apply_city_hall_policy
 
 
 class GuestWorkflowFieldsTests(TestCase):
@@ -59,6 +60,95 @@ class GuestWorkflowFieldsTests(TestCase):
 
 
 class CompanionServiceTests(TestCase):
+    def _primary_with_events(self, **overrides):
+        values = {
+            "first_name": "Marie",
+            "invitation_kind": Guest.InvitationKind.COUPLE,
+            "party_size_limit": 2,
+            **overrides,
+        }
+        primary = Guest.objects.create(**values)
+        for event in WeddingEvent.objects.all():
+            GuestEventInvitation.objects.create(
+                guest=primary,
+                event=event,
+                is_eligible=True,
+            )
+        return primary
+
+    def test_family_companion_is_eligible_for_city_hall(self):
+        primary = self._primary_with_events(guest_group=Guest.GuestGroup.BRIDE_FAMILY)
+
+        companion = add_companion(
+            primary_guest=primary,
+            first_name="Jean",
+            last_name="Dupont",
+            gender=Guest.Gender.MALE,
+            age_category=Guest.AgeCategory.ADULT,
+        )
+
+        invitation = companion.event_invitations.get(event__code=WeddingEvent.Code.CITY_HALL)
+        self.assertTrue(invitation.is_eligible)
+        self.assertEqual(invitation.eligibility_source, GuestEventInvitation.EligibilitySource.POLICY)
+
+    def test_friend_companion_is_not_eligible_for_city_hall(self):
+        primary = self._primary_with_events(guest_group=Guest.GuestGroup.GROOM_FRIENDS)
+
+        companion = add_companion(
+            primary_guest=primary,
+            first_name="Jean",
+            last_name="Dupont",
+            gender=Guest.Gender.MALE,
+            age_category=Guest.AgeCategory.ADULT,
+        )
+
+        invitation = companion.event_invitations.get(event__code=WeddingEvent.Code.CITY_HALL)
+        self.assertFalse(invitation.is_eligible)
+        self.assertEqual(invitation.attendance_status, Guest.RSVPStatus.NOT_ATTENDING)
+
+    def test_honor_companion_is_not_eligible_for_city_hall(self):
+        primary = self._primary_with_events(
+            guest_group=Guest.GuestGroup.BRIDE_FAMILY,
+            guest_type=Guest.GuestType.HONOR,
+        )
+
+        companion = add_companion(
+            primary_guest=primary,
+            first_name="Jean",
+            last_name="Dupont",
+            gender=Guest.Gender.MALE,
+            age_category=Guest.AgeCategory.ADULT,
+        )
+
+        self.assertFalse(
+            companion.event_invitations.get(event__code=WeddingEvent.Code.CITY_HALL).is_eligible
+        )
+
+    def test_city_hall_policy_prioritizes_family_but_not_honor_companion(self):
+        primary = self._primary_with_events(
+            guest_group=Guest.GuestGroup.GROOM_FAMILY,
+            guest_type=Guest.GuestType.HONOR,
+        )
+        companion = Guest.objects.create(
+            first_name="Jean",
+            invitation_owner=primary,
+            is_active=True,
+        )
+
+        apply_city_hall_policy(primary)
+
+        self.assertTrue(
+            primary.event_invitations.get(event__code=WeddingEvent.Code.CITY_HALL).is_eligible
+        )
+        companion_invitation = companion.event_invitations.get(
+            event__code=WeddingEvent.Code.CITY_HALL
+        )
+        self.assertFalse(companion_invitation.is_eligible)
+        self.assertEqual(
+            companion_invitation.eligibility_source,
+            GuestEventInvitation.EligibilitySource.POLICY,
+        )
+
     def test_add_companion_respects_server_side_limit(self):
         primary = Guest.objects.create(
             first_name="Marie",
