@@ -10,6 +10,7 @@ from .services.companions import add_companion, deactivate_companion, update_com
 from .services.notifications import send_rsvp_notification
 from .services.rsvp import update_rsvp
 from .services.event_eligibility import apply_city_hall_policy
+from .forms import CompanionAttendanceForm
 
 
 class GuestWorkflowFieldsTests(TestCase):
@@ -148,6 +149,22 @@ class CompanionServiceTests(TestCase):
             companion_invitation.eligibility_source,
             GuestEventInvitation.EligibilitySource.POLICY,
         )
+
+    def test_attendance_inheritance_label_does_not_imply_event_eligibility(self):
+        primary = self._primary_with_events(guest_group=Guest.GuestGroup.GROOM_FRIENDS)
+        companion = add_companion(
+            primary_guest=primary,
+            first_name="Jean",
+            last_name="Dupont",
+            gender=Guest.Gender.MALE,
+            age_category=Guest.AgeCategory.ADULT,
+        )
+
+        form = CompanionAttendanceForm(companion=companion)
+
+        labels = dict(form.fields["attendance_mode"].choices)
+        self.assertIn("événements inclus dans mon invitation", labels[Guest.AttendanceMode.INHERIT])
+        self.assertIn("n’ajoute aucun événement", form.fields["attendance_mode"].help_text)
 
     def test_add_companion_respects_server_side_limit(self):
         primary = Guest.objects.create(

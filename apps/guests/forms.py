@@ -130,7 +130,20 @@ class CompanionAttendanceForm(forms.Form):
             ).exists()
         )
         self.city_hall_restricted = owner_city_hall_eligible
-        self.fields["attendance_mode"].choices = Guest.AttendanceMode.choices
+        self.fields["attendance_mode"].choices = [
+            (
+                Guest.AttendanceMode.INHERIT,
+                "Reprendre les réponses de l’invité principal pour les événements inclus dans mon invitation",
+            ),
+            (
+                Guest.AttendanceMode.CUSTOM,
+                "Choisir mes réponses pour les événements inclus dans mon invitation",
+            ),
+        ]
+        self.fields["attendance_mode"].help_text = (
+            "Ce choix reprend uniquement les réponses de l’invité principal. "
+            "Il n’ajoute aucun événement à l’invitation de l’accompagnant."
+        )
         self.initial["attendance_mode"] = companion.attendance_mode
         self.has_open_events = False
         for invitation in companion.event_invitations.select_related("event").filter(

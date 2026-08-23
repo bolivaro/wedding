@@ -16,10 +16,12 @@ from guests.models import Guest, GuestEventInvitation, Ticket, WeddingEvent
 from guests.services.access import issue_guest_access
 from guests.services.notifications import send_ticket_email
 from guests.services.ticket import (
+    CITY_HALL_PRIVACY_MESSAGE,
     DRESS_CODE_PALETTES,
     PROGRAM_ICON_ASSETS,
     _make_qr_image,
     _paste_event_icon,
+    _ticket_program_events,
     build_information_jpg,
     build_party_pdf,
     generate_ticket,
@@ -44,6 +46,12 @@ OPEN_DEADLINE = datetime(2099, 9, 15, 23, 59, tzinfo=timezone.utc)
     STORAGES=TEST_STORAGES,
 )
 class TicketGenerationTests(TestCase):
+    def test_ticket_uses_the_requested_city_hall_privacy_wording(self):
+        self.assertEqual(
+            CITY_HALL_PRIVACY_MESSAGE,
+            "En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.",
+        )
+
     def setUp(self):
         self.primary = Guest.objects.create(
             first_name="Élodie",
@@ -147,6 +155,22 @@ class TicketGenerationTests(TestCase):
         invitation.save(update_fields=["is_eligible", "attendance_status"])
 
         self.assertFalse(ticket_is_current(ticket, self.primary))
+
+    def test_personalized_program_names_invited_members_for_each_event(self):
+        church = WeddingEvent.objects.get(code=WeddingEvent.Code.CHURCH)
+        GuestEventInvitation.objects.create(
+            guest=self.companion,
+            event=church,
+            is_eligible=True,
+        )
+
+        events = {event.code: event for event in _ticket_program_events(self.primary)}
+
+        self.assertEqual(events[WeddingEvent.Code.CITY_HALL].invitation_note, "Pour : Élodie")
+        self.assertEqual(
+            events[WeddingEvent.Code.CHURCH].invitation_note,
+            "Pour : Élodie · Jean",
+        )
 
     def test_program_icons_use_the_recolored_attached_vector_assets(self):
         expected_icons = {
