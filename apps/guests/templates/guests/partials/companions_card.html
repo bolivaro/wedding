@@ -2,12 +2,12 @@
   <div class="section-heading"><div><p class="eyebrow">Étape 2</p><h2>Vos accompagnants</h2></div><span class="counter-pill">{{ active_companions|length }} / {{ guest.companion_limit }}</span></div>
   {% if active_companions %}
   <div class="companion-list">
-    {% for companion, edit_form in companion_rows %}
+    {% for companion, edit_form, attendance_form in companion_rows %}
     <div class="companion-entry">
       <div class="companion-row"><div class="avatar">{{ companion.first_name|first }}{{ companion.last_name|first }}</div><div><strong>{{ companion.salutation }} {{ companion.full_name }}</strong><span>Accompagnant{% if companion.age_category_label %} · {{ companion.age_category_label }}{% else %} · Tranche d’âge à compléter{% endif %}</span></div>
-        {% if rsvp_open %}<form method="post" action="{% url 'guests:companion_remove' companion.pk %}" data-async-form data-confirm="Retirer {{ companion.first_name }} de votre invitation ?">{% csrf_token %}<button class="button-link danger" type="submit" data-loading-label="Retrait…">Retirer</button></form>{% endif %}
+        {% if composition_editable %}<form method="post" action="{% url 'guests:companion_remove' companion.pk %}" data-async-form data-confirm="Retirer {{ companion.first_name }} de votre invitation ?">{% csrf_token %}<button class="button-link danger" type="submit" data-loading-label="Retrait…">Retirer</button></form>{% endif %}
       </div>
-      {% if rsvp_open %}
+      {% if composition_editable %}
       <details class="companion-editor"{% if edit_form.errors %} open{% endif %}>
         <summary>Modifier les informations</summary>
         <form class="compact-form" method="post" action="{% url 'guests:companion_update' companion.pk %}" data-async-form>
@@ -20,12 +20,23 @@
         </form>
       </details>
       {% endif %}
+      <details class="companion-editor attendance-editor">
+        <summary>Disponibilités aux événements</summary>
+        <form class="compact-form" method="post" action="{% url 'guests:companion_attendance' companion.pk %}" data-async-form data-companion-attendance-form>
+          {% csrf_token %}
+          {{ attendance_form.non_field_errors }}
+          {% for field in attendance_form %}
+            <fieldset{% if field.name != "attendance_mode" %} data-custom-attendance-field{% endif %}><legend>{{ field.label }}</legend><div class="inline-choices">{{ field }}</div>{{ field.errors }}</fieldset>
+          {% endfor %}
+          {% if attendance_form.has_open_events %}<button class="button button-secondary" type="submit" data-loading-label="Enregistrement…">Enregistrer les disponibilités</button>{% else %}<span class="lock-label">Disponibilités closes</span>{% endif %}
+        </form>
+      </details>
     </div>
     {% endfor %}
   </div>
   {% else %}<p class="muted">Aucun accompagnant renseigné.</p>{% endif %}
 
-  {% if rsvp_open and active_companions|length < guest.companion_limit %}
+  {% if composition_editable and active_companions|length < guest.companion_limit %}
   <form class="compact-form" method="post" action="{% url 'guests:companion_add' %}" data-async-form>
     {% csrf_token %}
     {{ companion_form.non_field_errors }}
@@ -35,4 +46,13 @@
     <button class="button button-secondary" type="submit" data-loading-label="Ajout…">Ajouter cet accompagnant</button>
   </form>
   {% elif guest.companion_limit == 0 %}<p class="muted">Votre invitation est individuelle.</p>{% endif %}
+  {% if guest.companion_limit > 0 and guest.rsvp_status == "attending" %}
+  <div class="composition-confirmation">
+    {% if guest.confirmed_party_size != None %}<p><strong>Composition {{ composition_state|default:"confirmée" }}</strong> · {{ guest.confirmed_party_size }} personne{{ guest.confirmed_party_size|pluralize }} sur {{ guest.party_size_limit }}. {% if guest.party_composition_editable_until and composition_editable %}Modifiable jusqu’au {{ guest.party_composition_editable_until|date:"d/m/Y à H:i" }}.{% endif %}{% if composition_dirty %}<br><span class="composition-dirty">Composition actuelle : {{ current_party_size }} personne{{ current_party_size|pluralize }} · Modification à enregistrer.</span>{% endif %}</p>{% endif %}
+    {% if composition_editable %}
+      <form method="post" action="{% url 'guests:party_composition_confirm' %}" data-async-form>{% csrf_token %}<button class="button button-secondary" type="submit"{% if guest.party_composition_confirmed_at and not composition_dirty %} disabled aria-disabled="true"{% endif %}>{% if guest.party_composition_confirmed_at %}Enregistrer la nouvelle composition{% else %}Confirmer cette composition{% endif %}</button></form>
+      {% if active_companions %}<form method="post" action="{% url 'guests:party_composition_confirm' %}" data-async-form data-confirm="Vos accompagnants actuels seront retirés. Confirmer que vous viendrez seul(e) ?">{% csrf_token %}<input type="hidden" name="come_alone" value="1"><button class="button-link danger" type="submit">Je viendrai seul(e)</button></form>{% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
 </section>

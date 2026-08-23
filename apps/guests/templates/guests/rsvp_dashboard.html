@@ -15,13 +15,18 @@
     <div><strong data-minutes>—</strong><span>Minutes</span></div>
     <div><strong data-seconds>—</strong><span>Secondes</span></div>
   </div>
-  <p class="deadline-copy">Réponse modifiable jusqu'au {{ deadline|date:"j F Y à H:i" }}.</p>
+  <p class="deadline-copy">Réponse initiale avant le {{ deadline|date:"j F Y à H:i" }}{% if attendance_deadline %} · Disponibilités modifiables jusqu’au {{ attendance_deadline|date:"j F Y à H:i" }}{% endif %}.</p>
 </section>
 
-{% if not rsvp_open %}
+{% if not response_open %}
 <aside class="notice notice-warning">
   <strong>Les réponses en ligne sont désormais closes.</strong>
   <span>Pour toute modification, écrivez-nous à <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</span>
+</aside>
+{% elif not rsvp_open %}
+<aside class="notice notice-warning">
+  <strong>La composition de votre groupe est désormais définitive.</strong>
+  <span>Vous pouvez encore ajuster les disponibilités des personnes déjà renseignées.</span>
 </aside>
 {% endif %}
 

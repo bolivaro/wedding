@@ -37,6 +37,20 @@ document.addEventListener('DOMContentLoaded', () => {
     syncEvents();
   };
 
+  const syncCompanionAttendance = () => {
+    document.querySelectorAll('[data-companion-attendance-form]').forEach((form) => {
+      const sync = () => {
+        const custom = form.querySelector("input[name='attendance_mode']:checked")?.value === 'custom';
+        form.querySelectorAll('[data-custom-attendance-field]').forEach((field) => {
+          field.hidden = !custom;
+          field.querySelectorAll('input').forEach((input) => { input.disabled = !custom; });
+        });
+      };
+      form.querySelectorAll("input[name='attendance_mode']").forEach((input) => input.addEventListener('change', sync));
+      sync();
+    });
+  };
+
   const feedback = document.querySelector('[data-async-feedback]');
   let feedbackTimer;
   const dismissFeedback = () => {
@@ -76,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (replacement) current.replaceWith(replacement);
     });
     syncRsvpVisibility();
+    syncCompanionAttendance();
     window.requestAnimationFrame(() => {
       window.scrollTo(scrollPosition.left, scrollPosition.top);
     });
@@ -127,4 +142,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   syncRsvpVisibility();
+  syncCompanionAttendance();
 });

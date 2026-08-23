@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<p><a href="{% url 'admin:guests_guest_changelist' %}">← Retour aux invités</a></p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
+  {% for snapshot in snapshots %}
+  <section class="module" style="padding:18px">
+    <h2>{{ snapshot.event.name }}</h2>
+    <table><tbody>
+      <tr><th>Capacité</th><td>{{ snapshot.capacity }}</td></tr>
+      <tr><th>Présents</th><td>{{ snapshot.attending }}</td></tr>
+      <tr><th>En attente</th><td>{{ snapshot.pending }}</td></tr>
+      <tr><th>Places optionnelles réservées</th><td>{{ snapshot.reserved_optional }}</td></tr>
+      <tr><th>Libération provisoire</th><td>{{ snapshot.provisional_release }}</td></tr>
+      <tr><th>Places libérées</th><td>{{ snapshot.released }}</td></tr>
+      <tr><th>Disponibilité sûre</th><td><strong>{{ snapshot.available }}</strong></td></tr>
+    </tbody></table>
+    <h3>Répartition démographique</h3>
+    <table><thead><tr><th>Tranche d’âge</th><th>Genre</th><th>Total</th></tr></thead><tbody>
+      {% for row in snapshot.demographics %}<tr><td>{{ row.age }}</td><td>{{ row.gender }}</td><td>{{ row.total }}</td></tr>{% empty %}<tr><td colspan="3">Aucune présence confirmée</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+  {% endfor %}
+</div>
+<section class="module" style="padding:18px;margin-top:24px">
+  <h2>Liste {% if reception_deadline and reception_deadline > now %}prévisionnelle{% else %}définitive{% endif %} de la soirée</h2>
+  {% if reception_deadline %}<p>Modifications possibles jusqu’au {{ reception_deadline|date:"d/m/Y à H:i" }}.</p>{% endif %}
+  <table><thead><tr><th>Nom</th><th>Type</th><th>Tranche d’âge</th><th>Genre</th></tr></thead><tbody>
+    {% for guest in reception_guests %}<tr><td><a href="{% url 'admin:guests_guest_change' guest.pk %}">{{ guest.full_name }}</a></td><td>{% if guest.invitation_owner %}Accompagnant de {{ guest.invitation_owner.full_name }}{% else %}Invité principal{% endif %}</td><td>{{ guest.age_category_label|default:"Non renseigné" }}</td><td>{{ guest.get_gender_display }}</td></tr>{% empty %}<tr><td colspan="4">Aucun invité confirmé.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

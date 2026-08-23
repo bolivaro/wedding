@@ -7,9 +7,10 @@ from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import AccessRecoveryForm, CompanionForm, GuestEmailForm, RSVPForm
+from .forms import AccessRecoveryForm, CompanionAttendanceForm, CompanionForm, GuestEmailForm, RSVPForm
 from .models import Guest, GuestEmailToken
 from .services.access import (
     authenticate_guest_access,
@@ -17,7 +18,9 @@ from .services.access import (
     issue_guest_access,
     start_guest_session,
 )
-from .services.companions import add_companion, deactivate_companion, update_companion
+from .services.companions import add_companion, deactivate_companion, update_companion, update_companion_attendance
+from .services.capacity import attendance_is_open
+from .services.composition import confirm_party_composition, composition_is_editable, composition_state
 from .services.deadline import is_rsvp_open
 from .services.email_access import (
     consume_email_token,
@@ -120,6 +123,11 @@ def _dashboard_context(
         )
     )
     active_companions = list(guest.companions.filter(is_active=True))
+    current_party_size = 1 + len(active_companions)
+    composition_dirty = (
+        guest.confirmed_party_size is not None
+        and guest.confirmed_party_size != current_party_size
+    )
     companion_rows = []
     for companion in active_companions:
         edit_form = (
@@ -135,7 +143,20 @@ def _dashboard_context(
                 }
             )
         )
-        companion_rows.append((companion, edit_form))
+        attendance_form = CompanionAttendanceForm(
+            companion=companion,
+            auto_id=f"id_attendance_{companion.pk}_%s",
+        )
+        companion_rows.append((companion, edit_form, attendance_form))
+
+    response_open = is_rsvp_open() or (
+        guest.rsvp_responded_at
+        and any(attendance_is_open(invitation.event) for invitation in eligible)
+    )
+    attendance_deadline = max(
+        (invitation.event.attendance_change_deadline for invitation in eligible if invitation.event.attendance_change_deadline),
+        default=None,
+    )
 
     context = {
         "guest": guest,
@@ -144,12 +165,18 @@ def _dashboard_context(
         "email_form": email_form if email_form is not None else GuestEmailForm(initial={"email": guest.pending_email or guest.email}),
         "event_invitations": event_invitations,
         "active_companions": active_companions,
+        "current_party_size": current_party_size,
+        "composition_dirty": composition_dirty,
         "companion_rows": companion_rows,
         "rsvp_open": is_rsvp_open(),
+        "response_open": response_open,
+        "composition_editable": composition_is_editable(guest),
+        "composition_state": composition_state(guest),
         "rsvp_complete": rsvp_complete,
         "rsvp_answered": rsvp_answered,
         "rsvp_editor_open": not rsvp_answered or bool(resolved_rsvp_form.errors),
         "deadline": settings.RSVP_DEADLINE,
+        "attendance_deadline": attendance_deadline,
         "support_email": settings.RSVP_SUPPORT_EMAIL,
     }
     return context
@@ -347,6 +374,85 @@ def companion_remove(request, companion_id):
                 message="L'accompagnant a été retiré.",
             )
         messages.success(request, "L'accompagnant a été retiré.")
+    return redirect("guests:rsvp_dashboard")
+
+
+@require_POST
+@guest_access_required
+def companion_attendance(request, companion_id):
+    companion = get_object_or_404(
+        Guest,
+        pk=companion_id,
+        invitation_owner=request.guest,
+        is_active=True,
+    )
+    form = CompanionAttendanceForm(request.POST, companion=companion)
+    if form.is_valid():
+        try:
+            update_companion_attendance(
+                primary_guest=request.guest,
+                companion=companion,
+                attendance_mode=form.cleaned_data["attendance_mode"],
+                event_responses=form.event_responses(),
+            )
+        except ValidationError as exc:
+            form.add_error(None, "; ".join(exc.messages))
+        else:
+            if _is_async_request(request):
+                return _fragment_response(
+                    request,
+                    guest=request.guest,
+                    components=("companions",),
+                    message="Les disponibilités de l’accompagnant ont été enregistrées.",
+                )
+            messages.success(request, "Les disponibilités de l’accompagnant ont été enregistrées.")
+            return redirect("guests:rsvp_dashboard")
+    message = "; ".join(form.non_field_errors()) or "Certaines disponibilités sont invalides."
+    if _is_async_request(request):
+        return _fragment_response(request, guest=request.guest, components=("companions",), message=message, status=422)
+    messages.error(request, message)
+    return redirect("guests:rsvp_dashboard")
+
+
+@require_POST
+@guest_access_required
+def party_composition_confirm(request):
+    was_already_confirmed = request.guest.party_composition_confirmed_at is not None
+    try:
+        confirmed_guest = confirm_party_composition(
+            primary_guest=request.guest,
+            come_alone=request.POST.get("come_alone") == "1",
+        )
+    except ValidationError as exc:
+        message = "; ".join(exc.messages)
+        status = 422
+    else:
+        party_label = "personne" if confirmed_guest.confirmed_party_size == 1 else "personnes"
+        editable_until = timezone.localtime(
+            confirmed_guest.party_composition_editable_until
+        ).strftime("%d/%m/%Y à %H:%M")
+        if was_already_confirmed:
+            message = (
+                f"Composition mise à jour : {confirmed_guest.confirmed_party_size} "
+                f"{party_label} sur {confirmed_guest.party_size_limit}. "
+                f"La date limite reste fixée au {editable_until}."
+            )
+        else:
+            message = (
+                f"Composition confirmée : {confirmed_guest.confirmed_party_size} "
+                f"{party_label} sur {confirmed_guest.party_size_limit}. "
+                f"Modifiable jusqu’au {editable_until}."
+            )
+        status = 200
+    if _is_async_request(request):
+        return _fragment_response(
+            request,
+            guest=request.guest,
+            components=("companions", "ticket"),
+            message=message,
+            status=status,
+        )
+    messages.success(request, message) if status == 200 else messages.error(request, message)
     return redirect("guests:rsvp_dashboard")
 
 

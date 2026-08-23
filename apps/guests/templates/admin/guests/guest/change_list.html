@@ -1,6 +1,7 @@
 {% extends "admin/change_list.html" %}
 
 {% block object-tools-items %}
+  <li><a href="{% url 'admin:guests_guest_capacity_dashboard' %}">Capacités et statistiques</a></li>
   <li><a href="{% url 'admin:guests_guest_import' %}" class="addlink">Importer des invités</a></li>
   {{ block.super }}
 {% endblock %}

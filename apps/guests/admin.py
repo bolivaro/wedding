@@ -19,6 +19,7 @@ from .services.import_guests import analyze_batch, apply_batch, upload_checksum
 from .services.access import issue_guest_access, start_guest_session
 from .services.invitation_messages import build_invitation_share_text
 from .services.ticket import TicketGenerationError, generate_ticket
+from .services.capacity import demographic_statistics, event_capacity_snapshot
 
 
 class GuestEventInvitationInline(admin.TabularInline):
@@ -30,7 +31,7 @@ class CompanionInline(admin.TabularInline):
     model = Guest
     fk_name = "invitation_owner"
     extra = 0
-    fields = ("first_name", "last_name", "gender", "age_category", "is_active", "rsvp_status")
+    fields = ("first_name", "last_name", "gender", "age_category", "attendance_mode", "is_active", "rsvp_status")
     show_change_link = True
 
 
@@ -280,8 +281,51 @@ class GuestAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.renew_share_view),
                 name="guests_guest_renew_share",
             ),
+            path(
+                "capacity-dashboard/",
+                self.admin_site.admin_view(self.capacity_dashboard_view),
+                name="guests_guest_capacity_dashboard",
+            ),
         ]
         return custom_urls + super().get_urls()
+
+    def capacity_dashboard_view(self, request):
+        if not self.has_view_permission(request):
+            from django.core.exceptions import PermissionDenied
+
+            raise PermissionDenied
+        events = list(WeddingEvent.objects.filter(is_active=True).order_by("display_order"))
+        snapshots = []
+        for event in events:
+            demographics = []
+            for row in demographic_statistics(event):
+                demographics.append(
+                    {
+                        "age": Guest.AgeCategory(row["age_category"]).label if row["age_category"] in Guest.AgeCategory.values else "Non renseigné",
+                        "gender": Guest.Gender(row["gender"]).label if row["gender"] in Guest.Gender.values else "Non renseigné",
+                        "total": row["total"],
+                    }
+                )
+            snapshots.append({**event_capacity_snapshot(event), "demographics": demographics})
+        reception = WeddingEvent.objects.filter(code=WeddingEvent.Code.RECEPTION).first()
+        reception_guests = Guest.objects.none()
+        if reception:
+            reception_guests = Guest.objects.filter(
+                is_active=True,
+                event_invitations__event=reception,
+                event_invitations__is_eligible=True,
+                event_invitations__attendance_status=Guest.RSVPStatus.ATTENDING,
+            ).select_related("invitation_owner").order_by("last_name", "first_name")
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "Capacités, soirée et statistiques",
+            "snapshots": snapshots,
+            "reception_guests": reception_guests,
+            "reception_deadline": reception.attendance_change_deadline if reception else None,
+            "now": timezone.now(),
+        }
+        return render(request, "admin/guests/guest/capacity_dashboard.html", context)
 
     def open_rsvp_view(self, request, guest_id):
         guest = get_object_or_404(
@@ -416,6 +460,7 @@ class WeddingEventAdmin(admin.ModelAdmin):
         "display_order",
         "requires_rsvp",
         "capacity",
+        "attendance_change_deadline",
         "is_active",
     )
     list_editable = (

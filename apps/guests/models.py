@@ -40,6 +40,10 @@ class Guest(models.Model):
         GUEST = "guest", "Invité"
         ADMIN = "admin", "Administration"
 
+    class AttendanceMode(models.TextChoices):
+        INHERIT = "inherit", "Mêmes disponibilités que l’invité principal"
+        CUSTOM = "custom", "Disponibilités personnalisées"
+
     class AgeCategory(models.TextChoices):
         BABY = "baby_0_2", "Bébé (0–2)"
         CHILD = "child_3_12", "Enfant (3–12)"
@@ -132,6 +136,27 @@ class Guest(models.Model):
         null=True,
         blank=True,
     )
+    attendance_mode = models.CharField(
+        "mode de disponibilités",
+        max_length=20,
+        choices=AttendanceMode.choices,
+        default=AttendanceMode.INHERIT,
+    )
+    confirmed_party_size = models.PositiveSmallIntegerField(
+        "taille du groupe confirmée",
+        null=True,
+        blank=True,
+    )
+    party_composition_confirmed_at = models.DateTimeField(
+        "composition confirmée le",
+        null=True,
+        blank=True,
+    )
+    party_composition_editable_until = models.DateTimeField(
+        "composition modifiable jusqu’au",
+        null=True,
+        blank=True,
+    )
 
     qr_token = models.UUIDField(
         "identifiant QR permanent",
@@ -206,6 +231,9 @@ class Guest(models.Model):
         if self.invitation_owner_id and self.invitation_owner_id == self.pk:
             errors["invitation_owner"] = "Un invité ne peut pas être son propre accompagnant."
 
+        if self.confirmed_party_size is not None and not 0 <= self.confirmed_party_size <= self.party_size_limit:
+            errors["confirmed_party_size"] = "La composition confirmée dépasse la taille de l’invitation."
+
         if self.invitation_kind == self.InvitationKind.SINGLE and self.party_size_limit != 1:
             errors["party_size_limit"] = "Une invitation individuelle autorise exactement une place."
         elif self.invitation_kind == self.InvitationKind.COUPLE and self.party_size_limit != 2:
@@ -245,6 +273,11 @@ class WeddingEvent(models.Model):
     )
     starts_at = models.DateTimeField("début", null=True, blank=True)
     capacity = models.PositiveIntegerField("capacité", null=True, blank=True)
+    attendance_change_deadline = models.DateTimeField(
+        "disponibilités modifiables jusqu’au",
+        null=True,
+        blank=True,
+    )
     display_order = models.PositiveSmallIntegerField("ordre", default=0)
     is_active = models.BooleanField("actif", default=True)
     requires_rsvp = models.BooleanField(
