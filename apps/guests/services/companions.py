@@ -6,6 +6,7 @@ from guests.models import Guest, GuestEventInvitation
 from guests.services.deadline import is_rsvp_open
 from guests.services.capacity import attendance_is_open, ensure_capacity
 from guests.services.composition import composition_is_editable
+from guests.services.event_eligibility import companion_event_eligibility
 
 
 @transaction.atomic
@@ -42,14 +43,21 @@ def add_companion(*, primary_guest, first_name, last_name, gender, age_category)
 
     event_invitations = []
     for invitation in primary_guest.event_invitations.select_related("event"):
+        is_eligible = companion_event_eligibility(
+            primary_guest=primary_guest,
+            primary_invitation=invitation,
+        )
         status = Guest.RSVPStatus.PENDING
-        if invitation.is_eligible and invitation.attendance_status == Guest.RSVPStatus.ATTENDING:
+        if is_eligible and invitation.attendance_status == Guest.RSVPStatus.ATTENDING:
             status = Guest.RSVPStatus.ATTENDING
+        elif not is_eligible:
+            status = Guest.RSVPStatus.NOT_ATTENDING
         event_invitations.append(
             GuestEventInvitation(
                 guest=companion,
                 event=invitation.event,
-                is_eligible=invitation.is_eligible,
+                is_eligible=is_eligible,
+                eligibility_source=GuestEventInvitation.EligibilitySource.POLICY,
                 attendance_status=status,
                 response_source=Guest.RSVPSource.GUEST if status != Guest.RSVPStatus.PENDING else "",
             )

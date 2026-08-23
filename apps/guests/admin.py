@@ -6,7 +6,7 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
-from .forms import GuestImportUploadForm
+from .forms import GuestEventInvitationAdminForm, GuestImportUploadForm
 from .models import (
     Guest,
     GuestEventInvitation,
@@ -20,11 +20,22 @@ from .services.access import issue_guest_access, start_guest_session
 from .services.invitation_messages import build_invitation_share_text
 from .services.ticket import TicketGenerationError, generate_ticket
 from .services.capacity import demographic_statistics, event_capacity_snapshot
+from .services.event_eligibility import apply_city_hall_policy
 
 
 class GuestEventInvitationInline(admin.TabularInline):
     model = GuestEventInvitation
+    form = GuestEventInvitationAdminForm
     extra = 0
+    fields = (
+        "event",
+        "is_eligible",
+        "eligibility_source",
+        "attendance_status",
+        "response_source",
+        "responded_at",
+    )
+    readonly_fields = ("eligibility_source",)
 
 
 class CompanionInline(admin.TabularInline):
@@ -86,11 +97,29 @@ class GuestAdmin(admin.ModelAdmin):
         "updated_at",
     )
     inlines = [GuestEventInvitationInline, CompanionInline, TicketInline]
-    actions = ["regenerate_rsvp_access", "generate_selected_tickets"]
+    actions = [
+        "regenerate_rsvp_access",
+        "generate_selected_tickets",
+        "apply_selected_city_hall_policy",
+    ]
     list_select_related = ("invitation_owner",)
 
     class Media:
         js = ("guests/js/admin_invitation_share.js",)
+
+    @admin.action(description="Appliquer la politique mairie aux groupes sélectionnés")
+    def apply_selected_city_hall_policy(self, request, queryset):
+        owners = {
+            (guest.invitation_owner or guest).pk: guest.invitation_owner or guest
+            for guest in queryset.select_related("invitation_owner")
+        }
+        for owner in owners.values():
+            apply_city_hall_policy(owner)
+        self.message_user(
+            request,
+            f"Politique mairie appliquée à {len(owners)} groupe(s). Les décisions restent modifiables individuellement.",
+            messages.SUCCESS,
+        )
 
     @admin.display(description="Accès RSVP")
     def access_status(self, obj):

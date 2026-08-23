@@ -71,6 +71,8 @@ def update_rsvp(
             inherited_companions = guest.companions.filter(
                 is_active=True,
                 attendance_mode=Guest.AttendanceMode.INHERIT,
+                event_invitations__event=invitation.event,
+                event_invitations__is_eligible=True,
             ).count()
             if event_status == Guest.RSVPStatus.ATTENDING and invitation.attendance_status != event_status:
                 ensure_capacity(invitation.event, additional_attendees=1 + inherited_companions)
