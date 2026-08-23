@@ -26,7 +26,7 @@
           {% csrf_token %}
           {{ attendance_form.non_field_errors }}
           {% for field in attendance_form %}
-            <fieldset{% if field.name != "attendance_mode" %} data-custom-attendance-field{% endif %}><legend>{{ field.label }}</legend><div class="inline-choices">{{ field }}</div>{{ field.errors }}</fieldset>
+            <fieldset{% if field.name != "attendance_mode" %} data-custom-attendance-field{% endif %}><legend>{{ field.label }}</legend><div class="inline-choices">{{ field }}</div>{% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</fieldset>
           {% endfor %}
           {% if attendance_form.city_hall_restricted %}
           <div class="event-choice event-disabled" data-custom-attendance-field title="Contactez les mariés pour toute situation particulière.">
