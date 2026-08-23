@@ -16,7 +16,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from ..models import Guest, Ticket, WeddingEvent
+from ..models import Guest, GuestEventInvitation, Ticket, WeddingEvent
 
 
 INFO_BACKGROUND = "#FFEEEC"
@@ -177,8 +177,8 @@ def _render_signature(guest):
             "dress-code/",
         ),
         "dress_code_palettes": DRESS_CODE_PALETTES,
-        "information_layout_version": 3,
-        "program": _program_snapshot(),
+        "information_layout_version": 4,
+        "program": _program_snapshot(_ticket_program_events(guest)),
         "program_icon_assets": _program_icon_assets_snapshot(),
     }
     serialized = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
@@ -275,7 +275,7 @@ def _program_events():
     return list(WeddingEvent.objects.filter(is_active=True).order_by("display_order", "name"))
 
 
-def _program_snapshot():
+def _program_snapshot(events=None):
     return [
         {
             "code": event.code,
@@ -287,8 +287,35 @@ def _program_snapshot():
             "starts_at": event.starts_at.isoformat() if event.starts_at else None,
             "display_order": event.display_order,
         }
-        for event in _program_events()
+        for event in (events if events is not None else _program_events())
     ]
+
+
+def _ticket_program_events(primary_guest):
+    members = party_members(primary_guest)
+    invitations = list(
+        GuestEventInvitation.objects.filter(
+            guest__in=members,
+            is_eligible=True,
+            event__is_active=True,
+        ).select_related("guest", "event")
+    )
+    if not invitations:
+        return _program_events()
+    names_by_event = {}
+    events_by_id = {}
+    for invitation in invitations:
+        events_by_id[invitation.event_id] = invitation.event
+        names_by_event.setdefault(invitation.event_id, []).append(
+            invitation.guest.first_name or invitation.guest.full_name
+        )
+    for event_id, event in events_by_id.items():
+        invited_names = names_by_event[event_id]
+        if len(invited_names) < len(members):
+            event.invitation_note = "Invités : " + ", ".join(invited_names)
+        else:
+            event.invitation_note = ""
+    return sorted(events_by_id.values(), key=lambda event: (event.display_order, event.name))
 
 
 def _program_icon_asset_path(icon, variant):
@@ -570,6 +597,14 @@ def _render_information_image(events=None):
                 font=font(max(22, event_detail_size - 2)),
                 fill=INFO_TERRACOTTA if event.map_url else INFO_TEXT,
             )
+            invitation_note = getattr(event, "invitation_note", "")
+            if invitation_note:
+                draw.text(
+                    (text_x, address_y + event_detail_size + 8),
+                    invitation_note,
+                    font=font(max(20, event_detail_size - 4)),
+                    fill=INFO_TERRACOTTA_DARK,
+                )
             if event.map_url and event.address:
                 map_links.append(
                     {
@@ -787,7 +822,7 @@ def _render_ticket_images(guest, template_path):
         dpi=(settings.TICKET_OUTPUT_DPI, settings.TICKET_OUTPUT_DPI),
     )
     jpg_content = jpg_buffer.getvalue()
-    information_jpg, link_boxes = _render_information_image()
+    information_jpg, link_boxes = _render_information_image(_ticket_program_events(guest))
     pdf_content = _build_two_page_pdf(jpg_content, information_jpg, link_boxes)
     return jpg_content, pdf_content
 

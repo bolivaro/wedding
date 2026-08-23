@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models import Prefetch
 from django.shortcuts import redirect, render
 
-from guests.models import WeddingEvent
+from guests.models import GuestEventInvitation, WeddingEvent
 from guests.services.access import get_session_guest
 
 from .models import Accommodation, StayArea
@@ -79,7 +79,23 @@ def home(request):
 
 
 def program(request):
+    guest = get_session_guest(request)
     events = _events()
+    if guest:
+        members = [guest, *guest.companions.filter(is_active=True)]
+        invitations = GuestEventInvitation.objects.filter(
+            guest__in=members,
+            is_eligible=True,
+            event__is_active=True,
+        ).select_related("guest", "event")
+        invited_by_event = {}
+        for invitation in invitations:
+            invited_by_event.setdefault(invitation.event_id, []).append(
+                invitation.guest.full_name
+            )
+        for event in events:
+            event.invited_members = invited_by_event.get(event.pk, [])
+            event.is_in_group_invitation = bool(event.invited_members)
     for event in events:
         event.embed_url = _embed_url(event.address)
     return render(request, "website/program.html", _public_context(request, events=events))

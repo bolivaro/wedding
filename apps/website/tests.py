@@ -49,6 +49,14 @@ class PublicWebsiteTests(TestCase):
         self.assertContains(response, "Retrouvons-nous à la mairie.")
         self.assertContains(response, "guests/images/program-icons/city-hall.svg")
         self.assertNotContains(response, "guests/images/program-icons/city_hall.svg")
+
+    def test_program_explains_city_hall_capacity_limit(self):
+        response = self.client.get(reverse("website:program"))
+
+        self.assertContains(
+            response,
+            "En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.",
+        )
         self.assertNotContains(response, "Masqué")
 
     def test_dress_code_contains_four_palettes(self):
