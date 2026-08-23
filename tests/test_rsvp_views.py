@@ -131,6 +131,7 @@ class RSVPViewsTests(TestCase):
                 "status": Guest.RSVPStatus.ATTENDING,
                 "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_cocktail": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
             },
         )
@@ -166,6 +167,7 @@ class RSVPViewsTests(TestCase):
                 "status": Guest.RSVPStatus.ATTENDING,
                 "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_cocktail": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
             },
         )
@@ -211,6 +213,7 @@ class RSVPViewsTests(TestCase):
                 "status": Guest.RSVPStatus.ATTENDING,
                 "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_cocktail": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.NOT_ATTENDING,
             },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
@@ -276,14 +279,14 @@ class RSVPViewsTests(TestCase):
         self.assertIn('<details class="rsvp-editor" open', fragment)
         self.assertIn("Choisissez une réponse", fragment)
 
-    def test_cocktail_is_in_program_data_but_not_a_separate_rsvp_question(self):
+    def test_cocktail_has_an_independent_rsvp_question(self):
         self.login_guest()
 
         response = self.client.get(reverse("guests:rsvp_dashboard"))
 
         cocktail = WeddingEvent.objects.get(code=WeddingEvent.Code.COCKTAIL)
-        self.assertFalse(cocktail.requires_rsvp)
-        self.assertNotContains(response, 'name="event_cocktail"')
+        self.assertTrue(cocktail.requires_rsvp)
+        self.assertContains(response, 'name="event_cocktail"')
 
     def test_companion_limit_is_enforced_through_view(self):
         self.login_guest()
@@ -343,6 +346,25 @@ class RSVPViewsTests(TestCase):
         )
 
         response = self.client.post(
+            reverse("guests:companion_attendance", kwargs={"companion_id": companion.pk}),
+            {
+                "attendance_mode": Guest.AttendanceMode.CUSTOM,
+                "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_cocktail": Guest.RSVPStatus.NOT_ATTENDING,
+                "event_reception": Guest.RSVPStatus.ATTENDING,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        companion.refresh_from_db()
+        self.assertEqual(companion.attendance_mode, Guest.AttendanceMode.CUSTOM)
+        self.assertEqual(
+            companion.event_invitations.get(event__code=WeddingEvent.Code.COCKTAIL).attendance_status,
+            Guest.RSVPStatus.NOT_ATTENDING,
+        )
+
+        response = self.client.post(
             reverse("guests:companion_remove", kwargs={"companion_id": companion.pk}),
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
@@ -363,6 +385,7 @@ class RSVPViewsTests(TestCase):
                 "status": Guest.RSVPStatus.ATTENDING,
                 "age_category": Guest.AgeCategory.ADULT,
                 "event_church": Guest.RSVPStatus.ATTENDING,
+                "event_cocktail": Guest.RSVPStatus.ATTENDING,
                 "event_reception": Guest.RSVPStatus.ATTENDING,
             },
         )

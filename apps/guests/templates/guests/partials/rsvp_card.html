@@ -15,12 +15,12 @@
   <form method="post" action="{% url 'guests:rsvp_respond' %}" data-async-form data-rsvp-form>
     {% csrf_token %}
     {{ rsvp_form.non_field_errors }}
-    <fieldset {% if not rsvp_open %}disabled{% endif %}>
+    <fieldset {% if not response_open %}disabled{% endif %}>
       <legend>{{ rsvp_form.status.label }}</legend>
       <div class="choice-grid">{{ rsvp_form.status }}</div>
       {{ rsvp_form.status.errors }}
     </fieldset>
-    <fieldset {% if not rsvp_open %}disabled{% endif %}>
+    <fieldset {% if not response_open %}disabled{% endif %}>
       <legend>À propos de vous</legend>
       <div class="field">
         <label for="{{ rsvp_form.age_category.id_for_label }}">{{ rsvp_form.age_category.label }}</label>
@@ -28,7 +28,7 @@
         {{ rsvp_form.age_category.errors }}
       </div>
     </fieldset>
-    <fieldset class="events-fieldset" data-events-fieldset {% if not rsvp_open %}disabled{% endif %}>
+    <fieldset class="events-fieldset" data-events-fieldset {% if not response_open %}disabled{% endif %}>
       <legend>À quelles étapes serez-vous présent(e) ?</legend>
       <div class="event-list">
         {% for field in rsvp_form %}
@@ -43,7 +43,7 @@
         {% endfor %}
       </div>
     </fieldset>
-    {% if rsvp_open %}<button class="button button-primary" type="submit" data-loading-label="Enregistrement…">Enregistrer mes réponses</button>{% endif %}
+    {% if response_open %}<button class="button button-primary" type="submit" data-loading-label="Enregistrement…">Enregistrer mes réponses</button>{% endif %}
   </form>
   {% if rsvp_answered %}</details>{% endif %}
 </section>

@@ -22,7 +22,7 @@ SITE_BASE_URL = normalize_public_base_url(
     env("SITE_BASE_URL", default=""),
     debug=DEBUG,
 )
-APP_VERSION = env("APP_VERSION", default="1.0.5")
+APP_VERSION = env("APP_VERSION", default="1.1.0")
 WEDDING_DATE = date.fromisoformat(env("WEDDING_DATE", default="2026-10-17"))
 WEDDING_PROGRAM_URL = normalize_public_url(
     env("WEDDING_PROGRAM_URL", default=""),
@@ -41,6 +41,7 @@ GOOGLE_MY_MAPS_EMBED_URL = env("GOOGLE_MY_MAPS_EMBED_URL", default="")
 RSVP_DEADLINE = datetime.fromisoformat(
     env("RSVP_DEADLINE", default="2026-09-15T23:59:59+02:00")
 )
+RSVP_COMPOSITION_EDIT_DAYS = env.int("RSVP_COMPOSITION_EDIT_DAYS", default=3)
 RSVP_SUPPORT_EMAIL = env("RSVP_SUPPORT_EMAIL", default="nous@leslieniboli.fr")
 GUEST_ACCESS_LIFETIME_DAYS = env.int("GUEST_ACCESS_LIFETIME_DAYS", default=120)
 GUEST_ACCESS_MAX_FAILURES = env.int("GUEST_ACCESS_MAX_FAILURES", default=5)

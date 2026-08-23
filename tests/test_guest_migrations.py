@@ -6,6 +6,40 @@ from django.test import TransactionTestCase
 from django.utils import timezone
 
 
+class ZZCapacityMigrationTests(TransactionTestCase):
+    migrate_from = [("guests", "0013_structured_guest_age_categories")]
+    migrate_to = [("guests", "0014_guest_composition_capacity_and_attendance")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        WeddingEvent = old_apps.get_model("guests", "WeddingEvent")
+        for order, (code, name) in enumerate(
+            (("city_hall", "Mairie"), ("church", "Église"), ("cocktail", "Vin d'honneur"), ("reception", "Soirée")),
+            start=1,
+        ):
+            WeddingEvent.objects.get_or_create(code=code, defaults={"name": name, "display_order": order})
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_capacities_and_attendance_deadlines_are_configured(self):
+        WeddingEvent = self.apps.get_model("guests", "WeddingEvent")
+        expected = {"city_hall": 175, "church": 300, "cocktail": 300, "reception": 280}
+        for code, capacity in expected.items():
+            event = WeddingEvent.objects.get(code=code)
+            self.assertEqual(event.capacity, capacity)
+            self.assertIsNotNone(event.attendance_change_deadline)
+        self.assertTrue(WeddingEvent.objects.get(code="cocktail").requires_rsvp)
+
+
 class CocktailEventMigrationTests(TransactionTestCase):
     migrate_from = [("guests", "0008_ticket")]
     migrate_to = [("guests", "0009_weddingevent_cocktail_and_requires_rsvp")]

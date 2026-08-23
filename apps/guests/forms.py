@@ -104,5 +104,61 @@ class GuestEmailForm(forms.Form):
     email = forms.EmailField(label="Votre adresse email", max_length=254)
 
 
+class CompanionAttendanceForm(forms.Form):
+    attendance_mode = forms.ChoiceField(
+        label="Disponibilités",
+        choices=[],
+        widget=forms.RadioSelect,
+    )
+
+    def __init__(self, *args, companion, **kwargs):
+        from guests.models import Guest
+        from guests.services.capacity import attendance_is_open
+
+        super().__init__(*args, **kwargs)
+        self.companion = companion
+        self.fields["attendance_mode"].choices = Guest.AttendanceMode.choices
+        self.initial["attendance_mode"] = companion.attendance_mode
+        self.has_open_events = False
+        for invitation in companion.event_invitations.select_related("event").filter(
+            event__is_active=True,
+            event__requires_rsvp=True,
+            is_eligible=True,
+        ):
+            name = f"event_{invitation.event.code}"
+            is_open = attendance_is_open(invitation.event)
+            self.has_open_events = self.has_open_events or is_open
+            self.fields[name] = forms.ChoiceField(
+                label=invitation.event.name,
+                choices=[
+                    (Guest.RSVPStatus.ATTENDING, "Oui"),
+                    (Guest.RSVPStatus.NOT_ATTENDING, "Non"),
+                ],
+                widget=forms.RadioSelect,
+                required=False,
+                disabled=not is_open,
+            )
+            if invitation.attendance_status != Guest.RSVPStatus.PENDING:
+                self.initial[name] = invitation.attendance_status
+        self.fields["attendance_mode"].disabled = not self.has_open_events
+
+    def clean(self):
+        from guests.models import Guest
+
+        data = super().clean()
+        if data.get("attendance_mode") == Guest.AttendanceMode.CUSTOM:
+            for name in self.fields:
+                if name.startswith("event_") and not data.get(name):
+                    self.add_error(name, "Choisissez une réponse pour cet événement.")
+        return data
+
+    def event_responses(self):
+        return {
+            name.removeprefix("event_"): value
+            for name, value in self.cleaned_data.items()
+            if name.startswith("event_") and value
+        }
+
+
 class AccessRecoveryForm(forms.Form):
     email = forms.EmailField(label="Adresse email vérifiée", max_length=254)

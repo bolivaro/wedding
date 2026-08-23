@@ -17,6 +17,7 @@ urlpatterns = [
     path("rsvp/", views.rsvp_dashboard, name="rsvp_dashboard"),
     path("rsvp/respond/", views.rsvp_respond, name="rsvp_respond"),
     path("rsvp/companions/add/", views.companion_add, name="companion_add"),
+    path("rsvp/composition/confirm/", views.party_composition_confirm, name="party_composition_confirm"),
     path(
         "rsvp/companions/<int:companion_id>/update/",
         views.companion_update,
@@ -26,6 +27,11 @@ urlpatterns = [
         "rsvp/companions/<int:companion_id>/remove/",
         views.companion_remove,
         name="companion_remove",
+    ),
+    path(
+        "rsvp/companions/<int:companion_id>/attendance/",
+        views.companion_attendance,
+        name="companion_attendance",
     ),
     path("rsvp/email/", views.email_update, name="email_update"),
     path("email/verify/<uuid:selector>/<str:secret>/", views.verify_email, name="verify_email"),
