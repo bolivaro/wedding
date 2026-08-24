@@ -20,6 +20,25 @@ from guests.services.email_access import (
     request_email_verification,
 )
 from guests.services.notifications import send_email_verification
+from guests.services.invitation_messages import build_invitation_share_text
+
+
+class InvitationShareMessageTests(TestCase):
+    @override_settings(
+        SITE_BASE_URL="https://www.leslieniboli.fr",
+        WEDDING_DATE=date(2026, 10, 17),
+        RSVP_DEADLINE=datetime.fromisoformat("2026-09-15T23:59:00+02:00"),
+    )
+    def test_message_separates_public_site_from_private_rsvp_link(self):
+        message = build_invitation_share_text()
+
+        self.assertIn(
+            "toutes les informations pratiques :\nhttps://www.leslieniboli.fr/",
+            message,
+        )
+        warning = "*Ce lien est strictement privé. Merci de ne pas le transmettre.*"
+        self.assertIn(warning, message)
+        self.assertLess(message.index("https://www.leslieniboli.fr/"), message.index(warning))
 
 
 class GuestAccessServiceTests(TestCase):
