@@ -7,6 +7,7 @@
   <div class="carousel-track" data-carousel-track>
     {% for slide in slides %}
       <article class="carousel-slide carousel-slide-{{ forloop.counter }}" data-carousel-slide {% if not forloop.first %}hidden{% endif %}>
+        <img class="carousel-background" src="{% static slide.image %}" alt="" width="{{ slide.image_width }}" height="{{ slide.image_height }}" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
         <div class="ornament" aria-hidden="true">◇</div>
         <div class="carousel-copy">
           <p class="eyebrow">{{ slide.eyebrow }}</p>

@@ -71,9 +71,9 @@ def _embed_url(address):
 
 def home(request):
     slides = [
-        {"eyebrow": "17 octobre 2026", "title": "Une journée à célébrer ensemble", "text": "Toutes les informations utiles pour préparer votre venue."},
-        {"eyebrow": "Notre histoire", "title": "Quelques souvenirs, bientôt ici", "text": "Les images et les mots de cette galerie seront ajoutés prochainement."},
-        {"eyebrow": "Votre séjour", "title": "Préparez chaque étape sereinement", "text": "Programme, tenue, trajets et conseils de logement réunis au même endroit."},
+        {"eyebrow": "17 octobre 2026", "title": "Une journée à célébrer ensemble", "text": "Toutes les informations utiles pour préparer votre venue.", "image": "website/images/carousel/proposal-hand.webp", "image_width": 2200, "image_height": 2200},
+        {"eyebrow": "Notre histoire", "title": "Quelques souvenirs, bientôt ici", "text": "Les images et les mots de cette galerie seront ajoutés prochainement.", "image": "website/images/carousel/proposal-bir.webp", "image_width": 2600, "image_height": 1734},
+        {"eyebrow": "Votre séjour", "title": "Préparez chaque étape sereinement", "text": "Programme, tenue, trajets et conseils de logement réunis au même endroit.", "image": "website/images/carousel/couple-goal.webp", "image_width": 2600, "image_height": 1734},
     ]
     return render(request, "website/home.html", _public_context(request, slides=slides))
 

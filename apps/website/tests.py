@@ -43,6 +43,21 @@ class PublicWebsiteTests(TestCase):
                 response = self.client.get(reverse(f"website:{name}"))
                 self.assertEqual(response.status_code, 200)
 
+    def test_home_carousel_uses_proposal_photos_in_requested_order(self):
+        response = self.client.get(reverse("website:home"))
+        content = response.content.decode()
+        images = (
+            "website/images/carousel/proposal-hand.webp",
+            "website/images/carousel/proposal-bir.webp",
+            "website/images/carousel/couple-goal.webp",
+        )
+
+        for image in images:
+            self.assertContains(response, image)
+        self.assertLess(content.index(images[0]), content.index(images[1]))
+        self.assertLess(content.index(images[1]), content.index(images[2]))
+        self.assertContains(response, 'fetchpriority="high"', count=1)
+
     def test_program_only_displays_active_events_and_details(self):
         response = self.client.get(reverse("website:program"))
         self.assertContains(response, "Cérémonie civile")
