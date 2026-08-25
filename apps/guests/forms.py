@@ -46,6 +46,17 @@ class RSVPForm(forms.Form):
         widget=forms.RadioSelect,
     )
     age_category = forms.ChoiceField(label="Votre tranche d’âge", choices=[])
+    decline_reason = forms.ChoiceField(
+        label="Quelle est la raison principale de votre absence ?",
+        choices=[],
+        required=False,
+    )
+    decline_message = forms.CharField(
+        label="Souhaitez-vous nous laisser un message ?",
+        required=False,
+        max_length=1000,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Votre message (facultatif)"}),
+    )
 
     def __init__(self, *args, guest, **kwargs):
         from guests.models import Guest
@@ -61,6 +72,12 @@ class RSVPForm(forms.Form):
             *Guest.AgeCategory.choices,
         ]
         self.initial["age_category"] = guest.age_category
+        self.fields["decline_reason"].choices = [
+            ("", "Choisissez un motif"),
+            *Guest.DeclineReason.choices,
+        ]
+        self.initial["decline_reason"] = guest.decline_reason
+        self.initial["decline_message"] = guest.decline_message
         self.initial["status"] = (
             guest.rsvp_status if guest.rsvp_status != Guest.RSVPStatus.PENDING else ""
         )
@@ -90,6 +107,11 @@ class RSVPForm(forms.Form):
             for field_name, field in self.fields.items():
                 if field_name.startswith("event_") and not cleaned_data.get(field_name):
                     self.add_error(field_name, "Choisissez une réponse pour cet événement.")
+        elif (
+            cleaned_data.get("status") == Guest.RSVPStatus.NOT_ATTENDING
+            and not cleaned_data.get("decline_reason")
+        ):
+            self.add_error("decline_reason", "Choisissez un motif, même si vous préférez ne pas préciser.")
         return cleaned_data
 
     def event_responses(self):

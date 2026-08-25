@@ -129,8 +129,11 @@ input[type='radio'] { accent-color: var(--primary); }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .field { display: grid; gap: 6px; }
 .field label { font-size: .86rem; font-weight: 750; }
-.field input, .field select { width: 100%; min-height: 46px; padding: 10px 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
-.field input:focus, .field select:focus, button:focus-visible, a:focus-visible { outline: 3px solid color-mix(in srgb, var(--mustard) 60%, transparent); outline-offset: 2px; }
+.field input, .field select, .field textarea { width: 100%; min-height: 46px; padding: 10px 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
+.field textarea { min-height: 105px; resize: vertical; font: inherit; }
+.field input:focus, .field select:focus, .field textarea:focus, button:focus-visible, a:focus-visible { outline: 3px solid color-mix(in srgb, var(--mustard) 60%, transparent); outline-offset: 2px; }
+.decline-fieldset { padding: 18px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.decline-fieldset .field + .field { margin-top: 14px; }
 .errorlist { margin: 6px 0; padding-left: 20px; color: var(--danger); }
 .notice, .message { padding: 14px 18px; border: 1px solid var(--border); border-radius: var(--radius-md); }
 .notice { display: flex; justify-content: center; gap: 8px; margin: 22px 0; background: var(--surface); }

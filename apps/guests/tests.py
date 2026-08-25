@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 
 from .models import Guest, GuestEventInvitation, WeddingEvent
 from .services.companions import add_companion, deactivate_companion, update_companion
-from .services.notifications import send_rsvp_notification
+from .services.notifications import RSVPNotificationKind, send_rsvp_notification
 from .services.rsvp import update_rsvp
 from .services.event_eligibility import apply_city_hall_policy
 from .forms import CompanionAttendanceForm
@@ -248,12 +248,36 @@ class CompanionServiceTests(TestCase):
 class RSVPNotificationTests(TestCase):
     @override_settings(RSVP_NOTIFICATION_EMAILS=["couple@example.com"])
     @patch("guests.services.notifications.send_brevo_email")
+    def test_multi_place_initial_response_is_explicitly_provisional(self, send_email):
+        primary = Guest.objects.create(
+            first_name="Marie",
+            last_name="Dupont",
+            invitation_kind=Guest.InvitationKind.COUPLE,
+            party_size_limit=2,
+            rsvp_status=Guest.RSVPStatus.ATTENDING,
+        )
+
+        send_rsvp_notification(
+            guest=primary,
+            notification_kind=RSVPNotificationKind.PROVISIONAL,
+        )
+
+        kwargs = send_email.call_args.kwargs
+        self.assertIn("[RSVP provisoire]", kwargs["subject"])
+        self.assertIn("EN COURS DE SAISIE", kwargs["text_content"])
+        self.assertIn("Ne pas considérer", kwargs["text_content"])
+        self.assertNotIn("- Aucun accompagnant", kwargs["text_content"])
+
+    @override_settings(RSVP_NOTIFICATION_EMAILS=["couple@example.com"])
+    @patch("guests.services.notifications.send_brevo_email")
     def test_notification_contains_response_and_age_categories(self, send_email):
         primary = Guest.objects.create(
             first_name="Marie",
             last_name="Dupont",
             age_category=Guest.AgeCategory.CONFIRMED_ADULT,
             rsvp_status=Guest.RSVPStatus.NOT_ATTENDING,
+            decline_reason=Guest.DeclineReason.TRAVEL,
+            decline_message="Le trajet est trop compliqué.",
         )
         Guest.objects.create(
             first_name="Léa",
@@ -270,6 +294,8 @@ class RSVPNotificationTests(TestCase):
         self.assertIn("Absence confirmée", kwargs["subject"])
         self.assertIn("Adulte confirmé (45–59)", kwargs["text_content"])
         self.assertIn("Adolescent (13–17)", kwargs["text_content"])
+        self.assertIn("Distance ou déplacement", kwargs["text_content"])
+        self.assertIn("Le trajet est trop compliqué.", kwargs["text_content"])
 
 
 class RSVPServiceTests(TestCase):
@@ -313,6 +339,8 @@ class RSVPServiceTests(TestCase):
         update_rsvp(
             guest=self.guest,
             status=Guest.RSVPStatus.NOT_ATTENDING,
+            decline_reason=Guest.DeclineReason.UNAVAILABLE,
+            decline_message="Nous penserons très fort à vous.",
         )
 
         self.assertFalse(
@@ -320,5 +348,8 @@ class RSVPServiceTests(TestCase):
                 attendance_status=Guest.RSVPStatus.NOT_ATTENDING
             ).exists()
         )
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.decline_reason, Guest.DeclineReason.UNAVAILABLE)
+        self.assertEqual(self.guest.decline_message, "Nous penserons très fort à vous.")
 
 # Create your tests here.

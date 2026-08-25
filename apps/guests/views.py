@@ -28,6 +28,7 @@ from .services.email_access import (
     request_email_verification,
 )
 from .services.notifications import (
+    RSVPNotificationKind,
     send_access_recovery,
     send_email_verification,
     send_rsvp_notification,
@@ -215,26 +216,45 @@ def rsvp_respond(request):
                 status=form.cleaned_data["status"],
                 age_category=form.cleaned_data["age_category"],
                 event_responses=form.event_responses(),
+                decline_reason=form.cleaned_data.get("decline_reason", ""),
+                decline_message=form.cleaned_data.get("decline_message", ""),
             )
         except ValidationError as exc:
             for error in exc.messages:
                 form.add_error(None, error)
         else:
             try:
-                send_rsvp_notification(guest=updated_guest)
+                if updated_guest.rsvp_status == Guest.RSVPStatus.NOT_ATTENDING:
+                    notification_kind = RSVPNotificationKind.DECLINED
+                elif updated_guest.party_size_limit == 1:
+                    notification_kind = RSVPNotificationKind.INDIVIDUAL_CONFIRMED
+                elif updated_guest.confirmed_party_size is None:
+                    notification_kind = RSVPNotificationKind.PROVISIONAL
+                else:
+                    notification_kind = RSVPNotificationKind.AVAILABILITY_UPDATED
+                send_rsvp_notification(
+                    guest=updated_guest,
+                    notification_kind=notification_kind,
+                )
             except Exception:
                 logger.exception(
                     "Impossible d’envoyer la notification RSVP pour l’invité %s",
                     updated_guest.pk,
+                )
+            success_message = "Votre réponse a bien été enregistrée."
+            if notification_kind == RSVPNotificationKind.PROVISIONAL:
+                success_message = (
+                    "Votre présence est enregistrée. Ajoutez vos accompagnants puis "
+                    "confirmez définitivement votre groupe à l’étape 2."
                 )
             if _is_async_request(request):
                 return _fragment_response(
                     request,
                     guest=request.guest,
                     components=("rsvp", "ticket"),
-                    message="Votre réponse a bien été enregistrée.",
+                    message=success_message,
                 )
-            messages.success(request, "Votre réponse a bien été enregistrée.")
+            messages.success(request, success_message)
             return redirect("guests:rsvp_dashboard")
 
     if _is_async_request(request):
@@ -418,6 +438,7 @@ def companion_attendance(request, companion_id):
 @guest_access_required
 def party_composition_confirm(request):
     was_already_confirmed = request.guest.party_composition_confirmed_at is not None
+    previous_party_size = request.guest.confirmed_party_size
     try:
         confirmed_guest = confirm_party_composition(
             primary_guest=request.guest,
@@ -442,6 +463,21 @@ def party_composition_confirm(request):
                 f"Composition confirmée : {confirmed_guest.confirmed_party_size} "
                 f"{party_label} sur {confirmed_guest.party_size_limit}. "
                 f"Modifiable jusqu’au {editable_until}."
+            )
+        try:
+            send_rsvp_notification(
+                guest=confirmed_guest,
+                notification_kind=(
+                    RSVPNotificationKind.COMPOSITION_UPDATED
+                    if was_already_confirmed
+                    else RSVPNotificationKind.COMPOSITION_CONFIRMED
+                ),
+                previous_party_size=previous_party_size,
+            )
+        except Exception:
+            logger.exception(
+                "Impossible d’envoyer la notification de composition pour l’invité %s",
+                confirmed_guest.pk,
             )
         status = 200
     if _is_async_request(request):
