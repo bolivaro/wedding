@@ -23,12 +23,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncRsvpVisibility = () => {
     const form = document.querySelector('[data-rsvp-form]');
     const events = form?.querySelector('[data-events-fieldset]');
-    if (!form || !events) return;
+    const decline = form?.querySelector('[data-decline-fieldset]');
+    if (!form || !events || !decline) return;
     const syncEvents = () => {
       const status = form.querySelector("input[name='status']:checked")?.value;
       events.hidden = status === 'not_attending';
       events.querySelectorAll('input').forEach((input) => {
         input.disabled = status === 'not_attending';
+      });
+      decline.hidden = status !== 'not_attending';
+      decline.querySelectorAll('input, select, textarea').forEach((input) => {
+        input.disabled = status !== 'not_attending';
       });
     };
     form.querySelectorAll("input[name='status']").forEach((input) => {

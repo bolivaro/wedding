@@ -4,6 +4,8 @@
   <div class="rsvp-summary" aria-label="Résumé de vos réponses">
     <div><span>Réponse générale</span><strong>{{ guest.get_rsvp_status_display }}</strong></div>
     <div><span>Tranche d’âge</span><strong>{{ guest.age_category_label }}</strong></div>
+    {% if guest.rsvp_status == "not_attending" and guest.decline_reason %}<div><span>Motif de l’absence</span><strong>{{ guest.get_decline_reason_display }}</strong></div>{% endif %}
+    {% if guest.rsvp_status == "not_attending" and guest.decline_message %}<div><span>Votre message</span><strong>{{ guest.decline_message }}</strong></div>{% endif %}
     {% for invitation in event_invitations %}
       {% if invitation.is_eligible %}<div><span>{{ invitation.event.name }}</span><strong>{{ invitation.get_attendance_status_display }}</strong></div>{% endif %}
     {% endfor %}
@@ -28,11 +30,25 @@
         {{ rsvp_form.age_category.errors }}
       </div>
     </fieldset>
+    <fieldset class="decline-fieldset" data-decline-fieldset {% if not response_open %}disabled{% endif %}>
+      <legend>Un petit mot sur votre absence</legend>
+      <p class="field-help">Cette information nous aide à mieux comprendre les réponses. Vous pouvez choisir de ne pas préciser.</p>
+      <div class="field">
+        <label for="{{ rsvp_form.decline_reason.id_for_label }}">{{ rsvp_form.decline_reason.label }}</label>
+        {{ rsvp_form.decline_reason }}
+        {{ rsvp_form.decline_reason.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ rsvp_form.decline_message.id_for_label }}">{{ rsvp_form.decline_message.label }}</label>
+        {{ rsvp_form.decline_message }}
+        {{ rsvp_form.decline_message.errors }}
+      </div>
+    </fieldset>
     <fieldset class="events-fieldset" data-events-fieldset {% if not response_open %}disabled{% endif %}>
       <legend>À quelles étapes serez-vous présent(e) ?</legend>
       <div class="event-list">
         {% for field in rsvp_form %}
-          {% if field.name != "status" and field.name != "age_category" %}
+          {% if field.name != "status" and field.name != "age_category" and field.name != "decline_reason" and field.name != "decline_message" %}
           <div class="event-choice"><div><strong>{{ field.label }}</strong><span>Réponse indépendante</span></div><div class="inline-choices">{{ field }}</div>{{ field.errors }}</div>
           {% endif %}
         {% endfor %}

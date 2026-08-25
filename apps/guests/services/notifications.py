@@ -86,6 +86,14 @@ def send_rsvp_notification(*, guest):
         for companion in guest.companions.all()
         if companion.is_active
     ]
+    decline_lines = ""
+    if not attending:
+        decline_lines = (
+            "\n\nMotif de l’absence : "
+            f"{guest.get_decline_reason_display() or 'non renseigné'}\n"
+            "Message : "
+            f"{guest.decline_message or '- Aucun message'}"
+        )
     text_content = (
         f"{response_label} pour {guest.full_name}.\n\n"
         f"Réponse globale : {guest.get_rsvp_status_display()}\n\n"
@@ -94,6 +102,7 @@ def send_rsvp_notification(*, guest):
         f"{chr(10).join(event_lines) or '- Aucun événement soumis au RSVP'}\n\n"
         "Accompagnants :\n"
         f"{chr(10).join(companion_lines) or '- Aucun accompagnant'}"
+        f"{decline_lines}"
     )
     recipients = [
         {"email": email}

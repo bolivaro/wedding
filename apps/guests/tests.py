@@ -254,6 +254,8 @@ class RSVPNotificationTests(TestCase):
             last_name="Dupont",
             age_category=Guest.AgeCategory.CONFIRMED_ADULT,
             rsvp_status=Guest.RSVPStatus.NOT_ATTENDING,
+            decline_reason=Guest.DeclineReason.TRAVEL,
+            decline_message="Le trajet est trop compliqué.",
         )
         Guest.objects.create(
             first_name="Léa",
@@ -270,6 +272,8 @@ class RSVPNotificationTests(TestCase):
         self.assertIn("Absence confirmée", kwargs["subject"])
         self.assertIn("Adulte confirmé (45–59)", kwargs["text_content"])
         self.assertIn("Adolescent (13–17)", kwargs["text_content"])
+        self.assertIn("Distance ou déplacement", kwargs["text_content"])
+        self.assertIn("Le trajet est trop compliqué.", kwargs["text_content"])
 
 
 class RSVPServiceTests(TestCase):
@@ -313,6 +317,8 @@ class RSVPServiceTests(TestCase):
         update_rsvp(
             guest=self.guest,
             status=Guest.RSVPStatus.NOT_ATTENDING,
+            decline_reason=Guest.DeclineReason.UNAVAILABLE,
+            decline_message="Nous penserons très fort à vous.",
         )
 
         self.assertFalse(
@@ -320,5 +326,8 @@ class RSVPServiceTests(TestCase):
                 attendance_status=Guest.RSVPStatus.NOT_ATTENDING
             ).exists()
         )
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.decline_reason, Guest.DeclineReason.UNAVAILABLE)
+        self.assertEqual(self.guest.decline_message, "Nous penserons très fort à vous.")
 
 # Create your tests here.

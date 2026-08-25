@@ -70,8 +70,8 @@ class RSVPViewsTests(TestCase):
         self.assertContains(response, 'data-menu-toggle')
         self.assertContains(response, 'data-async-feedback')
         self.assertContains(response, 'aria-live="polite"')
-        self.assertContains(response, 'data-async-dashboard="2"')
-        self.assertContains(response, '?v=async-rsvp-2')
+        self.assertContains(response, 'data-async-dashboard="3"')
+        self.assertContains(response, '?v=async-rsvp-3')
         for age_label in (
             "Bébé (0–2)",
             "Enfant (3–12)",
@@ -102,6 +102,7 @@ class RSVPViewsTests(TestCase):
                 "csrfmiddlewaretoken": csrf_token,
                 "status": Guest.RSVPStatus.NOT_ATTENDING,
                 "age_category": Guest.AgeCategory.ADULT,
+                "decline_reason": Guest.DeclineReason.PREFER_NOT_TO_SAY,
             },
             HTTP_ORIGIN="http://testserver",
         )
@@ -176,6 +177,8 @@ class RSVPViewsTests(TestCase):
             {
                 "status": Guest.RSVPStatus.NOT_ATTENDING,
                 "age_category": Guest.AgeCategory.ADULT,
+                "decline_reason": Guest.DeclineReason.TRAVEL,
+                "decline_message": "Le déplacement est malheureusement impossible.",
             },
         )
 
@@ -186,6 +189,31 @@ class RSVPViewsTests(TestCase):
             [call.kwargs["guest"].rsvp_status for call in send_notification.call_args_list],
             [Guest.RSVPStatus.ATTENDING, Guest.RSVPStatus.NOT_ATTENDING],
         )
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.decline_reason, Guest.DeclineReason.TRAVEL)
+        self.assertEqual(
+            self.guest.decline_message,
+            "Le déplacement est malheureusement impossible.",
+        )
+
+    def test_declined_rsvp_requires_a_reason(self):
+        self.login_guest()
+
+        response = self.client.post(
+            reverse("guests:rsvp_respond"),
+            {
+                "status": Guest.RSVPStatus.NOT_ATTENDING,
+                "age_category": Guest.AgeCategory.ADULT,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        payload = response.json()
+        self.assertFalse(payload["ok"])
+        self.assertIn("Choisissez un motif", payload["fragments"]["rsvp"])
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.rsvp_status, Guest.RSVPStatus.PENDING)
 
     @patch("guests.views.send_rsvp_notification", side_effect=RuntimeError("Brevo indisponible"))
     def test_notification_failure_does_not_rollback_rsvp(self, send_notification):
@@ -196,6 +224,7 @@ class RSVPViewsTests(TestCase):
             {
                 "status": Guest.RSVPStatus.NOT_ATTENDING,
                 "age_category": Guest.AgeCategory.CONFIRMED_ADULT,
+                "decline_reason": Guest.DeclineReason.PERSONAL,
             },
         )
 
