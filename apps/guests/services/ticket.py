@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import textwrap
 from pathlib import Path
 
 import qrcode
@@ -17,6 +18,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from ..models import Guest, GuestEventInvitation, Ticket, WeddingEvent
+from .event_messages import YOUNG_CHILDREN_TICKET_MESSAGE
 
 
 INFO_BACKGROUND = "#FFEEEC"
@@ -647,30 +649,44 @@ def _render_information_image(events=None):
                 line_y = round(row_top + row_height - 4)
                 draw.line((text_x, line_y, 1550, line_y), fill=INFO_GOLD, width=2)
 
+    notice_cards = []
     if events and any(event.code == WeddingEvent.Code.CITY_HALL for event in events):
-        privacy_box = (205, 1160, 1590, 1315)
+        notice_cards.append(
+            (
+                "À propos de la mairie",
+                CITY_HALL_PRIVACY_MESSAGE,
+            )
+        )
+    if events and any(event.code == WeddingEvent.Code.RECEPTION for event in events):
+        notice_cards.append(
+            (
+                "À propos des jeunes enfants",
+                YOUNG_CHILDREN_TICKET_MESSAGE,
+            )
+        )
+    notice_width = 1385 if len(notice_cards) == 1 else 675
+    for notice_index, (notice_title, notice_text) in enumerate(notice_cards):
+        notice_left = 205 + notice_index * 700
+        notice_box = (notice_left, 1160, notice_left + notice_width, 1315)
         draw.rounded_rectangle(
-            privacy_box,
+            notice_box,
             radius=24,
             fill="#F8DDD4",
             outline="#E7B6A5",
             width=2,
         )
         draw.text(
-            (245, 1183),
-            "À propos de la mairie",
+            (notice_left + 30, 1183),
+            notice_title,
             font=title(27),
             fill=INFO_TERRACOTTA_DARK,
         )
         draw.multiline_text(
-            (245, 1222),
-            CITY_HALL_PRIVACY_MESSAGE.replace(
-                " la cérémonie civile se déroulera ",
-                " la cérémonie civile\nse déroulera ",
-            ),
-            font=font(22),
+            (notice_left + 30, 1222),
+            textwrap.fill(notice_text, width=55 if len(notice_cards) > 1 else 105),
+            font=font(20 if len(notice_cards) > 1 else 22),
             fill=INFO_TEXT,
-            spacing=7,
+            spacing=6,
         )
 
     dress_box = (145, 1425, 1651, 2045)

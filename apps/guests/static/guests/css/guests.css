@@ -113,6 +113,8 @@ input[type='radio'] { accent-color: var(--primary); }
 .muted { color: var(--muted); }
 .companion-list { display: grid; gap: 10px; margin-bottom: 24px; }
 .companion-entry { overflow: hidden; background: var(--surface-soft); border-radius: var(--radius-md); }
+.family-care-note { padding: 14px 16px; margin-bottom: 18px; color: var(--text); background: color-mix(in srgb, var(--sand) 24%, var(--surface)); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.family-care-note strong { color: var(--primary); }.family-care-note p { margin: 5px 0 0; color: var(--muted); font-size: .94rem; line-height: 1.55; }
 .companion-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 12px; background: var(--surface-soft); border-radius: var(--radius-md); }
 .companion-row strong, .companion-row span { display: block; }
 .companion-row span { color: var(--muted); font-size: .82rem; }

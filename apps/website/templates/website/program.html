@@ -11,6 +11,7 @@
       <div class="timeline-card">
         <p class="eyebrow">Étape {{ forloop.counter }}</p><h2>{{ event.name }}</h2>
         {% if event.code == "city_hall" %}<p class="event-notice">En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.</p>{% endif %}
+        {% if event.code == "reception" %}<p class="event-notice"><strong>À propos des jeunes enfants</strong><br>{{ young_children_message }}</p>{% endif %}
         {% if session_guest %}
           {% if event.is_in_group_invitation %}<p class="invitation-status"><strong>Sur votre invitation :</strong> {{ event.invited_members|join:", " }}</p>
           {% else %}<p class="invitation-status invitation-status-locked">Cette étape ne fait pas partie de votre invitation.</p>{% endif %}
