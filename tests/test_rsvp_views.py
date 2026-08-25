@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from guests.models import Guest, GuestEventInvitation, WeddingEvent
 from guests.services.access import issue_guest_access
+from guests.services.notifications import RSVPNotificationKind
 
 
 OPEN_DEADLINE = datetime(2099, 9, 15, 23, 59, tzinfo=timezone.utc)
@@ -189,6 +190,10 @@ class RSVPViewsTests(TestCase):
             [call.kwargs["guest"].rsvp_status for call in send_notification.call_args_list],
             [Guest.RSVPStatus.ATTENDING, Guest.RSVPStatus.NOT_ATTENDING],
         )
+        self.assertEqual(
+            [call.kwargs["notification_kind"] for call in send_notification.call_args_list],
+            [RSVPNotificationKind.PROVISIONAL, RSVPNotificationKind.DECLINED],
+        )
         self.guest.refresh_from_db()
         self.assertEqual(self.guest.decline_reason, Guest.DeclineReason.TRAVEL)
         self.assertEqual(
@@ -331,7 +336,8 @@ class RSVPViewsTests(TestCase):
 
         self.assertEqual(self.guest.companions.filter(is_active=True).count(), 1)
 
-    def test_composition_update_keeps_initial_deadline_and_reports_new_size(self):
+    @patch("guests.views.send_rsvp_notification")
+    def test_composition_update_keeps_initial_deadline_and_reports_new_size(self, send_notification):
         self.guest.rsvp_status = Guest.RSVPStatus.ATTENDING
         self.guest.save(update_fields=["rsvp_status", "updated_at"])
         companion = Guest.objects.create(
@@ -357,7 +363,7 @@ class RSVPViewsTests(TestCase):
         )
         removal_fragment = removal_response.json()["fragments"]["companions"]
         self.assertIn("Composition actuelle : 1 personne", removal_fragment)
-        self.assertIn("Modification à enregistrer", removal_fragment)
+        self.assertIn("Modification à confirmer", removal_fragment)
         self.assertNotIn("disabled aria-disabled=\"true\"", removal_fragment)
         second_response = self.client.post(
             reverse("guests:party_composition_confirm"),
@@ -367,11 +373,19 @@ class RSVPViewsTests(TestCase):
         self.assertEqual(second_response.status_code, 200)
         self.assertIn("Composition mise à jour : 1 personne sur 2", second_response.json()["message"])
         self.assertIn("La date limite reste fixée", second_response.json()["message"])
-        self.assertIn("Enregistrer la nouvelle composition", second_response.json()["fragments"]["companions"])
+        self.assertIn("Confirmer la nouvelle composition", second_response.json()["fragments"]["companions"])
         self.assertIn("disabled aria-disabled=\"true\"", second_response.json()["fragments"]["companions"])
         self.guest.refresh_from_db()
         self.assertEqual(self.guest.confirmed_party_size, 1)
         self.assertEqual(self.guest.party_composition_editable_until, initial_deadline)
+        self.assertEqual(
+            [call.kwargs["notification_kind"] for call in send_notification.call_args_list],
+            [
+                RSVPNotificationKind.COMPOSITION_CONFIRMED,
+                RSVPNotificationKind.COMPOSITION_UPDATED,
+            ],
+        )
+        self.assertEqual(send_notification.call_args_list[1].kwargs["previous_party_size"], 2)
 
     def test_companion_add_and_remove_can_refresh_fragments_asynchronously(self):
         self.login_guest()
