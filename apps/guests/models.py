@@ -44,6 +44,15 @@ class Guest(models.Model):
         INHERIT = "inherit", "Mêmes disponibilités que l’invité principal"
         CUSTOM = "custom", "Disponibilités personnalisées"
 
+    class DeclineReason(models.TextChoices):
+        UNAVAILABLE = "unavailable", "Indisponible à cette date"
+        TRAVEL = "travel", "Distance ou déplacement"
+        PERSONAL = "personal", "Raison personnelle ou familiale"
+        HEALTH = "health", "Raison de santé"
+        OTHER_COMMITMENT = "other_commitment", "Autre engagement"
+        OTHER = "other", "Autre raison"
+        PREFER_NOT_TO_SAY = "prefer_not_to_say", "Je préfère ne pas préciser"
+
     class AgeCategory(models.TextChoices):
         BABY = "baby_0_2", "Bébé (0–2)"
         CHILD = "child_3_12", "Enfant (3–12)"
@@ -134,6 +143,17 @@ class Guest(models.Model):
     rsvp_responded_at = models.DateTimeField(
         "RSVP répondu le",
         null=True,
+        blank=True,
+    )
+    decline_reason = models.CharField(
+        "motif du refus",
+        max_length=30,
+        choices=DeclineReason.choices,
+        blank=True,
+    )
+    decline_message = models.TextField(
+        "message associé au refus",
+        max_length=1000,
         blank=True,
     )
     attendance_mode = models.CharField(

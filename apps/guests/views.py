@@ -215,6 +215,8 @@ def rsvp_respond(request):
                 status=form.cleaned_data["status"],
                 age_category=form.cleaned_data["age_category"],
                 event_responses=form.event_responses(),
+                decline_reason=form.cleaned_data.get("decline_reason", ""),
+                decline_message=form.cleaned_data.get("decline_message", ""),
             )
         except ValidationError as exc:
             for error in exc.messages:

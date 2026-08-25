@@ -14,6 +14,8 @@ def update_rsvp(
     status,
     age_category=None,
     event_responses=None,
+    decline_reason="",
+    decline_message="",
     source=Guest.RSVPSource.GUEST,
     at=None,
 ):
@@ -26,6 +28,8 @@ def update_rsvp(
         raise ValidationError("Statut RSVP invalide.")
     if age_category is not None and age_category not in Guest.AgeCategory.values:
         raise ValidationError("La tranche d’âge de l’invité est invalide.")
+    if status == Guest.RSVPStatus.NOT_ATTENDING and decline_reason not in Guest.DeclineReason.values:
+        raise ValidationError("Le motif de l’absence est requis.")
 
     guest = Guest.objects.select_for_update().get(pk=guest.pk)
     invitations = {
@@ -56,7 +60,11 @@ def update_rsvp(
             response_source=source,
             responded_at=response_time,
         )
+        guest.decline_reason = decline_reason
+        guest.decline_message = (decline_message or "").strip()
     else:
+        guest.decline_reason = ""
+        guest.decline_message = ""
         attending_any_event = False
         for code, invitation in required_invitations.items():
             if source == Guest.RSVPSource.GUEST and not attendance_is_open(invitation.event, at=response_time):
@@ -112,7 +120,14 @@ def update_rsvp(
     guest.rsvp_status = status
     guest.rsvp_source = source
     guest.rsvp_responded_at = response_time
-    update_fields = ["rsvp_status", "rsvp_source", "rsvp_responded_at", "updated_at"]
+    update_fields = [
+        "rsvp_status",
+        "rsvp_source",
+        "rsvp_responded_at",
+        "decline_reason",
+        "decline_message",
+        "updated_at",
+    ]
     if age_category is not None:
         guest.age_category = age_category
         update_fields.append("age_category")
