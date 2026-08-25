@@ -74,6 +74,17 @@ class PublicWebsiteTests(TestCase):
         )
         self.assertNotContains(response, "Masqué")
 
+    def test_program_explains_arrangements_for_children_under_five(self):
+        reception = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
+        reception.is_active = True
+        reception.save(update_fields=["is_active"])
+
+        response = self.client.get(reverse("website:program"))
+
+        self.assertContains(response, "À propos des jeunes enfants")
+        self.assertContains(response, "enfants de moins de 5 ans")
+        self.assertContains(response, "service de garde adapté sur place")
+
     def test_dress_code_contains_four_palettes(self):
         response = self.client.get(reverse("website:dress_code"))
         for name in ("Terre brûlée", "Verdoyant", "Sable doré", "Gris élégant"):

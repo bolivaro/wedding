@@ -73,6 +73,8 @@ class RSVPViewsTests(TestCase):
         self.assertContains(response, 'aria-live="polite"')
         self.assertContains(response, 'data-async-dashboard="3"')
         self.assertContains(response, '?v=async-rsvp-3')
+        self.assertContains(response, "Un enfant de moins de 5 ans vous accompagne ?")
+        self.assertContains(response, "ne disposera malheureusement pas d’un service de garde")
         for age_label in (
             "Bébé (0–2)",
             "Enfant (3–12)",

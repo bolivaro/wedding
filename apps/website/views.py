@@ -6,6 +6,7 @@ from django.shortcuts import redirect, render
 
 from guests.models import GuestEventInvitation, WeddingEvent
 from guests.services.access import get_session_guest
+from guests.services.event_messages import YOUNG_CHILDREN_PROGRAM_MESSAGE
 
 from .models import Accommodation, StayArea
 from .services.stay_recommendations import recommend_area, selected_event_codes
@@ -98,7 +99,15 @@ def program(request):
             event.is_in_group_invitation = bool(event.invited_members)
     for event in events:
         event.embed_url = _embed_url(event.address)
-    return render(request, "website/program.html", _public_context(request, events=events))
+    return render(
+        request,
+        "website/program.html",
+        _public_context(
+            request,
+            events=events,
+            young_children_message=YOUNG_CHILDREN_PROGRAM_MESSAGE,
+        ),
+    )
 
 
 def dress_code(request):

@@ -1,5 +1,11 @@
 <section class="card" data-dashboard-component="companions">
   <div class="section-heading"><div><p class="eyebrow">Étape 2</p><h2>Vos accompagnants</h2></div><span class="counter-pill">{{ active_companions|length }} / {{ guest.companion_limit }}</span></div>
+  {% if guest.companion_limit > 0 %}
+  <aside class="family-care-note">
+    <strong>Un enfant de moins de 5 ans vous accompagne ?</strong>
+    <p>La soirée ne disposera malheureusement pas d’un service de garde adapté aux tout-petits. Dans la mesure du possible, merci de prévoir une solution de garde. Si cela vous met en difficulté, contactez-nous afin que nous puissions en échanger.</p>
+  </aside>
+  {% endif %}
   {% if active_companions %}
   <div class="companion-list">
     {% for companion, edit_form, attendance_form in companion_rows %}
