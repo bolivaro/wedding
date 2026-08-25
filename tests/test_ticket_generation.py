@@ -14,6 +14,7 @@ from django.utils import timezone as django_timezone
 
 from guests.models import Guest, GuestEventInvitation, Ticket, WeddingEvent
 from guests.services.access import issue_guest_access
+from guests.services.event_messages import YOUNG_CHILDREN_TICKET_MESSAGE
 from guests.services.notifications import send_ticket_email
 from guests.services.ticket import (
     CITY_HALL_PRIVACY_MESSAGE,
@@ -51,6 +52,11 @@ class TicketGenerationTests(TestCase):
             CITY_HALL_PRIVACY_MESSAGE,
             "En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.",
         )
+
+    def test_ticket_mentions_children_under_five_without_forbidding_attendance(self):
+        self.assertIn("enfants de moins de 5 ans", YOUNG_CHILDREN_TICKET_MESSAGE)
+        self.assertIn("si possible", YOUNG_CHILDREN_TICKET_MESSAGE)
+        self.assertNotIn("interdit", YOUNG_CHILDREN_TICKET_MESSAGE.lower())
 
     def setUp(self):
         self.primary = Guest.objects.create(
