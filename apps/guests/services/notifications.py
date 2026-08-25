@@ -66,13 +66,41 @@ def send_access_recovery(*, issued_token):
     )
 
 
-def send_rsvp_notification(*, guest):
+class RSVPNotificationKind:
+    PROVISIONAL = "provisional"
+    INDIVIDUAL_CONFIRMED = "individual_confirmed"
+    DECLINED = "declined"
+    COMPOSITION_CONFIRMED = "composition_confirmed"
+    COMPOSITION_UPDATED = "composition_updated"
+    AVAILABILITY_UPDATED = "availability_updated"
+
+
+def _default_rsvp_notification_kind(guest):
+    if guest.rsvp_status == Guest.RSVPStatus.NOT_ATTENDING:
+        return RSVPNotificationKind.DECLINED
+    if guest.party_size_limit == 1:
+        return RSVPNotificationKind.INDIVIDUAL_CONFIRMED
+    if guest.confirmed_party_size is None:
+        return RSVPNotificationKind.PROVISIONAL
+    return RSVPNotificationKind.AVAILABILITY_UPDATED
+
+
+def send_rsvp_notification(*, guest, notification_kind=None, previous_party_size=None):
     guest = Guest.objects.prefetch_related(
         "companions",
         "event_invitations__event",
     ).get(pk=guest.pk)
     attending = guest.rsvp_status == Guest.RSVPStatus.ATTENDING
-    response_label = "Présence confirmée" if attending else "Absence confirmée"
+    notification_kind = notification_kind or _default_rsvp_notification_kind(guest)
+    labels = {
+        RSVPNotificationKind.PROVISIONAL: ("[RSVP provisoire]", "Présence enregistrée"),
+        RSVPNotificationKind.INDIVIDUAL_CONFIRMED: ("[RSVP définitif]", "Présence confirmée"),
+        RSVPNotificationKind.DECLINED: ("[RSVP définitif]", "Absence confirmée"),
+        RSVPNotificationKind.COMPOSITION_CONFIRMED: ("[RSVP définitif]", "Composition confirmée"),
+        RSVPNotificationKind.COMPOSITION_UPDATED: ("[RSVP mis à jour]", "Composition mise à jour"),
+        RSVPNotificationKind.AVAILABILITY_UPDATED: ("[RSVP mis à jour]", "Disponibilités mises à jour"),
+    }
+    subject_prefix, response_label = labels[notification_kind]
 
     event_lines = []
     for invitation in guest.event_invitations.all():
@@ -94,14 +122,46 @@ def send_rsvp_notification(*, guest):
             "Message : "
             f"{guest.decline_message or '- Aucun message'}"
         )
+    active_companion_count = len(companion_lines)
+    if notification_kind == RSVPNotificationKind.PROVISIONAL:
+        composition_lines = (
+            "Composition du groupe : EN COURS DE SAISIE\n"
+            "Ne pas considérer l’absence actuelle d’accompagnant comme définitive.\n"
+            f"Accompagnants actuellement renseignés : {active_companion_count} "
+            f"sur {guest.companion_limit} place(s) disponible(s)."
+        )
+    elif notification_kind == RSVPNotificationKind.INDIVIDUAL_CONFIRMED:
+        composition_lines = "Composition définitive : 1 personne sur 1 (invitation individuelle)."
+    elif notification_kind == RSVPNotificationKind.DECLINED:
+        composition_lines = "Réponse définitive : l’invité principal a décliné l’invitation."
+    else:
+        confirmed_size = guest.confirmed_party_size or 1 + active_companion_count
+        composition_lines = (
+            f"Composition confirmée : {confirmed_size} personne(s) "
+            f"sur {guest.party_size_limit}."
+        )
+        if notification_kind == RSVPNotificationKind.COMPOSITION_UPDATED and previous_party_size is not None:
+            composition_lines = (
+                f"Ancienne composition : {previous_party_size} personne(s).\n"
+                f"Nouvelle composition : {confirmed_size} personne(s) "
+                f"sur {guest.party_size_limit}."
+            )
+    companion_summary = chr(10).join(companion_lines)
+    if not companion_summary:
+        companion_summary = (
+            "- Saisie non finalisée"
+            if notification_kind == RSVPNotificationKind.PROVISIONAL
+            else "- Aucun accompagnant"
+        )
     text_content = (
         f"{response_label} pour {guest.full_name}.\n\n"
         f"Réponse globale : {guest.get_rsvp_status_display()}\n\n"
         f"Tranche d’âge : {guest.age_category_label or 'non renseignée'}\n\n"
+        f"{composition_lines}\n\n"
         "Réponses par événement :\n"
         f"{chr(10).join(event_lines) or '- Aucun événement soumis au RSVP'}\n\n"
         "Accompagnants :\n"
-        f"{chr(10).join(companion_lines) or '- Aucun accompagnant'}"
+        f"{companion_summary}"
         f"{decline_lines}"
     )
     recipients = [
@@ -113,7 +173,7 @@ def send_rsvp_notification(*, guest):
         return None
     return send_brevo_email(
         to=recipients,
-        subject=f"[RSVP] {response_label} — {guest.full_name}",
+        subject=f"{subject_prefix} {response_label} — {guest.full_name}",
         text_content=text_content,
         reply_to=(
             {"email": guest.email, "name": guest.full_name}
