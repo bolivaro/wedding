@@ -1,32 +1,32 @@
 {% extends "website/base_public.html" %}
-{% load static %}
-{% block title %}Programme — Leslie & Bolivar{% endblock %}
+{% load i18n static %}
+{% block title %}{% translate "Programme" %} — Leslie & Bolivar{% endblock %}
 {% block content %}
-<header class="page-hero compact-hero"><p class="eyebrow">17 octobre 2026</p><h1>Le programme</h1><p>Les rendez-vous de notre journée, dans l'ordre, avec toutes les informations pour nous rejoindre.</p></header>
-<section class="content-section timeline" aria-label="Programme du mariage">
+<header class="page-hero compact-hero"><p class="eyebrow">{% translate "17 octobre 2026" %}</p><h1>{% translate "Le programme" %}</h1><p>{% translate "Les rendez-vous de notre journée, dans l'ordre, avec toutes les informations pour nous rejoindre." %}</p></header>
+<section class="content-section timeline" aria-label="{% translate 'Programme du mariage' %}">
   {% for event in events %}
     <article class="timeline-event">
-      <div class="timeline-time">{% if event.starts_at %}<time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:'H\hi' }}</time>{% else %}<span>À venir</span>{% endif %}</div>
+      <div class="timeline-time">{% if event.starts_at %}<time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:'H\hi' }}</time>{% else %}<span>{% translate "À venir" %}</span>{% endif %}</div>
       <div class="timeline-marker"><span>{% if event.icon_asset %}<img src="{% static event.icon_asset %}" alt="">{% else %}◇{% endif %}</span></div>
       <div class="timeline-card">
-        <p class="eyebrow">Étape {{ forloop.counter }}</p><h2>{{ event.name }}</h2>
-        {% if event.code == "city_hall" %}<p class="event-notice">En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation.</p>{% endif %}
-        {% if event.code == "reception" %}<p class="event-notice"><strong>À propos des jeunes enfants</strong><br>{{ young_children_message }}</p>{% endif %}
+        <p class="eyebrow">{% translate "Étape" %} {{ forloop.counter }}</p><h2>{{ event.name }}</h2>
+        {% if event.code == "city_hall" %}<p class="event-notice">{% translate "En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation." %}</p>{% endif %}
+        {% if event.code == "reception" %}<p class="event-notice"><strong>{% translate "À propos des jeunes enfants" %}</strong><br>{{ young_children_message }}</p>{% endif %}
         {% if session_guest %}
-          {% if event.is_in_group_invitation %}<p class="invitation-status"><strong>Sur votre invitation :</strong> {{ event.invited_members|join:", " }}</p>
-          {% else %}<p class="invitation-status invitation-status-locked">Cette étape ne fait pas partie de votre invitation.</p>{% endif %}
+          {% if event.is_in_group_invitation %}<p class="invitation-status"><strong>{% translate "Sur votre invitation :" %}</strong> {{ event.invited_members|join:", " }}</p>
+          {% else %}<p class="invitation-status invitation-status-locked">{% translate "Cette étape ne fait pas partie de votre invitation." %}</p>{% endif %}
         {% endif %}
         {% if event.description %}<p>{{ event.description }}</p>{% endif %}
         {% if event.venue_name or event.address %}<address><strong>{{ event.venue_name }}</strong>{% if event.address %}<span>{{ event.address }}</span>{% endif %}</address>{% endif %}
         <div class="card-actions">
           {% if not session_guest or event.is_in_group_invitation %}
-            {% if event.map_url %}<a class="button button-secondary" href="{{ event.map_url }}" target="_blank" rel="noopener">Voir sur la carte</a>{% endif %}
-            {% if event.address %}<a class="button button-link" href="{% url 'website:stay' %}#trajets">Calculer mon trajet</a>{% endif %}
+            {% if event.map_url %}<a class="button button-secondary" href="{{ event.map_url }}" target="_blank" rel="noopener">{% translate "Voir sur la carte" %}</a>{% endif %}
+            {% if event.address %}<a class="button button-link" href="{% url 'website:stay' %}#trajets">{% translate "Calculer mon trajet" %}</a>{% endif %}
           {% endif %}
         </div>
       </div>
     </article>
-  {% empty %}<div class="empty-state"><h2>Le programme arrive bientôt</h2><p>Revenez prochainement pour découvrir les horaires.</p></div>{% endfor %}
+  {% empty %}<div class="empty-state"><h2>{% translate "Le programme arrive bientôt" %}</h2><p>{% translate "Revenez prochainement pour découvrir les horaires." %}</p></div>{% endfor %}
 </section>
-<aside class="content-section warm-callout"><div><p class="eyebrow">Organiser votre venue</p><h2>Vous cherchez encore où dormir ?</h2><p>Comparez les différentes zones selon les étapes auxquelles vous assisterez.</p></div><a class="button button-primary" href="{% url 'website:stay' %}">Préparer mon séjour</a></aside>
+<aside class="content-section warm-callout"><div><p class="eyebrow">{% translate "Organiser votre venue" %}</p><h2>{% translate "Vous cherchez encore où dormir ?" %}</h2><p>{% translate "Comparez les différentes zones selon les étapes auxquelles vous assisterez." %}</p></div><a class="button button-primary" href="{% url 'website:stay' %}">{% translate "Préparer mon séjour" %}</a></aside>
 {% endblock %}

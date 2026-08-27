@@ -43,6 +43,24 @@ class PublicWebsiteTests(TestCase):
                 response = self.client.get(reverse(f"website:{name}"))
                 self.assertEqual(response.status_code, 200)
 
+    def test_public_page_content_is_translated_to_english(self):
+        expected_content = {
+            "home": ("Your wedding space", "Explore the colours", "Plan my stay"),
+            "program": ("The events of our day in order", "Plan your visit"),
+            "dress_code": ("For this special day", "Burnt earth", "Let your elegance shine"),
+            "stay": ("Stay & travel", "Your starting point", "Recommended areas"),
+            "my_invitation": ("Your invitation is private", "Recover my access"),
+        }
+
+        for name, translated_strings in expected_content.items():
+            with self.subTest(name=name):
+                response = self.client.get(
+                    reverse(f"website:{name}"), HTTP_ACCEPT_LANGUAGE="en"
+                )
+                self.assertEqual(response.headers["Content-Language"], "en")
+                for translated_string in translated_strings:
+                    self.assertContains(response, translated_string)
+
     def test_home_carousel_uses_proposal_photos_in_requested_order(self):
         response = self.client.get(reverse("website:home"))
         content = response.content.decode()

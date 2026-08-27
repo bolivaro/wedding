@@ -40,7 +40,8 @@
         map.querySelectorAll('[data-place-button]').forEach((item) => item.removeAttribute('aria-current'));
         button.setAttribute('aria-current', 'true');
         if (frame && button.dataset.embedUrl) {
-          frame.title = `Carte de ${button.querySelector('strong').textContent}`;
+          const template = map.closest('[data-map-title-template]')?.dataset.mapTitleTemplate || '{venue}';
+          frame.title = template.replace('{venue}', button.querySelector('strong').textContent);
           frame.src = button.dataset.embedUrl;
         }
       });
@@ -57,14 +58,14 @@
       const hasCeremonies = codes.some((code) => ['city_hall', 'church'].includes(code));
       const hasReception = codes.includes('reception');
       if (priority === 'evening' || (hasReception && !hasCeremonies)) {
-        title.textContent = 'Privilégiez la proximité de la soirée';
-        copy.textContent = 'Ris-Orangis et ses environs limitent le trajet de retour après les festivités.';
+        title.textContent = recommendation.dataset.eveningTitle;
+        copy.textContent = recommendation.dataset.eveningCopy;
       } else if (priority === 'ceremonies' || (hasCeremonies && !hasReception)) {
-        title.textContent = 'Privilégiez Puteaux et La Défense';
-        copy.textContent = 'Vous serez au plus près des cérémonies et du vin d’honneur.';
+        title.textContent = recommendation.dataset.ceremoniesTitle;
+        copy.textContent = recommendation.dataset.ceremoniesCopy;
       } else {
-        title.textContent = 'Recherchez un compromis entre les lieux';
-        copy.textContent = 'Vous prévoyez plusieurs étapes : comparez les trajets réels avant de réserver.';
+        title.textContent = recommendation.dataset.balancedTitle;
+        copy.textContent = recommendation.dataset.balancedCopy;
       }
     };
     recommendation.querySelectorAll('input').forEach((input) => input.addEventListener('change', updateRecommendation));
