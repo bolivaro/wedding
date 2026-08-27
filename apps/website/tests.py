@@ -139,7 +139,7 @@ class PublicWebsiteTests(TestCase):
 
         self.assertContains(response, "L<i>&amp;</i>B")
         self.assertContains(response, "Leslie&amp;Bolivar")
-        self.assertContains(response, "Version 1.1.0")
+        self.assertContains(response, "Version 1.2.0")
 
     def test_lodging_address_is_hidden_until_selected(self):
         response = self.client.get(reverse("website:stay"))
