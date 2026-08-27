@@ -22,7 +22,7 @@ SITE_BASE_URL = normalize_public_base_url(
     env("SITE_BASE_URL", default=""),
     debug=DEBUG,
 )
-APP_VERSION = env("APP_VERSION", default="1.1.0")
+APP_VERSION = env("APP_VERSION", default="1.2.0")
 WEDDING_DATE = date.fromisoformat(env("WEDDING_DATE", default="2026-10-17"))
 WEDDING_PROGRAM_URL = normalize_public_url(
     env("WEDDING_PROGRAM_URL", default=""),
