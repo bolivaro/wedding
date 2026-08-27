@@ -1,0 +1,793 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-27 19:11+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/guests/services/event_messages.py:5
+msgid "Afin que chacun puisse profiter pleinement de la soirée, et faute d’avoir pu mettre en place un service de garde adapté sur place, nous vous remercions, dans la mesure du possible, de prévoir une solution de garde pour les enfants de moins de 5 ans. Si cela représente une difficulté pour vous, n’hésitez pas à nous contacter afin que nous puissions en échanger."
+msgstr "So that everyone can fully enjoy the evening, and as we were unable to arrange suitable childcare at the venue, we kindly ask you, where possible, to arrange childcare for children under five. If this is difficult for you, please contact us so that we can discuss it."
+
+#: apps/guests/services/event_messages.py:13
+msgid "Pour la soirée, merci de prévoir, si possible, une solution de garde pour les enfants de moins de 5 ans. En cas de difficulté, contactez-nous."
+msgstr "For the evening, please arrange childcare for children under five where possible. If this is difficult, please contact us."
+
+#: apps/guests/templates/guests/base.html:18
+#: apps/website/templates/website/base_public.html:17
+msgid "Aller au contenu"
+msgstr "Skip to content"
+
+#: apps/guests/templates/guests/base.html:28
+#: apps/website/templates/website/base_public.html:23
+msgid "Avec affection,"
+msgstr "With love,"
+
+#: apps/guests/templates/guests/base.html:28
+#: apps/website/templates/website/base_public.html:23
+msgid "Version"
+msgstr "Version"
+
+#: apps/website/services/stay_recommendations.py:40
+#: apps/website/templates/website/stay.html:36
+msgid "Privilégiez la proximité de la soirée"
+msgstr "Stay close to the evening venue"
+
+#: apps/website/services/stay_recommendations.py:41
+msgid "Cette zone limite le trajet de retour après le dîner et les festivités."
+msgstr "This area shortens your journey back after dinner and the celebrations."
+
+#: apps/website/services/stay_recommendations.py:46
+#: apps/website/templates/website/stay.html:36
+msgid "Privilégiez Puteaux et La Défense"
+msgstr "Choose Puteaux and La Défense"
+
+#: apps/website/services/stay_recommendations.py:47
+msgid "Vous serez au plus près des cérémonies et du vin d'honneur."
+msgstr "You will be closest to the ceremonies and cocktail reception."
+
+#: apps/website/services/stay_recommendations.py:51
+#: apps/website/templates/website/stay.html:36
+msgid "Recherchez un compromis entre les lieux"
+msgstr "Find a balance between the venues"
+
+#: apps/website/services/stay_recommendations.py:52
+msgid "Vous prévoyez plusieurs étapes : comparez les trajets réels dans Google Maps avant de réserver."
+msgstr "You are attending several events: compare actual travel times in Google Maps before booking."
+
+#: apps/website/templates/website/base_public.html:24
+msgid "Navigation de pied de page"
+msgstr "Footer navigation"
+
+#: apps/website/templates/website/base_public.html:24
+#: apps/website/templates/website/partials/public_header.html:13
+#: apps/website/templates/website/program.html:3
+msgid "Programme"
+msgstr "Schedule"
+
+#: apps/website/templates/website/base_public.html:24
+#: apps/website/templates/website/dress_code.html:3
+msgid "Dress code"
+msgstr "Dress code"
+
+#: apps/website/templates/website/base_public.html:24
+#: apps/website/templates/website/partials/public_header.html:15
+msgid "Séjour"
+msgstr "Stay"
+
+#: apps/website/templates/website/dress_code.html:5
+#: apps/website/templates/website/home.html:45
+msgid "Élégance d'automne"
+msgstr "Autumn elegance"
+
+#: apps/website/templates/website/dress_code.html:5
+msgid "Pour cette journée spéciale, nous avons choisi une palette de couleurs qui nous inspire. Nous serions ravis de vous voir arborer ces teintes dans vos plus belles parures."
+msgstr "For this special day, we have chosen a colour palette that inspires us. We would be delighted to see you wearing these shades in your finest attire."
+
+#: apps/website/templates/website/dress_code.html:9
+#, python-format
+msgid "Inspiration de tenues femme et homme pour le thème %(theme_name)s"
+msgstr "Women's and men's outfit inspiration for the %(theme_name)s theme"
+
+#: apps/website/templates/website/dress_code.html:10
+msgid "Palette"
+msgstr "Palette"
+
+#: apps/website/templates/website/dress_code.html:11
+#, python-format
+msgid "Couleurs %(theme_name)s"
+msgstr "%(theme_name)s colours"
+
+#: apps/website/templates/website/dress_code.html:16
+msgid "Laissez parler votre élégance"
+msgstr "Let your elegance shine"
+
+#: apps/website/templates/website/dress_code.html:16
+msgid "Les nuances peuvent être portées en couleur principale ou par touches. Le plus important est que vous vous sentiez à l'aise pour célébrer avec nous."
+msgstr "Wear these shades as a main colour or as accents. What matters most is that you feel comfortable celebrating with us."
+
+#: apps/website/templates/website/home.html:3
+#: apps/website/templates/website/program.html:5 apps/website/views.py:108
+msgid "17 octobre 2026"
+msgstr "October 17, 2026"
+
+#: apps/website/templates/website/home.html:6
+msgid "carrousel"
+msgstr "carousel"
+
+#: apps/website/templates/website/home.html:6
+msgid "Bienvenue"
+msgstr "Welcome"
+
+#: apps/website/templates/website/home.html:16
+msgid "Découvrir le programme"
+msgstr "View the schedule"
+
+#: apps/website/templates/website/home.html:22
+msgid "Image précédente"
+msgstr "Previous image"
+
+#: apps/website/templates/website/home.html:23
+msgid "Choisir une image"
+msgstr "Choose an image"
+
+#: apps/website/templates/website/home.html:24
+#, python-format
+msgid "Afficher l’image %(number)s"
+msgstr "Show image %(number)s"
+
+#: apps/website/templates/website/home.html:26
+msgid "Image suivante"
+msgstr "Next image"
+
+#: apps/website/templates/website/home.html:31
+msgid "Votre espace mariage"
+msgstr "Your wedding space"
+
+#: apps/website/templates/website/home.html:32
+msgid "Préparer la journée, simplement"
+msgstr "Plan the day with ease"
+
+#: apps/website/templates/website/home.html:33
+msgid "Retrouvez au même endroit les informations qui vous accompagnent, de votre réponse jusqu'à votre arrivée."
+msgstr "Find all the information you need in one place, from your RSVP through to your arrival."
+
+#: apps/website/templates/website/home.html:35
+msgid "Invitation"
+msgstr "Invitation"
+
+#: apps/website/templates/website/home.html:35
+msgid "Ouvrez votre accès personnel depuis le lien reçu."
+msgstr "Open your personal access from the link you received."
+
+#: apps/website/templates/website/home.html:36
+msgid "Confirmez votre présence et celle de vos accompagnants."
+msgstr "Confirm your attendance and that of your guests."
+
+#: apps/website/templates/website/home.html:37
+msgid "Préparation"
+msgstr "Planning"
+
+#: apps/website/templates/website/home.html:37
+msgid "Consultez le programme, le dress code et préparez votre séjour."
+msgstr "View the schedule and dress code, and plan your stay."
+
+#: apps/website/templates/website/home.html:38
+msgid "Billet"
+msgstr "Ticket"
+
+#: apps/website/templates/website/home.html:38
+msgid "Récupérez votre billet et son QR code sécurisé."
+msgstr "Get your ticket and its secure QR code."
+
+#: apps/website/templates/website/home.html:39
+msgid "Jour J"
+msgstr "Wedding day"
+
+#: apps/website/templates/website/home.html:39
+msgid "Présentez-vous sereinement pour célébrer avec nous."
+msgstr "Arrive with peace of mind and celebrate with us."
+
+#: apps/website/templates/website/home.html:43
+msgid "Informations pratiques"
+msgstr "Practical information"
+
+#: apps/website/templates/website/home.html:44
+msgid "La journée"
+msgstr "The day"
+
+#: apps/website/templates/website/home.html:44
+#: apps/website/templates/website/program.html:5
+msgid "Le programme"
+msgstr "The schedule"
+
+#: apps/website/templates/website/home.html:44
+msgid "Horaires, lieux et détails de chaque rendez-vous."
+msgstr "Times, venues and details for every event."
+
+#: apps/website/templates/website/home.html:44
+msgid "Voir le programme →"
+msgstr "View the schedule →"
+
+#: apps/website/templates/website/home.html:45
+msgid "Le dress code"
+msgstr "The dress code"
+
+#: apps/website/templates/website/home.html:45
+msgid "Palettes, nuances et inspirations vestimentaires."
+msgstr "Palettes, shades and outfit inspiration."
+
+#: apps/website/templates/website/home.html:45
+msgid "Découvrir les couleurs →"
+msgstr "Explore the colours →"
+
+#: apps/website/templates/website/home.html:46
+#: apps/website/templates/website/stay.html:6
+msgid "Venir sereinement"
+msgstr "Travel with ease"
+
+#: apps/website/templates/website/home.html:46
+#: apps/website/templates/website/stay.html:3
+#: apps/website/templates/website/stay.html:6
+msgid "Séjour & déplacements"
+msgstr "Stay & travel"
+
+#: apps/website/templates/website/home.html:46
+msgid "Comparez les lieux et choisissez une zone adaptée."
+msgstr "Compare the venues and choose a suitable area."
+
+#: apps/website/templates/website/home.html:46
+msgid "Préparer mon séjour →"
+msgstr "Plan my stay →"
+
+#: apps/website/templates/website/my_invitation.html:3
+#: apps/website/templates/website/partials/public_header.html:16
+msgid "Mon invitation"
+msgstr "My invitation"
+
+#: apps/website/templates/website/my_invitation.html:5
+msgid "Accès personnel"
+msgstr "Personal access"
+
+#: apps/website/templates/website/my_invitation.html:5
+msgid "Votre invitation est privée"
+msgstr "Your invitation is private"
+
+#: apps/website/templates/website/my_invitation.html:5
+msgid "Utilisez le lien personnel reçu avec votre invitation pour confirmer votre présence, renseigner vos accompagnants et récupérer vos billets."
+msgstr "Use the personal link included with your invitation to RSVP, add your guests and retrieve your tickets."
+
+#: apps/website/templates/website/my_invitation.html:5
+msgid "Retrouver mon accès"
+msgstr "Recover my access"
+
+#: apps/website/templates/website/my_invitation.html:5
+msgid "Contacter le couple"
+msgstr "Contact the couple"
+
+#: apps/website/templates/website/my_invitation.html:5
+msgid "Pour votre sécurité, une invitation ne peut pas être recherchée par nom."
+msgstr "For your security, invitations cannot be searched by name."
+
+#: apps/website/templates/website/partials/public_header.html:4
+msgid "Accueil Leslie et Bolivar"
+msgstr "Leslie and Bolivar home"
+
+#: apps/website/templates/website/partials/public_header.html:9
+msgid "Ouvrir le menu"
+msgstr "Open menu"
+
+#: apps/website/templates/website/partials/public_header.html:11
+msgid "Navigation principale"
+msgstr "Main navigation"
+
+#: apps/website/templates/website/partials/public_header.html:12
+msgid "Accueil"
+msgstr "Home"
+
+#: apps/website/templates/website/partials/public_header.html:16
+msgid "Mon RSVP"
+msgstr "My RSVP"
+
+#: apps/website/templates/website/partials/public_header.html:19
+#: apps/website/templates/website/partials/public_header.html:20
+msgid "Langue"
+msgstr "Language"
+
+#: apps/website/templates/website/partials/public_header.html:26
+msgid "Changer de thème"
+msgstr "Change theme"
+
+#: apps/website/templates/website/partials/public_header.html:26
+msgid "Thème"
+msgstr "Theme"
+
+#: apps/website/templates/website/program.html:5
+msgid "Les rendez-vous de notre journée, dans l'ordre, avec toutes les informations pour nous rejoindre."
+msgstr "The events of our day in order, with everything you need to join us."
+
+#: apps/website/templates/website/program.html:6
+msgid "Programme du mariage"
+msgstr "Wedding schedule"
+
+#: apps/website/templates/website/program.html:9
+msgid "À venir"
+msgstr "Coming soon"
+
+#: apps/website/templates/website/program.html:12
+msgid "Étape"
+msgstr "Step"
+
+#: apps/website/templates/website/program.html:13
+msgid "En raison de la capacité limitée de la salle, la cérémonie civile se déroulera dans la stricte intimité familiale. Merci de vous référer à votre invitation."
+msgstr "Due to the venue's limited capacity, the civil ceremony will be held with immediate family only. Please refer to your invitation."
+
+#: apps/website/templates/website/program.html:14
+msgid "À propos des jeunes enfants"
+msgstr "About young children"
+
+#: apps/website/templates/website/program.html:16
+msgid "Sur votre invitation :"
+msgstr "On your invitation:"
+
+#: apps/website/templates/website/program.html:17
+msgid "Cette étape ne fait pas partie de votre invitation."
+msgstr "This event is not included in your invitation."
+
+#: apps/website/templates/website/program.html:23
+msgid "Voir sur la carte"
+msgstr "View on the map"
+
+#: apps/website/templates/website/program.html:24
+msgid "Calculer mon trajet"
+msgstr "Plan my journey"
+
+#: apps/website/templates/website/program.html:29
+msgid "Le programme arrive bientôt"
+msgstr "The schedule is coming soon"
+
+#: apps/website/templates/website/program.html:29
+msgid "Revenez prochainement pour découvrir les horaires."
+msgstr "Check back soon for the times."
+
+#: apps/website/templates/website/program.html:31
+msgid "Organiser votre venue"
+msgstr "Plan your visit"
+
+#: apps/website/templates/website/program.html:31
+msgid "Vous cherchez encore où dormir ?"
+msgstr "Still looking for somewhere to stay?"
+
+#: apps/website/templates/website/program.html:31
+msgid "Comparez les différentes zones selon les étapes auxquelles vous assisterez."
+msgstr "Compare the different areas based on the events you will attend."
+
+#: apps/website/templates/website/program.html:31
+msgid "Préparer mon séjour"
+msgstr "Plan my stay"
+
+#: apps/website/templates/website/stay.html:6
+msgid "Visualisez les lieux, comparez vos trajets dans Google Maps et choisissez la zone qui correspond le mieux à votre journée."
+msgstr "View the venues, compare journeys in Google Maps and choose the area that best suits your day."
+
+#: apps/website/templates/website/stay.html:8
+#, python-brace-format
+msgid "Carte de {venue}"
+msgstr "Map of {venue}"
+
+#: apps/website/templates/website/stay.html:9
+msgid "Les lieux"
+msgstr "The venues"
+
+#: apps/website/templates/website/stay.html:9
+msgid "Repérez chaque rendez-vous"
+msgstr "Find every venue"
+
+#: apps/website/templates/website/stay.html:9
+msgid "Sélectionnez un lieu pour l'afficher sur la carte."
+msgstr "Select a venue to display it on the map."
+
+#: apps/website/templates/website/stay.html:19
+msgid "Carte du lieu sélectionné"
+msgstr "Map of the selected venue"
+
+#: apps/website/templates/website/stay.html:19
+msgid "Carte interactive"
+msgstr "Interactive map"
+
+#: apps/website/templates/website/stay.html:19
+msgid "Ajoutez la clé Google Maps Embed dans l'environnement pour afficher la carte ici."
+msgstr "Add the Google Maps Embed key to the environment to display the map here."
+
+#: apps/website/templates/website/stay.html:19
+msgid "Ouvrir Google Maps"
+msgstr "Open Google Maps"
+
+#: apps/website/templates/website/stay.html:25
+msgid "Votre point de départ"
+msgstr "Your starting point"
+
+#: apps/website/templates/website/stay.html:25
+msgid "Évaluez vos trajets"
+msgstr "Plan your journeys"
+
+#: apps/website/templates/website/stay.html:25
+msgid "L'adresse reste dans votre navigateur et n'est pas enregistrée sur notre site."
+msgstr "The address stays in your browser and is not stored on our website."
+
+#: apps/website/templates/website/stay.html:27
+msgid "D'où partirez-vous ?"
+msgstr "Where will you be travelling from?"
+
+#: apps/website/templates/website/stay.html:27
+msgid "Ma position actuelle"
+msgstr "My current location"
+
+#: apps/website/templates/website/stay.html:27
+msgid "L'adresse de mon logement"
+msgstr "My accommodation address"
+
+#: apps/website/templates/website/stay.html:28
+msgid "Adresse du logement"
+msgstr "Accommodation address"
+
+#: apps/website/templates/website/stay.html:28
+msgid "Ex. 12 rue…, 92800 Puteaux"
+msgstr "E.g. 12 rue…, 92800 Puteaux"
+
+#: apps/website/templates/website/stay.html:28
+msgid "Cette adresse sera transmise à Google Maps uniquement lorsque vous ouvrirez un trajet."
+msgstr "This address is sent to Google Maps only when you open a journey."
+
+#: apps/website/templates/website/stay.html:29
+msgid "Mode de déplacement"
+msgstr "Mode of transport"
+
+#: apps/website/templates/website/stay.html:29
+msgid "Voiture"
+msgstr "Car"
+
+#: apps/website/templates/website/stay.html:29
+msgid "Transports"
+msgstr "Public transport"
+
+#: apps/website/templates/website/stay.html:29
+msgid "Marche"
+msgstr "Walking"
+
+#: apps/website/templates/website/stay.html:29
+msgid "Vélo"
+msgstr "Bicycle"
+
+#: apps/website/templates/website/stay.html:32
+msgid "Ouvrir le trajet"
+msgstr "Open directions"
+
+#: apps/website/templates/website/stay.html:36
+msgid "Ris-Orangis et ses environs limitent le trajet de retour après les festivités."
+msgstr "This area shortens your journey back after dinner and the celebrations."
+
+#: apps/website/templates/website/stay.html:36
+msgid "Vous serez au plus près des cérémonies et du vin d’honneur."
+msgstr "You will be closest to the ceremonies and cocktail reception."
+
+#: apps/website/templates/website/stay.html:36
+msgid "Vous prévoyez plusieurs étapes : comparez les trajets réels avant de réserver."
+msgstr "You are attending several events: compare actual travel times in Google Maps before booking."
+
+#: apps/website/templates/website/stay.html:37
+msgid "Trouver votre équilibre"
+msgstr "Find the right balance"
+
+#: apps/website/templates/website/stay.html:37
+msgid "Quelle zone vous conviendrait ?"
+msgstr "Which area would suit you?"
+
+#: apps/website/templates/website/stay.html:37
+#, python-format
+msgid "Suggestion adaptée à l'invitation de %(first_name)s."
+msgstr "A suggestion tailored to %(first_name)s's invitation."
+
+#: apps/website/templates/website/stay.html:37
+msgid "Sélectionnez les étapes auxquelles vous pensez assister."
+msgstr "Select the events you expect to attend."
+
+#: apps/website/templates/website/stay.html:39
+msgid "Étapes de votre journée"
+msgstr "Events in your day"
+
+#: apps/website/templates/website/stay.html:40
+msgid "Votre priorité"
+msgstr "Your priority"
+
+#: apps/website/templates/website/stay.html:40
+msgid "Équilibre"
+msgstr "Balance"
+
+#: apps/website/templates/website/stay.html:40
+msgid "Cérémonies"
+msgstr "Ceremonies"
+
+#: apps/website/templates/website/stay.html:40
+msgid "Retour de soirée"
+msgstr "Journey home after the party"
+
+#: apps/website/templates/website/stay.html:42
+msgid "Notre suggestion"
+msgstr "Our suggestion"
+
+#: apps/website/templates/website/stay.html:42
+msgid "Conseil indicatif : vérifiez toujours les trajets réels avant de réserver."
+msgstr "General guidance: always check actual journey times before booking."
+
+#: apps/website/templates/website/stay.html:46
+msgid "Zones conseillées"
+msgstr "Recommended areas"
+
+#: apps/website/templates/website/stay.html:46
+msgid "Choisissez selon votre rythme"
+msgstr "Choose to suit your pace"
+
+#: apps/website/templates/website/stay.html:46
+msgid "Des repères pratiques, sans promesse sur les durées ou la disponibilité."
+msgstr "Practical guidance, without guarantees on travel times or availability."
+
+#: apps/website/templates/website/stay.html:48
+msgid "Atouts"
+msgstr "Advantages"
+
+#: apps/website/templates/website/stay.html:48
+msgid "À considérer"
+msgstr "Things to consider"
+
+#: apps/website/templates/website/stay.html:48
+msgid "Déplacements"
+msgstr "Travel"
+
+#: apps/website/templates/website/stay.html:49
+msgid "Notre sélection"
+msgstr "Our selection"
+
+#: apps/website/templates/website/stay.html:50
+msgid "Explorer les hébergements ↗"
+msgstr "Explore accommodation ↗"
+
+#: apps/website/templates/website/stay.html:53
+msgid "Les recommandations sont éditoriales et indicatives. Vérifiez les avis récents, les conditions, le prix, la disponibilité et votre trajet avant toute réservation."
+msgstr "These recommendations are editorial guidance only. Check recent reviews, terms, price, availability and travel times before booking."
+
+#: apps/website/views.py:19
+msgid "Terre brûlée"
+msgstr "Burnt earth"
+
+#: apps/website/views.py:20
+msgid "Brique · Brun clair"
+msgstr "Brick · Light brown"
+
+#: apps/website/views.py:21
+msgid "Des tons chaleureux et profonds, inspirés des feuilles d'automne."
+msgstr "Warm, deep tones inspired by autumn leaves."
+
+#: apps/website/views.py:22
+msgid "Brique"
+msgstr "Brick"
+
+#: apps/website/views.py:22
+msgid "Brun clair"
+msgstr "Light brown"
+
+#: apps/website/views.py:26
+msgid "Verdoyant"
+msgstr "Verdant"
+
+#: apps/website/views.py:27
+msgid "Olive · Vert nature"
+msgstr "Olive · Natural green"
+
+#: apps/website/views.py:28
+msgid "Une palette végétale, élégante et facile à associer aux tons naturels."
+msgstr "An elegant botanical palette that pairs easily with natural tones."
+
+#: apps/website/views.py:29
+msgid "Olive"
+msgstr "Olive"
+
+#: apps/website/views.py:29
+msgid "Vert nature"
+msgstr "Natural green"
+
+#: apps/website/views.py:33
+msgid "Sable doré"
+msgstr "Golden sand"
+
+#: apps/website/views.py:34
+msgid "Beige sable · Moutarde"
+msgstr "Sand beige · Mustard"
+
+#: apps/website/views.py:35
+msgid "Des nuances lumineuses et douces pour apporter une touche solaire."
+msgstr "Soft, luminous shades that add a touch of sunshine."
+
+#: apps/website/views.py:36
+msgid "Beige sable"
+msgstr "Sand beige"
+
+#: apps/website/views.py:36
+msgid "Moutarde"
+msgstr "Mustard"
+
+#: apps/website/views.py:40
+msgid "Gris élégant"
+msgstr "Elegant grey"
+
+#: apps/website/views.py:41
+msgid "Perle · Anthracite"
+msgstr "Pearl · Anthracite"
+
+#: apps/website/views.py:42
+msgid "Des neutres raffinés qui équilibrent naturellement les couleurs chaudes."
+msgstr "Refined neutrals that naturally balance the warm colours."
+
+#: apps/website/views.py:43
+msgid "Perle"
+msgstr "Pearl"
+
+#: apps/website/views.py:43
+msgid "Anthracite"
+msgstr "Anthracite"
+
+#: apps/website/views.py:57
+msgid "Cérémonie civile"
+msgstr "Civil ceremony"
+
+#: apps/website/views.py:57
+msgid "Cérémonie religieuse"
+msgstr "Religious ceremony"
+
+#: apps/website/views.py:57
+msgid "Vin d'honneur"
+msgstr "Cocktail reception"
+
+#: apps/website/views.py:57
+msgid "Dîner"
+msgstr "Dinner"
+
+#: apps/website/views.py:58
+msgid "Le début officiel de notre journée, entourés de nos proches."
+msgstr "The official start of our day, surrounded by our loved ones."
+
+#: apps/website/views.py:59
+msgid "Un temps de célébration et de partage au cœur de Puteaux."
+msgstr "A time of celebration and togetherness in the heart of Puteaux."
+
+#: apps/website/views.py:60
+msgid "Retrouvons-nous autour d'un verre avant de poursuivre les festivités."
+msgstr "Join us for a drink before the celebrations continue."
+
+#: apps/website/views.py:61
+msgid "Dîner, surprises et soirée dansante pour célébrer ensemble."
+msgstr "Dinner, surprises and dancing as we celebrate together."
+
+#: apps/website/views.py:62
+msgid "Puteaux & La Défense"
+msgstr "Puteaux & La Défense"
+
+#: apps/website/views.py:62
+msgid "Ris-Orangis & environs"
+msgstr "Ris-Orangis & surrounding area"
+
+#: apps/website/views.py:62
+msgid "Sud parisien, compromis voiture"
+msgstr "Southern Paris, a balanced option by car"
+
+#: apps/website/views.py:63
+msgid "Priorité aux cérémonies"
+msgstr "Best for the ceremonies"
+
+#: apps/website/views.py:63
+msgid "Priorité à la soirée"
+msgstr "Best for the evening"
+
+#: apps/website/views.py:63
+msgid "Compromis entre les lieux"
+msgstr "Balanced between venues"
+
+#: apps/website/views.py:64
+msgid "Une base pratique pour rejoindre rapidement la mairie, l'église et le vin d'honneur."
+msgstr "A convenient base for quickly reaching the town hall, church and cocktail reception."
+
+#: apps/website/views.py:65
+msgid "Offre de transports et de logements variée, commerces et restauration à proximité."
+msgstr "A wide range of transport and accommodation, with shops and restaurants nearby."
+
+#: apps/website/views.py:66
+msgid "Prévoyez le trajet vers Ris-Orangis après les cérémonies."
+msgstr "Plan your journey to Ris-Orangis after the ceremonies."
+
+#: apps/website/views.py:67
+msgid "Particulièrement adaptée aux invités privilégiant les transports en commun."
+msgstr "Particularly suitable for guests who prefer public transport."
+
+#: apps/website/views.py:68
+msgid "Une option confortable pour limiter le trajet de retour après le dîner et la soirée."
+msgstr "A comfortable option that shortens the journey back after dinner and the party."
+
+#: apps/website/views.py:69
+msgid "Retour plus simple en fin de soirée, notamment en voiture ou en taxi."
+msgstr "An easier journey back late at night, especially by car or taxi."
+
+#: apps/website/views.py:70
+msgid "Les cérémonies du matin se déroulent à Puteaux, plus au nord."
+msgstr "The morning ceremonies take place further north in Puteaux."
+
+#: apps/website/views.py:71
+msgid "Vérifiez les horaires de transport tardifs et les possibilités de stationnement."
+msgstr "Check late-night transport times and parking options."
+
+#: apps/website/views.py:72
+msgid "Une zone intermédiaire à envisager pour équilibrer les déplacements entre Puteaux et Ris-Orangis."
+msgstr "An intermediate area to balance travel between Puteaux and Ris-Orangis."
+
+#: apps/website/views.py:73
+msgid "Répartition plus équilibrée des kilomètres sur l'ensemble de la journée."
+msgstr "A more even distribution of travel throughout the day."
+
+#: apps/website/views.py:74
+msgid "La circulation peut modifier fortement les durées : comparez chaque trajet avant de réserver."
+msgstr "Traffic can significantly affect journey times: compare each trip before booking."
+
+#: apps/website/views.py:75
+msgid "Option surtout pertinente pour les invités disposant d'une voiture."
+msgstr "Most suitable for guests travelling by car."
+
+#: apps/website/views.py:108
+msgid "Une journée à célébrer ensemble"
+msgstr "A day to celebrate together"
+
+#: apps/website/views.py:108
+msgid "Toutes les informations utiles pour préparer votre venue."
+msgstr "Everything you need to plan your visit."
+
+#: apps/website/views.py:109
+msgid "Notre histoire"
+msgstr "Our story"
+
+#: apps/website/views.py:109
+msgid "Quelques souvenirs, bientôt ici"
+msgstr "A few memories, coming soon"
+
+#: apps/website/views.py:109
+msgid "Les images et les mots de cette galerie seront ajoutés prochainement."
+msgstr "Images and words will be added to this gallery soon."
+
+#: apps/website/views.py:110
+msgid "Votre séjour"
+msgstr "Your stay"
+
+#: apps/website/views.py:110
+msgid "Préparez chaque étape sereinement"
+msgstr "Plan every step with ease"
+
+#: apps/website/views.py:110
+msgid "Programme, tenue, trajets et conseils de logement réunis au même endroit."
+msgstr "Schedule, attire, travel and accommodation advice, all in one place."
+
+#: templates/admin/base_site.html:4
+msgid "Django site admin"
+msgstr "Django site admin"
+
+#: templates/admin/base_site.html:12
+msgid "Django administration"
+msgstr "Django administration"

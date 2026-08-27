@@ -1,17 +1,17 @@
 {% extends "website/base_public.html" %}
-{% load static %}
-{% block title %}Dress code — Leslie & Bolivar{% endblock %}
+{% load i18n static %}
+{% block title %}{% translate "Dress code" %} — Leslie & Bolivar{% endblock %}
 {% block content %}
-<header class="page-hero dress-hero"><p class="eyebrow">Élégance d'automne</p><h1>Dress code</h1><p>Pour cette journée spéciale, nous avons choisi une palette de couleurs qui nous inspire. Nous serions ravis de vous voir arborer ces teintes dans vos plus belles parures.</p></header>
+<header class="page-hero dress-hero"><p class="eyebrow">{% translate "Élégance d'automne" %}</p><h1>Dress code</h1><p>{% translate "Pour cette journée spéciale, nous avons choisi une palette de couleurs qui nous inspire. Nous serions ravis de vous voir arborer ces teintes dans vos plus belles parures." %}</p></header>
 <section class="content-section dress-grid">
   {% for theme in dress_code_themes %}
     <article class="dress-card">
-      <div class="dress-visual"><img src="{% static 'website/images/dress-code/' %}{{ theme.slug }}.webp" alt="Inspiration de tenues femme et homme pour le thème {{ theme.name }}" loading="lazy" width="760" height="900"></div>
-      <div class="dress-copy"><p class="eyebrow">Palette {{ forloop.counter|stringformat:'02d' }}</p><h2>{{ theme.name }}</h2><p class="dress-subtitle">{{ theme.subtitle }}</p><p>{{ theme.description }}</p>
-        <ul class="swatch-list" aria-label="Couleurs {{ theme.name }}">{% for label, color in theme.swatches %}<li><span class="swatch" style="--swatch: {{ color }}" aria-hidden="true"></span>{{ label }}</li>{% endfor %}</ul>
+      <div class="dress-visual"><img src="{% static 'website/images/dress-code/' %}{{ theme.slug }}.webp" alt="{% blocktranslate with theme_name=theme.name %}Inspiration de tenues femme et homme pour le thème {{ theme_name }}{% endblocktranslate %}" loading="lazy" width="760" height="900"></div>
+      <div class="dress-copy"><p class="eyebrow">{% translate "Palette" %} {{ forloop.counter|stringformat:'02d' }}</p><h2>{{ theme.name }}</h2><p class="dress-subtitle">{{ theme.subtitle }}</p><p>{{ theme.description }}</p>
+        <ul class="swatch-list" aria-label="{% blocktranslate with theme_name=theme.name %}Couleurs {{ theme_name }}{% endblocktranslate %}">{% for label, color in theme.swatches %}<li><span class="swatch" style="--swatch: {{ color }}" aria-hidden="true"></span>{{ label }}</li>{% endfor %}</ul>
       </div>
     </article>
   {% endfor %}
 </section>
-<aside class="content-section etiquette-note"><span aria-hidden="true">♡</span><div><h2>Laissez parler votre élégance</h2><p>Les nuances peuvent être portées en couleur principale ou par touches. Le plus important est que vous vous sentiez à l'aise pour célébrer avec nous.</p></div></aside>
+<aside class="content-section etiquette-note"><span aria-hidden="true">♡</span><div><h2>{% translate "Laissez parler votre élégance" %}</h2><p>{% translate "Les nuances peuvent être portées en couleur principale ou par touches. Le plus important est que vous vous sentiez à l'aise pour célébrer avec nous." %}</p></div></aside>
 {% endblock %}

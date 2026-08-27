@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from django.utils.translation import gettext_lazy as _
+
 from guests.models import Guest, WeddingEvent
 
 
@@ -35,17 +37,17 @@ def recommend_area(event_codes, priority="balanced"):
     if priority == "evening" or (reception and not ceremonies):
         return StayRecommendation(
             "ris-orangis",
-            "Privilégiez la proximité de la soirée",
-            "Cette zone limite le trajet de retour après le dîner et les festivités.",
+            _("Privilégiez la proximité de la soirée"),
+            _("Cette zone limite le trajet de retour après le dîner et les festivités."),
         )
     if priority == "ceremonies" or (ceremonies and not reception):
         return StayRecommendation(
             "puteaux-la-defense",
-            "Privilégiez Puteaux et La Défense",
-            "Vous serez au plus près des cérémonies et du vin d'honneur.",
+            _("Privilégiez Puteaux et La Défense"),
+            _("Vous serez au plus près des cérémonies et du vin d'honneur."),
         )
     return StayRecommendation(
         "compromis-sud-parisien",
-        "Recherchez un compromis entre les lieux",
-        "Vous prévoyez plusieurs étapes : comparez les trajets réels dans Google Maps avant de réserver.",
+        _("Recherchez un compromis entre les lieux"),
+        _("Vous prévoyez plusieurs étapes : comparez les trajets réels dans Google Maps avant de réserver."),
     )

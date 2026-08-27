@@ -1,6 +1,6 @@
-{% load static %}
+{% load i18n static %}
 <!doctype html>
-<html lang="fr">
+<html lang="{{ LANGUAGE_CODE }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,7 +15,7 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Aller au contenu</a>
+    <a class="skip-link" href="#main-content">{% translate "Aller au contenu" %}</a>
     {% include "website/partials/public_header.html" %}
     <main class="page-shell" id="main-content">
       {% if messages %}
@@ -25,6 +25,6 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
-    <footer class="site-footer">Avec affection, Leslie&amp;Bolivar · Version {{ application_version }}</footer>
+    <footer class="site-footer">{% translate "Avec affection," %} Leslie&amp;Bolivar · {% translate "Version" %} {{ application_version }}</footer>
   </body>
 </html>
