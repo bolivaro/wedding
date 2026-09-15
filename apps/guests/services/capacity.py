@@ -3,8 +3,9 @@ from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
 
-from guests.models import Guest, GuestEventInvitation, WeddingEvent
+from guests.models import Guest, WeddingEvent
 from guests.services.composition import composition_state
+from guests.services.attendance import event_responses, present_responses
 
 
 def attendance_is_open(event, *, at=None):
@@ -14,16 +15,16 @@ def attendance_is_open(event, *, at=None):
 
 def event_capacity_snapshot(event, *, at=None):
     now = at or timezone.now()
-    invitations = GuestEventInvitation.objects.filter(
+    invitations = event_responses().filter(
         event=event,
         is_eligible=True,
         guest__is_active=True,
     )
-    attending = invitations.filter(attendance_status=Guest.RSVPStatus.ATTENDING).count()
-    pending_people = invitations.filter(attendance_status=Guest.RSVPStatus.PENDING).count()
+    attending = invitations.filter(effective_status=Guest.RSVPStatus.ATTENDING).count()
+    pending_people = invitations.filter(effective_status=Guest.RSVPStatus.PENDING).count()
     reserved_optional = 0
     provisional_release = 0
-    released = 0
+    released = invitations.filter(effective_status=Guest.RSVPStatus.NOT_ATTENDING).count()
     owners = Guest.objects.filter(
         invitation_owner__isnull=True,
         is_active=True,
@@ -31,12 +32,11 @@ def event_capacity_snapshot(event, *, at=None):
         event_invitations__is_eligible=True,
     ).prefetch_related("companions")
     for owner in owners:
-        owner_invitation = owner.event_invitations.get(event=event)
-        if owner_invitation.attendance_status == Guest.RSVPStatus.NOT_ATTENDING:
-            released += owner.party_size_limit
-            continue
         unused = max(0, owner.companion_limit - owner.companions.filter(is_active=True).count())
         if not unused:
+            continue
+        if invitations.filter(guest=owner, effective_status=Guest.RSVPStatus.NOT_ATTENDING).exists():
+            released += unused
             continue
         state = composition_state(owner, at=now)
         if state == "pending":
@@ -64,24 +64,14 @@ def ensure_capacity(event, *, additional_attendees=1):
     event = WeddingEvent.objects.select_for_update().get(pk=event.pk)
     if event.capacity is None:
         return
-    attending = GuestEventInvitation.objects.filter(
-        event=event,
-        is_eligible=True,
-        guest__is_active=True,
-        attendance_status=Guest.RSVPStatus.ATTENDING,
-    ).count()
+    attending = present_responses().filter(event=event).count()
     if attending + additional_attendees > event.capacity:
         raise ValidationError(f"La capacité maximale est atteinte pour {event.name}.")
 
 
 def demographic_statistics(event):
     return list(
-        Guest.objects.filter(
-            is_active=True,
-            event_invitations__event=event,
-            event_invitations__is_eligible=True,
-            event_invitations__attendance_status=Guest.RSVPStatus.ATTENDING,
-        )
+        Guest.objects.filter(pk__in=present_responses().filter(event=event).values("guest_id"))
         .values("age_category", "gender")
         .annotate(total=Count("pk"))
         .order_by("age_category", "gender")

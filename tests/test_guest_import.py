@@ -70,6 +70,20 @@ class GuestImportServiceTests(TestCase):
             checksum=upload_checksum(uploaded),
         )
 
+    def test_excel_absence_immediately_releases_places_without_rsvp(self):
+        from guests.services.capacity import event_capacity_snapshot
+        content = build_workbook({"Famille femme": [excel_row(**{"Présence (P/A)": "A"})]})
+        batch = analyze_batch(self.create_batch(content))
+        apply_batch(batch)
+        guest = Guest.objects.get()
+        self.assertEqual(guest.rsvp_status, Guest.RSVPStatus.NOT_ATTENDING)
+        event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
+        snapshot = event_capacity_snapshot(event)
+        self.assertEqual(snapshot["pending"], 0)
+        self.assertEqual(snapshot["attending"], 0)
+        self.assertEqual(snapshot["reserved_optional"], 0)
+        self.assertEqual(snapshot["released"], 2)
+
     def test_new_guest_is_previewed_then_imported(self):
         batch = analyze_batch(self.create_batch())
         self.assertEqual(batch.summary, {GuestImportRow.Outcome.NEW: 1})
