@@ -1,20 +1,29 @@
-{% load static %}
+{% load i18n static %}
 <header class="public-header" data-site-header>
   <div class="header-inner">
-    <a class="public-brand" href="{% url 'website:home' %}" aria-label="Accueil Leslie et Bolivar">
+    <a class="public-brand" href="{% url 'website:home' %}" aria-label="{% translate 'Accueil Leslie et Bolivar' %}">
       <img class="public-brand-icon" src="{% static 'website/images/favicon.svg' %}" alt="" aria-hidden="true">
       <span class="public-brand-name"><span>Leslie</span><span class="brand-amp">&amp;</span><span>Bolivar</span></span>
     </a>
     <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="public-navigation">
-      <span class="menu-toggle-lines" aria-hidden="true"></span><span class="sr-only">Ouvrir le menu</span>
+      <span class="menu-toggle-lines" aria-hidden="true"></span><span class="sr-only">{% translate "Ouvrir le menu" %}</span>
     </button>
-    <nav class="public-nav" id="public-navigation" data-menu aria-label="Navigation principale">
-      <a href="{% url 'website:home' %}" {% if request.resolver_match.namespace == 'website' and request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>Accueil</a>
-      <a href="{% url 'website:program' %}" {% if request.resolver_match.url_name == 'program' %}aria-current="page"{% endif %}>Programme</a>
+    <nav class="public-nav" id="public-navigation" data-menu aria-label="{% translate 'Navigation principale' %}">
+      <a href="{% url 'website:home' %}" {% if request.resolver_match.namespace == 'website' and request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>{% translate "Accueil" %}</a>
+      <a href="{% url 'website:program' %}" {% if request.resolver_match.url_name == 'program' %}aria-current="page"{% endif %}>{% translate "Programme" %}</a>
       <a href="{% url 'website:dress_code' %}" {% if request.resolver_match.url_name == 'dress_code' %}aria-current="page"{% endif %}>Dress code</a>
-      <a href="{% url 'website:stay' %}" {% if request.resolver_match.url_name == 'stay' %}aria-current="page"{% endif %}>Séjour</a>
-      <a class="nav-invitation" href="{% url 'website:my_invitation' %}" {% if request.resolver_match.namespace == 'guests' %}aria-current="page"{% endif %}>{% if session_guest or request.resolver_match.namespace == 'guests' %}Mon RSVP{% else %}Mon invitation{% endif %}</a>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Changer de thème"><span aria-hidden="true">◐</span><span>Thème</span></button>
+      <a href="{% url 'website:stay' %}" {% if request.resolver_match.url_name == 'stay' %}aria-current="page"{% endif %}>{% translate "Séjour" %}</a>
+      <a class="nav-invitation" href="{% url 'website:my_invitation' %}" {% if request.resolver_match.namespace == 'guests' %}aria-current="page"{% endif %}>{% if session_guest or request.resolver_match.namespace == 'guests' %}{% translate "Mon RSVP" %}{% else %}{% translate "Mon invitation" %}{% endif %}</a>
+      <form class="language-switcher" action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}<input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <span class="sr-only" id="language-switcher-label">{% translate "Langue" %}</span>
+        {% get_current_language as CURRENT_LANGUAGE %}
+        <div class="language-options" role="group" aria-labelledby="language-switcher-label">
+          <button type="submit" name="language" value="fr" lang="fr"{% if CURRENT_LANGUAGE == 'fr' %} class="is-active" aria-pressed="true"{% else %} aria-pressed="false"{% endif %}><span aria-hidden="true">FR</span><span class="sr-only">Français</span></button>
+          <button type="submit" name="language" value="en" lang="en"{% if CURRENT_LANGUAGE == 'en' %} class="is-active" aria-pressed="true"{% else %} aria-pressed="false"{% endif %}><span aria-hidden="true">EN</span><span class="sr-only">English</span></button>
+        </div>
+      </form>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="{% translate 'Changer de thème' %}"><span aria-hidden="true">◐</span><span>{% translate "Thème" %}</span></button>
     </nav>
   </div>
 </header>

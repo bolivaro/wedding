@@ -1,12 +1,12 @@
 {% extends "website/base_public.html" %}
-{% load static %}
-{% block title %}Séjour & déplacements — Leslie & Bolivar{% endblock %}
+{% load i18n static %}
+{% block title %}{% translate "Séjour & déplacements" %} — Leslie & Bolivar{% endblock %}
 {% block extra_head %}<script src="{% static 'website/js/travel.js' %}" defer></script>{% endblock %}
 {% block content %}
-<header class="page-hero stay-hero"><p class="eyebrow">Venir sereinement</p><h1>Séjour &amp; déplacements</h1><p>Visualisez les lieux, comparez vos trajets dans Google Maps et choisissez la zone qui correspond le mieux à votre journée.</p></header>
+<header class="page-hero stay-hero"><p class="eyebrow">{% translate "Venir sereinement" %}</p><h1>{% translate "Séjour & déplacements" %}</h1><p>{% translate "Visualisez les lieux, comparez vos trajets dans Google Maps et choisissez la zone qui correspond le mieux à votre journée." %}</p></header>
 
-<section class="content-section map-section" aria-labelledby="places-title">
-  <div class="section-heading"><div><p class="eyebrow">Les lieux</p><h2 id="places-title">Repérez chaque rendez-vous</h2></div><p>Sélectionnez un lieu pour l'afficher sur la carte.</p></div>
+<section class="content-section map-section" aria-labelledby="places-title" data-map-title-template="{% translate 'Carte de {venue}' %}">
+  <div class="section-heading"><div><p class="eyebrow">{% translate "Les lieux" %}</p><h2 id="places-title">{% translate "Repérez chaque rendez-vous" %}</h2></div><p>{% translate "Sélectionnez un lieu pour l'afficher sur la carte." %}</p></div>
   <div class="map-layout" data-place-map>
     <div class="place-selector" role="list">
       {% for event in events %}
@@ -16,40 +16,40 @@
       {% endfor %}
     </div>
     <div class="map-frame" data-map-frame>
-      {% if map_embed_url %}<iframe title="Carte du lieu sélectionné" src="{{ map_embed_url }}" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>{% else %}<div class="map-fallback"><span aria-hidden="true">⌖</span><h3>Carte interactive</h3><p>Ajoutez la clé Google Maps Embed dans l'environnement pour afficher la carte ici.</p>{% if events.0.map_url %}<a class="button button-secondary" href="{{ events.0.map_url }}" target="_blank" rel="noopener">Ouvrir Google Maps</a>{% endif %}</div>{% endif %}
+      {% if map_embed_url %}<iframe title="{% translate 'Carte du lieu sélectionné' %}" src="{{ map_embed_url }}" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>{% else %}<div class="map-fallback"><span aria-hidden="true">⌖</span><h3>{% translate "Carte interactive" %}</h3><p>{% translate "Ajoutez la clé Google Maps Embed dans l'environnement pour afficher la carte ici." %}</p>{% if events.0.map_url %}<a class="button button-secondary" href="{{ events.0.map_url }}" target="_blank" rel="noopener">{% translate "Ouvrir Google Maps" %}</a>{% endif %}</div>{% endif %}
     </div>
   </div>
 </section>
 
 <section class="content-section route-planner" id="trajets" data-route-planner>
-  <div class="section-heading"><div><p class="eyebrow">Votre point de départ</p><h2>Évaluez vos trajets</h2></div><p>L'adresse reste dans votre navigateur et n'est pas enregistrée sur notre site.</p></div>
+  <div class="section-heading"><div><p class="eyebrow">{% translate "Votre point de départ" %}</p><h2>{% translate "Évaluez vos trajets" %}</h2></div><p>{% translate "L'adresse reste dans votre navigateur et n'est pas enregistrée sur notre site." %}</p></div>
   <div class="planner-controls">
-    <fieldset><legend>D'où partirez-vous ?</legend><label class="choice"><input type="radio" name="origin-kind" value="position" checked> Ma position actuelle</label><label class="choice"><input type="radio" name="origin-kind" value="address"> L'adresse de mon logement</label></fieldset>
-    <label class="address-field" data-address-field hidden><span>Adresse du logement</span><input type="text" autocomplete="street-address" data-origin-address placeholder="Ex. 12 rue…, 92800 Puteaux"><small>Cette adresse sera transmise à Google Maps uniquement lorsque vous ouvrirez un trajet.</small></label>
-    <fieldset><legend>Mode de déplacement</legend><div class="mode-choices"><label class="choice"><input type="radio" name="travel-mode" value="driving" checked> Voiture</label><label class="choice"><input type="radio" name="travel-mode" value="transit"> Transports</label><label class="choice"><input type="radio" name="travel-mode" value="walking"> Marche</label><label class="choice"><input type="radio" name="travel-mode" value="bicycling"> Vélo</label></div></fieldset>
+    <fieldset><legend>{% translate "D'où partirez-vous ?" %}</legend><label class="choice"><input type="radio" name="origin-kind" value="position" checked> {% translate "Ma position actuelle" %}</label><label class="choice"><input type="radio" name="origin-kind" value="address"> {% translate "L'adresse de mon logement" %}</label></fieldset>
+    <label class="address-field" data-address-field hidden><span>{% translate "Adresse du logement" %}</span><input type="text" autocomplete="street-address" data-origin-address placeholder="{% translate 'Ex. 12 rue…, 92800 Puteaux' %}"><small>{% translate "Cette adresse sera transmise à Google Maps uniquement lorsque vous ouvrirez un trajet." %}</small></label>
+    <fieldset><legend>{% translate "Mode de déplacement" %}</legend><div class="mode-choices"><label class="choice"><input type="radio" name="travel-mode" value="driving" checked> {% translate "Voiture" %}</label><label class="choice"><input type="radio" name="travel-mode" value="transit"> {% translate "Transports" %}</label><label class="choice"><input type="radio" name="travel-mode" value="walking"> {% translate "Marche" %}</label><label class="choice"><input type="radio" name="travel-mode" value="bicycling"> {% translate "Vélo" %}</label></div></fieldset>
   </div>
   <div class="route-grid">
-    {% for event in events %}<article class="route-card"><div><span>{% if event.starts_at %}{{ event.starts_at|date:'H\hi' }}{% endif %}</span><h3>{{ event.name }}</h3><p>{{ event.venue_name }}</p></div><a class="button button-primary" data-route-link data-destination="{{ event.address|escape }}" href="{{ event.map_url }}" target="_blank" rel="noopener">Ouvrir le trajet <span aria-hidden="true">↗</span></a></article>{% endfor %}
+    {% for event in events %}<article class="route-card"><div><span>{% if event.starts_at %}{{ event.starts_at|date:'H\hi' }}{% endif %}</span><h3>{{ event.name }}</h3><p>{{ event.venue_name }}</p></div><a class="button button-primary" data-route-link data-destination="{{ event.address|escape }}" href="{{ event.map_url }}" target="_blank" rel="noopener">{% translate "Ouvrir le trajet" %} <span aria-hidden="true">↗</span></a></article>{% endfor %}
   </div>
 </section>
 
-<section class="content-section recommendation-section" data-recommendation data-initial-codes="{{ selected_event_codes|join:',' }}">
-  <div class="section-heading"><div><p class="eyebrow">Trouver votre équilibre</p><h2>Quelle zone vous conviendrait ?</h2></div>{% if session_guest %}<p>Suggestion adaptée à l'invitation de {{ session_guest.first_name }}.</p>{% else %}<p>Sélectionnez les étapes auxquelles vous pensez assister.</p>{% endif %}</div>
+<section class="content-section recommendation-section" data-recommendation data-initial-codes="{{ selected_event_codes|join:',' }}" data-evening-title="{% translate 'Privilégiez la proximité de la soirée' %}" data-evening-copy="{% translate 'Ris-Orangis et ses environs limitent le trajet de retour après les festivités.' %}" data-ceremonies-title="{% translate 'Privilégiez Puteaux et La Défense' %}" data-ceremonies-copy="{% translate 'Vous serez au plus près des cérémonies et du vin d’honneur.' %}" data-balanced-title="{% translate 'Recherchez un compromis entre les lieux' %}" data-balanced-copy="{% translate 'Vous prévoyez plusieurs étapes : comparez les trajets réels avant de réserver.' %}">
+  <div class="section-heading"><div><p class="eyebrow">{% translate "Trouver votre équilibre" %}</p><h2>{% translate "Quelle zone vous conviendrait ?" %}</h2></div>{% if session_guest %}<p>{% blocktranslate with first_name=session_guest.first_name %}Suggestion adaptée à l'invitation de {{ first_name }}.{% endblocktranslate %}</p>{% else %}<p>{% translate "Sélectionnez les étapes auxquelles vous pensez assister." %}</p>{% endif %}</div>
   <div class="recommendation-controls">
-    <fieldset><legend>Étapes de votre journée</legend><div class="event-checks">{% for event in events %}<label class="choice"><input type="checkbox" value="{{ event.code }}" data-event-choice {% if event.code in selected_event_codes %}checked{% elif not session_guest %}checked{% endif %}> {{ event.name }}</label>{% endfor %}</div></fieldset>
-    <fieldset><legend>Votre priorité</legend><div class="priority-choices"><label class="choice"><input type="radio" name="stay-priority" value="balanced" checked> Équilibre</label><label class="choice"><input type="radio" name="stay-priority" value="ceremonies"> Cérémonies</label><label class="choice"><input type="radio" name="stay-priority" value="evening"> Retour de soirée</label></div></fieldset>
+    <fieldset><legend>{% translate "Étapes de votre journée" %}</legend><div class="event-checks">{% for event in events %}<label class="choice"><input type="checkbox" value="{{ event.code }}" data-event-choice {% if event.code in selected_event_codes %}checked{% elif not session_guest %}checked{% endif %}> {{ event.name }}</label>{% endfor %}</div></fieldset>
+    <fieldset><legend>{% translate "Votre priorité" %}</legend><div class="priority-choices"><label class="choice"><input type="radio" name="stay-priority" value="balanced" checked> {% translate "Équilibre" %}</label><label class="choice"><input type="radio" name="stay-priority" value="ceremonies"> {% translate "Cérémonies" %}</label><label class="choice"><input type="radio" name="stay-priority" value="evening"> {% translate "Retour de soirée" %}</label></div></fieldset>
   </div>
-  <div class="recommendation-result" aria-live="polite"><p class="eyebrow">Notre suggestion</p><h3 data-recommendation-title>{{ recommendation.title }}</h3><p data-recommendation-copy>{{ recommendation.explanation }}</p><small>Conseil indicatif : vérifiez toujours les trajets réels avant de réserver.</small></div>
+  <div class="recommendation-result" aria-live="polite"><p class="eyebrow">{% translate "Notre suggestion" %}</p><h3 data-recommendation-title>{{ recommendation.title }}</h3><p data-recommendation-copy>{{ recommendation.explanation }}</p><small>{% translate "Conseil indicatif : vérifiez toujours les trajets réels avant de réserver." %}</small></div>
 </section>
 
 <section class="content-section areas-section">
-  <div class="section-heading"><div><p class="eyebrow">Zones conseillées</p><h2>Choisissez selon votre rythme</h2></div><p>Des repères pratiques, sans promesse sur les durées ou la disponibilité.</p></div>
+  <div class="section-heading"><div><p class="eyebrow">{% translate "Zones conseillées" %}</p><h2>{% translate "Choisissez selon votre rythme" %}</h2></div><p>{% translate "Des repères pratiques, sans promesse sur les durées ou la disponibilité." %}</p></div>
   <div class="area-grid">
-    {% for area in areas %}<article class="area-card" id="{{ area.slug }}"><span class="area-tag">{{ area.recommended_for }}</span><h3>{{ area.name }}</h3><p>{{ area.summary }}</p><dl><div><dt>Atouts</dt><dd>{{ area.advantages }}</dd></div><div><dt>À considérer</dt><dd>{{ area.considerations }}</dd></div><div><dt>Déplacements</dt><dd>{{ area.transport_notes }}</dd></div></dl>
-      {% with accommodations=area.accommodations.all %}{% if accommodations %}<div class="accommodation-list"><h4>Notre sélection</h4>{% for lodging in accommodations %}<a href="{{ lodging.booking_url }}" target="_blank" rel="noopener"><strong>{{ lodging.name }}</strong><span>{{ lodging.get_accommodation_type_display }}{% if lodging.capacity_note %} · {{ lodging.capacity_note }}{% endif %}</span></a>{% endfor %}</div>{% endif %}{% endwith %}
-      <a class="button button-secondary area-search-link" href="https://www.google.com/maps/search/?api=1&query={{ area.search_query|urlencode }}" target="_blank" rel="noopener">Explorer les hébergements ↗</a>
+    {% for area in areas %}<article class="area-card" id="{{ area.slug }}"><span class="area-tag">{{ area.recommended_for }}</span><h3>{{ area.name }}</h3><p>{{ area.summary }}</p><dl><div><dt>{% translate "Atouts" %}</dt><dd>{{ area.advantages }}</dd></div><div><dt>{% translate "À considérer" %}</dt><dd>{{ area.considerations }}</dd></div><div><dt>{% translate "Déplacements" %}</dt><dd>{{ area.transport_notes }}</dd></div></dl>
+      {% with accommodations=area.accommodations.all %}{% if accommodations %}<div class="accommodation-list"><h4>{% translate "Notre sélection" %}</h4>{% for lodging in accommodations %}<a href="{{ lodging.booking_url }}" target="_blank" rel="noopener"><strong>{{ lodging.name }}</strong><span>{{ lodging.get_accommodation_type_display }}{% if lodging.capacity_note %} · {{ lodging.capacity_note }}{% endif %}</span></a>{% endfor %}</div>{% endif %}{% endwith %}
+      <a class="button button-secondary area-search-link" href="https://www.google.com/maps/search/?api=1&query={{ area.search_query|urlencode }}" target="_blank" rel="noopener">{% translate "Explorer les hébergements ↗" %}</a>
     </article>{% endfor %}
   </div>
-  <p class="disclaimer">Les recommandations sont éditoriales et indicatives. Vérifiez les avis récents, les conditions, le prix, la disponibilité et votre trajet avant toute réservation.</p>
+  <p class="disclaimer">{% translate "Les recommandations sont éditoriales et indicatives. Vérifiez les avis récents, les conditions, le prix, la disponibilité et votre trajet avant toute réservation." %}</p>
 </section>
 {% endblock %}
