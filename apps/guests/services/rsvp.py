@@ -8,6 +8,32 @@ from guests.services.capacity import attendance_is_open, ensure_capacity
 
 
 @transaction.atomic
+def synchronize_admin_absence(guest):
+    """Apply an admin's global absence after event and companion inlines save."""
+    guest = Guest.objects.select_for_update().get(pk=guest.pk)
+    if guest.rsvp_status != Guest.RSVPStatus.NOT_ATTENDING:
+        return
+    response_time = timezone.now()
+    response = {
+        "attendance_status": Guest.RSVPStatus.NOT_ATTENDING,
+        "response_source": Guest.RSVPSource.ADMIN,
+        "responded_at": response_time,
+    }
+    guest.event_invitations.exclude(
+        attendance_status=Guest.RSVPStatus.NOT_ATTENDING,
+    ).update(**response)
+    GuestEventInvitation.objects.filter(
+        guest__invitation_owner=guest,
+        guest__is_active=True,
+        guest__attendance_mode=Guest.AttendanceMode.INHERIT,
+    ).exclude(attendance_status=Guest.RSVPStatus.NOT_ATTENDING).update(**response)
+    if guest.rsvp_source != Guest.RSVPSource.ADMIN or not guest.rsvp_responded_at:
+        guest.rsvp_source = Guest.RSVPSource.ADMIN
+        guest.rsvp_responded_at = response_time
+        guest.save(update_fields=["rsvp_source", "rsvp_responded_at", "updated_at"])
+
+
+@transaction.atomic
 def update_rsvp(
     *,
     guest,

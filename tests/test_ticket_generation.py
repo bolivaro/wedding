@@ -28,6 +28,9 @@ from guests.services.ticket import (
     generate_ticket,
     qr_payload,
     ticket_is_current,
+    party_members,
+    party_rsvp_complete,
+    TicketGenerationError,
 )
 
 
@@ -73,6 +76,11 @@ class TicketGenerationTests(TestCase):
             gender=Guest.Gender.MALE,
             invitation_owner=self.primary,
         )
+        GuestEventInvitation.objects.create(
+            guest=self.companion,
+            event=WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION),
+            attendance_status=Guest.RSVPStatus.ATTENDING,
+        )
         for event in WeddingEvent.objects.all():
             GuestEventInvitation.objects.create(
                 guest=self.primary,
@@ -80,6 +88,47 @@ class TicketGenerationTests(TestCase):
                 is_eligible=True,
                 attendance_status=Guest.RSVPStatus.ATTENDING,
             )
+
+    def test_partial_absence_regenerates_ticket_with_custom_companion_only(self):
+        ticket = generate_ticket(self.primary)
+        token = qr_payload(self.primary)
+        self.companion.attendance_mode = Guest.AttendanceMode.CUSTOM
+        self.companion.save(update_fields=["attendance_mode"])
+        self.primary.rsvp_status = Guest.RSVPStatus.NOT_ATTENDING
+        self.primary.save(update_fields=["rsvp_status"])
+        self.assertEqual(party_members(self.primary), [self.companion])
+        self.assertTrue(party_rsvp_complete(self.primary))
+        self.assertFalse(ticket_is_current(ticket, self.primary))
+        regenerated = generate_ticket(self.primary)
+        self.assertEqual(regenerated.pk, ticket.pk)
+        self.assertEqual(qr_payload(self.primary), token)
+        self.assertTrue(ticket_is_current(regenerated, self.primary))
+        events = _ticket_program_events(self.primary)
+        self.assertEqual([event.code for event in events], [WeddingEvent.Code.RECEPTION])
+        self.assertEqual(events[0].invitation_note, "Pour : Jean")
+
+    def test_no_ticket_when_entire_group_is_absent(self):
+        self.primary.rsvp_status = Guest.RSVPStatus.NOT_ATTENDING
+        self.primary.save(update_fields=["rsvp_status"])
+        self.assertEqual(party_members(self.primary), [])
+        self.assertFalse(party_rsvp_complete(self.primary))
+        with self.assertRaises(TicketGenerationError):
+            generate_ticket(self.primary)
+
+    def test_pending_companion_is_not_on_ticket(self):
+        self.companion.event_invitations.update(attendance_status=Guest.RSVPStatus.PENDING)
+        self.assertEqual(party_members(self.primary), [self.primary])
+
+    def test_event_attendance_change_invalidates_ticket_with_same_members(self):
+        ticket = generate_ticket(self.primary)
+        self.companion.event_invitations.update(attendance_status=Guest.RSVPStatus.NOT_ATTENDING)
+        GuestEventInvitation.objects.create(
+            guest=self.companion,
+            event=WeddingEvent.objects.get(code=WeddingEvent.Code.CHURCH),
+            attendance_status=Guest.RSVPStatus.ATTENDING,
+        )
+        self.assertEqual(party_members(self.primary), [self.primary, self.companion])
+        self.assertFalse(ticket_is_current(ticket, self.primary))
 
     def _template_bytes(self):
         template = Path(__file__).parents[1] / (
@@ -168,6 +217,7 @@ class TicketGenerationTests(TestCase):
             guest=self.companion,
             event=church,
             is_eligible=True,
+            attendance_status=Guest.RSVPStatus.ATTENDING,
         )
 
         events = {event.code: event for event in _ticket_program_events(self.primary)}
@@ -347,6 +397,11 @@ class TicketViewsTests(TestCase):
             invitation_owner=self.primary,
         )
         self.unrelated = Guest.objects.create(first_name="Intrus")
+        GuestEventInvitation.objects.create(
+            guest=self.companion,
+            event=WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION),
+            attendance_status=Guest.RSVPStatus.ATTENDING,
+        )
         for event in WeddingEvent.objects.all():
             GuestEventInvitation.objects.create(
                 guest=self.primary,
@@ -361,6 +416,17 @@ class TicketViewsTests(TestCase):
                 kwargs={"selector": issued.credential.selector, "secret": issued.secret},
             )
         )
+
+    def test_absent_primary_keeps_access_for_custom_companion(self):
+        self.primary.rsvp_status = Guest.RSVPStatus.NOT_ATTENDING
+        self.primary.save(update_fields=["rsvp_status"])
+        self.companion.attendance_mode = Guest.AttendanceMode.CUSTOM
+        self.companion.save(update_fields=["attendance_mode"])
+        response = self.client.get(reverse("guests:ticket_preview"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["members"], [self.companion])
+        response = self.client.post(reverse("guests:party_ticket_download"))
+        self.assertEqual(response.status_code, 200)
 
     def test_companion_route_generates_and_downloads_the_group_ticket(self):
         response = self.client.post(
@@ -431,6 +497,7 @@ class TicketAdminTests(TestCase):
             password="safe-test-password",
         )
         guest = Guest.objects.create(first_name="Marie")
+        GuestEventInvitation.objects.create(guest=guest, event=WeddingEvent.objects.get(code="reception"), attendance_status=Guest.RSVPStatus.ATTENDING)
         self.client.force_login(admin)
 
         response = self.client.post(
@@ -452,6 +519,7 @@ class TicketAdminTests(TestCase):
             password="safe-test-password",
         )
         primary = Guest.objects.create(first_name="Marie")
+        GuestEventInvitation.objects.create(guest=primary, event=WeddingEvent.objects.get(code="reception"), attendance_status=Guest.RSVPStatus.ATTENDING)
         companion = Guest.objects.create(first_name="Jean", invitation_owner=primary)
         self.client.force_login(admin)
 

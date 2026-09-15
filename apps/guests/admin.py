@@ -21,6 +21,8 @@ from .services.invitation_messages import build_invitation_share_text
 from .services.ticket import TicketGenerationError, generate_ticket
 from .services.capacity import demographic_statistics, event_capacity_snapshot
 from .services.event_eligibility import apply_city_hall_policy
+from .services.rsvp import synchronize_admin_absence
+from .services.attendance import present_responses
 
 
 class GuestEventInvitationInline(admin.TabularInline):
@@ -106,6 +108,16 @@ class GuestAdmin(admin.ModelAdmin):
 
     class Media:
         js = ("guests/js/admin_invitation_share.js",)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        synchronize_admin_absence(form.instance)
+        for formset in formsets:
+            if formset.model is Guest:
+                for companion in formset.new_objects:
+                    synchronize_admin_absence(companion)
+                for companion, changed_fields in formset.changed_objects:
+                    synchronize_admin_absence(companion)
 
     @admin.action(description="Appliquer la politique mairie aux groupes sélectionnés")
     def apply_selected_city_hall_policy(self, request, queryset):
@@ -343,7 +355,7 @@ class GuestAdmin(admin.ModelAdmin):
                 is_active=True,
                 event_invitations__event=reception,
                 event_invitations__is_eligible=True,
-                event_invitations__attendance_status=Guest.RSVPStatus.ATTENDING,
+                pk__in=present_responses().filter(event=reception).values("guest_id"),
             ).select_related("invitation_owner").order_by("last_name", "first_name")
         context = {
             **self.admin_site.each_context(request),

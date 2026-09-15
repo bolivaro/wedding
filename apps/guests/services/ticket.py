@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 
@@ -17,7 +18,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from ..models import Guest, GuestEventInvitation, Ticket, WeddingEvent
+from ..models import Guest, Ticket, WeddingEvent
+from .attendance import present_responses
 from .event_messages import YOUNG_CHILDREN_TICKET_MESSAGE
 
 
@@ -68,25 +70,17 @@ def get_primary_guest(guest):
 
 def party_members(primary_guest):
     primary_guest = get_primary_guest(primary_guest)
-    companions = primary_guest.companions.filter(is_active=True).order_by(
-        "first_name",
-        "last_name",
-    )
-    return [primary_guest, *companions]
+    members = Guest.objects.filter(
+        pk__in=present_responses().filter(event__is_active=True).values("guest_id"),
+    ).filter(
+        Q(pk=primary_guest.pk) | Q(invitation_owner=primary_guest),
+    ).order_by("first_name", "last_name", "pk")
+    return sorted(members, key=lambda member: member.pk != primary_guest.pk)
 
 
 def party_rsvp_complete(primary_guest):
     primary_guest = get_primary_guest(primary_guest)
-    if primary_guest.rsvp_status != Guest.RSVPStatus.ATTENDING:
-        return False
-    eligible = primary_guest.event_invitations.filter(
-        is_eligible=True,
-        event__is_active=True,
-        event__requires_rsvp=True,
-    )
-    return eligible.exists() and not eligible.filter(
-        attendance_status=Guest.RSVPStatus.PENDING,
-    ).exists()
+    return primary_guest.is_active and bool(party_members(primary_guest))
 
 
 def qr_payload(guest):
@@ -294,6 +288,7 @@ def _program_snapshot(events=None):
             "icon": event.icon,
             "starts_at": event.starts_at.isoformat() if event.starts_at else None,
             "display_order": event.display_order,
+            "invitation_note": getattr(event, "invitation_note", ""),
         }
         for event in (events if events is not None else _program_events())
     ]
@@ -302,14 +297,12 @@ def _program_snapshot(events=None):
 def _ticket_program_events(primary_guest):
     members = party_members(primary_guest)
     invitations = list(
-        GuestEventInvitation.objects.filter(
+        present_responses().filter(
             guest__in=members,
             is_eligible=True,
             event__is_active=True,
         ).select_related("guest", "event")
     )
-    if not invitations:
-        return _program_events()
     names_by_event = {}
     events_by_id = {}
     for invitation in invitations:
@@ -897,8 +890,8 @@ def _render_ticket_images(guest, template_path):
 
 def generate_ticket(guest, *, force=False):
     guest = get_primary_guest(guest)
-    if not guest.is_active:
-        raise TicketGenerationError("Impossible de générer le billet d'un invité inactif.")
+    if not guest.is_active or not party_members(guest):
+        raise TicketGenerationError("Aucun participant confirmé pour ce billet.")
 
     ticket, _ = Ticket.objects.get_or_create(guest=guest)
     template_path = _template_path()
