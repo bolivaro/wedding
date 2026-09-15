@@ -103,14 +103,7 @@ def _dashboard_context(
         )
     )
     eligible = [invitation for invitation in event_invitations if invitation.is_eligible]
-    rsvp_complete = (
-        guest.rsvp_status == Guest.RSVPStatus.ATTENDING
-        and bool(eligible)
-        and all(
-            invitation.attendance_status != Guest.RSVPStatus.PENDING
-            for invitation in eligible
-        )
-    )
+    rsvp_complete = party_rsvp_complete(guest)
     resolved_rsvp_form = rsvp_form if rsvp_form is not None else RSVPForm(guest=guest)
     rsvp_answered = (
         guest.rsvp_status != Guest.RSVPStatus.PENDING
@@ -422,14 +415,14 @@ def companion_attendance(request, companion_id):
                 return _fragment_response(
                     request,
                     guest=request.guest,
-                    components=("companions",),
+                    components=("companions", "ticket"),
                     message="Les disponibilités de l’accompagnant ont été enregistrées.",
                 )
             messages.success(request, "Les disponibilités de l’accompagnant ont été enregistrées.")
             return redirect("guests:rsvp_dashboard")
     message = "; ".join(form.non_field_errors()) or "Certaines disponibilités sont invalides."
     if _is_async_request(request):
-        return _fragment_response(request, guest=request.guest, components=("companions",), message=message, status=422)
+        return _fragment_response(request, guest=request.guest, components=("companions", "ticket"), message=message, status=422)
     messages.error(request, message)
     return redirect("guests:rsvp_dashboard")
 
@@ -626,7 +619,7 @@ def _party_member_or_404(primary_guest, guest_id):
 def _ensure_ticket_access(request, primary_guest):
     if party_rsvp_complete(primary_guest):
         return True
-    messages.info(request, "Terminez votre RSVP avant d'accéder à vos billets.")
+    messages.info(request, "Confirmez la présence d’au moins un participant pour accéder au billet.")
     return False
 
 
