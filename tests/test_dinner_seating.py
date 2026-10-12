@@ -10,6 +10,7 @@ from guests.services.seating import assign_guests, create_table, dinner_guests, 
 @override_settings(SECURE_SSL_REDIRECT=False, STORAGES={"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}, "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})
 class DinnerSeatingTests(TestCase):
     def setUp(self):
+        DinnerTable.objects.all().delete()
         self.event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
         self.table = create_table(name="Olivier")
         self.other = create_table(name="Jasmin")
@@ -136,3 +137,21 @@ class DinnerSeatingTests(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(response.status_code, 400)
         self.assertFalse(DinnerTable.objects.filter(number=4).exists())
+
+    def test_default_tables_migration_preserves_existing_tables_and_assignments(self):
+        from importlib import import_module
+        from django.apps import apps
+        from django.db import connection
+        migration = import_module("guests.migrations.0020_default_dinner_tables")
+        existing = create_table(name="  BALEPOUO  ")
+        guest = self.guest("Camille")
+        assign_guests(guest_ids=[guest.pk], table_id=existing.pk)
+        from types import SimpleNamespace
+        editor = SimpleNamespace(connection=connection)
+        migration.create_default_tables(apps, editor)
+        migration.create_default_tables(apps, editor)
+        self.assertEqual(DinnerTable.objects.count(), 28)
+        self.assertEqual(DinnerSeatingAssignment.objects.get(guest=guest).table_id, existing.pk)
+        self.assertEqual(DinnerTable.objects.filter(name="Balepouo").count(), 0)
+        self.assertTrue(DinnerTable.objects.filter(name="Bossèdi I").exists())
+        self.assertEqual(len(migration.TABLE_NAMES), 26)

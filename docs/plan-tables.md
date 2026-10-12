@@ -84,3 +84,10 @@ concerne une personne, indépendamment des cases cochées. La sauvegarde utilise
 les mêmes contrôles serveur et permissions que les formulaires. Les personnes
 en anomalie ne sont pas déplaçables. Sur mobile et au clavier, utiliser les boutons
 d’affectation et de déplacement. Aucune migration supplémentaire n’est nécessaire.
+
+## Tables par défaut
+
+La migration `0020` ajoute les 26 noms de tables fournis, sans affecter de convive.
+Elle conserve les tables et affectations existantes et ignore les noms déjà présents
+(sans distinction de casse ni d’espaces en début ou fin). Elle sera appliquée par
+le pre-deploy Railway existant. Son annulation ne supprime aucune table.
