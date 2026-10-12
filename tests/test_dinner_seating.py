@@ -85,3 +85,37 @@ class DinnerSeatingTests(TestCase):
     def test_duplicate_table_number_is_rejected(self):
         with self.assertRaises(ValidationError):
             create_table(number=1)
+
+    def test_export_data_excludes_absences_and_lists_incomplete_plan(self):
+        from guests.services.seating_export import seating_export_data, build_seating_pdf
+        placed = self.guest("Zoé & <Martin>")
+        unassigned = self.guest("À placer")
+        absent = self.guest("Absent")
+        assign_guests(guest_ids=[placed.pk, absent.pk], table_id=self.table.pk)
+        absent.rsvp_status = Guest.RSVPStatus.NOT_ATTENDING
+        absent.save()
+        data = seating_export_data()
+        self.assertEqual(data["tables"][0][1], [placed])
+        self.assertEqual(data["unassigned"], [unassigned])
+        self.assertEqual([item.guest_id for item in data["anomalies"]], [absent.pk])
+        for per_table in (False, True):
+            pdf = build_seating_pdf(per_table=per_table)
+            self.assertTrue(pdf.startswith(b"%PDF-"))
+            self.assertIn(b"%%EOF", pdf)
+
+    def test_export_requires_view_permission_and_downloads_both_layouts(self):
+        from django.contrib.auth.models import Permission
+        url = reverse("admin:guests_guest_seating_export")
+        self.assertEqual(self.client.get(url).status_code, 302)
+        user = get_user_model().objects.create_user(username="exporter", is_staff=True)
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(url).status_code, 403)
+        user.user_permissions.add(Permission.objects.get(codename="view_guest"))
+        for layout in ("summary", "tables"):
+            response = self.client.get(url, {"layout": layout})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["Content-Type"], "application/pdf")
+            self.assertIn("attachment", response["Content-Disposition"])
+            self.assertTrue(response.content.startswith(b"%PDF-"))
+        self.assertEqual(self.client.get(url, {"layout": "invalid"}).status_code, 400)
+        self.assertEqual(self.client.post(url).status_code, 405)

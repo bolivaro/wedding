@@ -7,6 +7,11 @@
 <a href="{% url 'admin:guests_guest_changelist' %}">← Retour aux invités</a>
 <p>Seuls les invités confirmés au dîner sont proposés. Chaque table accueille au maximum 10 personnes.</p>
 <div class="seating-stats"><span><strong>{{ confirmed_count }}</strong> confirmés</span><span><strong>{{ placed_count }}</strong> placés</span><span><strong>{{ unassigned_count }}</strong> à placer</span><span><strong>{{ anomaly_count }}</strong> anomalies</span></div>
+<div class="seating-exports" aria-label="Exports pour impression">
+<a href="{% url 'admin:guests_guest_seating_export' %}?layout=summary">Télécharger le PDF récapitulatif</a>
+<a href="{% url 'admin:guests_guest_seating_export' %}?layout=tables">Télécharger le PDF par table</a>
+</div>
+<p>Les PDF incluent uniquement les convives confirmés. En cas de personnes à placer ou d’anomalies, ils portent la mention « Plan provisoire » et une annexe des points à résoudre.</p>
 <p id="seating-feedback" role="status" aria-live="polite">{{ error|default:"" }}</p>
 {% if can_edit %}<details class="seating-card"><summary>Ajouter une table</summary><form method="post" data-seating-form>{% csrf_token %}<input type="hidden" name="action" value="create"><label>Numéro <input type="number" name="number" min="1" max="32767" required></label><label>Nom (facultatif) <input name="name" maxlength="100" placeholder="Olivier"></label><button type="submit">Créer la table</button></form></details>{% endif %}
 <div class="seating-layout">

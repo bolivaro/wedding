@@ -46,3 +46,17 @@ DATABASE_URL=sqlite:////tmp/wedding-seating-check.sqlite3 .venv/bin/python manag
 
 Les verrous utilisés pour sérialiser les affectations sont effectifs sur PostgreSQL.
 Les tests SQLite vérifient les règles métier mais ne simulent pas la concurrence PostgreSQL.
+
+## Exports pour impression
+
+Deux liens permettent de télécharger un PDF A4 récapitulatif ou un PDF avec
+une page par table (précédées d’une couverture récapitulative). Les convives sont
+triés par nom et prénom. Seuls les invités actuellement confirmés au dîner
+figurent dans les listes des tables. Les tables vides sont incluses.
+
+En présence de convives non placés ou d’affectations incompatibles avec la présence,
+le document porte la mention « Plan provisoire ». Une annexe liste les convives à
+placer et les affectations exclues à corriger. Les exports sont accessibles avec
+la permission `guests.view_guest` et ne modifient aucune donnée.
+
+Aucune migration ou dépendance supplémentaire n’est nécessaire pour cette évolution.

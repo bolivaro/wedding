@@ -83,3 +83,7 @@ html[data-theme='dark'] .seating {
 .seating-warning, #seating-feedback { color: var(--danger); }
 html[data-theme='auto'] .seating { color-scheme: light dark; }
 @media (max-width: 850px) { .seating-layout { grid-template-columns: 1fr; } .seating { padding: 12px; } }
+
+.seating-exports { display: flex; flex-wrap: wrap; gap: 12px; }
+.seating-exports a { display: inline-block; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); color: var(--primary); }
+.seating-exports a:hover { border-color: var(--primary); background: var(--surface); }

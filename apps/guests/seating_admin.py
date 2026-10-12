@@ -73,3 +73,21 @@ def seating_view(model_admin, request):
         "unassigned_count": len(confirmed_ids - assigned_ids),
         "anomaly_count": len(assigned_ids - confirmed_ids), "error": error,
     })
+
+
+def seating_export_view(model_admin, request):
+    from django.http import HttpResponse, HttpResponseBadRequest
+    from guests.services.seating_export import build_seating_pdf
+
+    if not model_admin.has_view_permission(request):
+        raise PermissionDenied
+    if request.method != "GET":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["GET"])
+    layout = request.GET.get("layout", "summary")
+    if layout not in {"summary", "tables"}:
+        return HttpResponseBadRequest("Format d’export inconnu.")
+    response = HttpResponse(build_seating_pdf(per_table=layout == "tables"), content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="plan-tables-diner-{layout}.pdf"'
+    response["Cache-Control"] = "private, no-store"
+    return response
