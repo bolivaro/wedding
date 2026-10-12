@@ -67,6 +67,8 @@ html[data-theme='dark'] .seating {
 .seating h2 { background: transparent; color: var(--text); padding: 0; }
 .seating label { display: block; margin: 12px 0; }
 .seating input, .seating select { max-width: 100%; box-sizing: border-box; background: var(--surface-soft); color: var(--text); border: 1px solid var(--border); padding: 9px; border-radius: 8px; }
+/* Override Django admin's fixed select height, which clips padded text. */
+.seating select { height: auto; min-height: 44px; line-height: 1.4; }
 .seating button { background: var(--primary); color: var(--primary-text); border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
 .seating button:hover { background: var(--primary-hover); }
 .seating :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
