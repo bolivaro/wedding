@@ -51,7 +51,9 @@ Les tests SQLite vérifient les règles métier mais ne simulent pas la concurre
 
 Deux liens permettent de télécharger un PDF A4 récapitulatif ou un PDF avec
 une page par table (précédées d’une couverture récapitulative). Les convives sont
-triés par nom et prénom. Seuls les invités actuellement confirmés au dîner
+triés par nom et prénom. Dans le PDF récapitulatif, les tables sont affichées
+par leur nom, dans l’ordre alphabétique sans distinction de casse ou d’accent.
+Une table sans nom apparaît sous « Table N ». Seuls les invités actuellement confirmés au dîner
 figurent dans les listes des tables. Les tables vides sont incluses.
 
 En présence de convives non placés ou d’affectations incompatibles avec la présence,

@@ -1,6 +1,7 @@
 """Printable A4 dinner seating documents; no files or guest data are changed."""
 from io import BytesIO
 from pathlib import Path
+import unicodedata
 from xml.sax.saxutils import escape
 
 from django.conf import settings
@@ -55,10 +56,19 @@ def build_seating_pdf(*, per_table=False):
         story.append(Paragraph("Une page par table suit ce récapitulatif.", styles["DinnerBody"]))
     if not data["tables"]:
         story.append(Paragraph("Aucune table créée.", styles["DinnerBody"]))
-    for table, guests in data["tables"]:
+    tables = data["tables"]
+    if not per_table:
+        def alphabetical_key(row):
+            table = row[0]
+            label = table.name.strip() or f"Table {table.number}"
+            normalized = unicodedata.normalize("NFD", label.casefold())
+            return ("".join(char for char in normalized if not unicodedata.combining(char)), table.number)
+        tables = sorted(tables, key=alphabetical_key)
+    for table, guests in tables:
         if per_table:
             story.append(PageBreak())
-        block = [Paragraph(escape(str(table)), styles["DinnerTable"]),
+        label = str(table) if per_table else (table.name.strip() or f"Table {table.number}")
+        block = [Paragraph(escape(label), styles["DinnerTable"]),
                  Paragraph(f"{len(guests)} / 10 convives confirmés" + (" · Plan provisoire" if provisional else ""), styles["DinnerBody"])]
         block.extend(Paragraph(escape(guest.full_name), styles["DinnerBody"]) for guest in guests)
         if not guests:
