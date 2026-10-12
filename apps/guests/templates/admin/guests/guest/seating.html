@@ -16,7 +16,7 @@
 {% if can_edit %}<details class="seating-card"><summary>Ajouter une table</summary><form method="post" data-seating-form>{% csrf_token %}<input type="hidden" name="action" value="create"><label>Nom de la table <input name="name" maxlength="100" required placeholder="Olivier"></label><button type="submit">Créer la table</button></form></details>{% endif %}
 {% if can_edit %}<p>Sur ordinateur, glissez un convive vers une table pour l’affecter ou le déplacer. Les boutons restent disponibles sur mobile et au clavier.</p>{% endif %}
 <div class="seating-layout">
-<section class="seating-card"><h2>Invités à placer · {{ unassigned_count }}</h2>
+<section class="seating-card seating-unassigned"><h2>Invités à placer · {{ unassigned_count }}</h2>
 <label>Rechercher un invité <input type="search" id="seating-search" placeholder="Nom, prénom ou groupe…"></label>
 <form method="post" data-seating-form>{% csrf_token %}<input type="hidden" name="action" value="assign">
 <div class="seating-people">{% for guest in unassigned %}<label class="seating-person" {% if can_edit %}draggable="true" data-drag-guest="{{ guest.pk }}" data-source-table=""{% endif %} data-search="{{ guest.full_name }} {{ guest.get_guest_group_display }} {{ guest.invitation_owner.full_name }}"><input type="checkbox" name="guest_ids" value="{{ guest.pk }}" {% if not can_edit %}disabled{% endif %}><span><strong>{{ guest.full_name }}</strong><small>{{ guest.get_guest_group_display }}{% if guest.invitation_owner %} · Accompagne {{ guest.invitation_owner.full_name }}{% endif %}</small></span></label>{% empty %}<p>Tous les convives confirmés sont placés, ou aucune présence n’est encore confirmée.</p>{% endfor %}</div>

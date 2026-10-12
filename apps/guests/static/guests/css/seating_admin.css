@@ -93,3 +93,31 @@ html[data-theme='auto'] .seating { color-scheme: light dark; }
 .seating .seating-drop-ready { outline: 2px dashed var(--primary); outline-offset: 2px; }
 .seating .seating-drop-over { outline-style: solid; background: var(--surface-soft); }
 .seating .seating-drop-full { outline: 2px dashed var(--danger); outline-offset: 2px; }
+
+/* Keep the source list within reach while browsing the dinner tables. */
+@media (min-width: 851px) and (min-height: 600px) {
+  .seating-unassigned {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .seating-unassigned > h2,
+  .seating-unassigned > label { flex-shrink: 0; }
+  .seating-unassigned > form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .seating-unassigned > form > :not(.seating-people) { flex-shrink: 0; }
+  .seating-unassigned .seating-people {
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
