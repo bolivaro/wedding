@@ -87,3 +87,9 @@ html[data-theme='auto'] .seating { color-scheme: light dark; }
 .seating-exports { display: flex; flex-wrap: wrap; gap: 12px; }
 .seating-exports a { display: inline-block; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); color: var(--primary); }
 .seating-exports a:hover { border-color: var(--primary); background: var(--surface); }
+
+.seating [draggable="true"] { cursor: grab; }
+.seating .seating-dragging { opacity: .5; cursor: grabbing; }
+.seating .seating-drop-ready { outline: 2px dashed var(--primary); outline-offset: 2px; }
+.seating .seating-drop-over { outline-style: solid; background: var(--surface-soft); }
+.seating .seating-drop-full { outline: 2px dashed var(--danger); outline-offset: 2px; }

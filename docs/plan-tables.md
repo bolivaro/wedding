@@ -74,3 +74,13 @@ et des PDF. Les tables sont présentées par leur nom dans l’administration. A
 au déploiement (le pre-deploy Railway déjà configuré le fait automatiquement).
 
 La migration `0019` modifie uniquement l’ordre de présentation des tables, sans changement de colonnes ni des affectations.
+
+## Glisser-déposer
+
+Sur ordinateur, glisser un convive depuis « À placer » ou depuis une table vers
+une autre table permet de l’affecter ou de le déplacer. Les tables disponibles
+sont mises en évidence ; les tables complètes refusent le dépôt. Chaque dépôt
+concerne une personne, indépendamment des cases cochées. La sauvegarde utilise
+les mêmes contrôles serveur et permissions que les formulaires. Les personnes
+en anomalie ne sont pas déplaçables. Sur mobile et au clavier, utiliser les boutons
+d’affectation et de déplacement. Aucune migration supplémentaire n’est nécessaire.
