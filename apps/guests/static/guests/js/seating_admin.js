@@ -1,9 +1,5 @@
 (() => {
   const normalize = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
-  document.querySelector('#seating-search')?.addEventListener('input', (event) => {
-    const query = normalize(event.target.value);
-    document.querySelectorAll('[data-search]').forEach((row) => { row.hidden = !normalize(row.dataset.search).includes(query); });
-  });
   const selectionForm = document.querySelector('[data-selection-status]')?.closest('form');
   const updateSelection = () => {
     if (!selectionForm) return true;
@@ -28,6 +24,34 @@
   };
   selectionForm?.addEventListener('change', updateSelection);
   updateSelection();
+  const search = document.querySelector('#seating-search');
+  const filters = document.querySelector('[data-group-filters]');
+  const filterStatus = document.querySelector('[data-filter-status]');
+  const applyFilters = () => {
+    const query = normalize(search?.value || '');
+    const groups = new Set([...document.querySelectorAll('[data-group-filter]:checked')].map((input) => input.value));
+    let visible = 0;
+    let cleared = 0;
+    document.querySelectorAll('[data-search]').forEach((row) => {
+      row.hidden = !normalize(row.dataset.search).includes(query) || !groups.has(row.dataset.group);
+      const checkbox = row.querySelector('[name="guest_ids"]');
+      if (row.hidden && checkbox.checked) {
+        checkbox.checked = false;
+        cleared += 1;
+      }
+      if (!row.hidden) visible += 1;
+    });
+    filterStatus.textContent = `${visible} convive(s) affiché(s).` +
+      (cleared ? ` ${cleared} sélection(s) masquée(s) décochée(s).` : '');
+    updateSelection();
+  };
+  if (filters && filterStatus) {
+    filters.hidden = false;
+    filterStatus.hidden = false;
+    filters.addEventListener('change', applyFilters);
+    search?.addEventListener('input', applyFilters);
+    applyFilters();
+  }
   let saving = false;
   const submitAssignment = async (data) => {
     if (saving) return;

@@ -123,3 +123,10 @@ html[data-theme='auto'] .seating { color-scheme: light dark; }
     scrollbar-gutter: stable;
   }
 }
+
+.seating-group-filters { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin: 0; flex-shrink: 0; }
+.seating-group-filters legend { color: var(--text); padding: 0 4px; }
+.seating .seating-group-filters label { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.seating-group-filters input { accent-color: var(--primary); }
+.seating [data-filter-status] { color: var(--muted); flex-shrink: 0; margin: 8px 0; }
+.seating-group-filters[hidden] { display: none; }
