@@ -60,14 +60,14 @@ def build_seating_pdf(*, per_table=False):
     if not per_table:
         def alphabetical_key(row):
             table = row[0]
-            label = table.name.strip() or f"Table {table.number}"
+            label = table.name
             normalized = unicodedata.normalize("NFD", label.casefold())
-            return ("".join(char for char in normalized if not unicodedata.combining(char)), table.number)
+            return ("".join(char for char in normalized if not unicodedata.combining(char)), table.pk)
         tables = sorted(tables, key=alphabetical_key)
     for table, guests in tables:
         if per_table:
             story.append(PageBreak())
-        label = str(table) if per_table else (table.name.strip() or f"Table {table.number}")
+        label = table.name
         block = [Paragraph(escape(label), styles["DinnerTable"]),
                  Paragraph(f"{len(guests)} / 10 convives confirmés" + (" · Plan provisoire" if provisional else ""), styles["DinnerBody"])]
         block.extend(Paragraph(escape(guest.full_name), styles["DinnerBody"]) for guest in guests)

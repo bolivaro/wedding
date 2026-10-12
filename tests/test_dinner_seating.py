@@ -11,8 +11,8 @@ from guests.services.seating import assign_guests, create_table, dinner_guests, 
 class DinnerSeatingTests(TestCase):
     def setUp(self):
         self.event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
-        self.table = create_table(number=1, name="Olivier")
-        self.other = create_table(number=2, name="Jasmin")
+        self.table = create_table(name="Olivier")
+        self.other = create_table(name="Jasmin")
 
     def guest(self, name, status=Guest.RSVPStatus.ATTENDING, **kwargs):
         guest = Guest.objects.create(first_name=name, rsvp_status=status, **kwargs)
@@ -82,9 +82,14 @@ class DinnerSeatingTests(TestCase):
         self.assertEqual(self.client.get(url).status_code, 200)
         self.assertEqual(self.client.post(url, {"action": "create", "number": 3}).status_code, 403)
 
-    def test_duplicate_table_number_is_rejected(self):
-        with self.assertRaises(ValidationError):
-            create_table(number=1, name="Autre")
+    def test_tables_are_created_by_name_and_displayed_without_numbers(self):
+        table = create_table(name="Rose")
+        self.assertEqual(str(table), "Rose")
+        self.assertEqual(list(DinnerTable.objects.values_list("name", flat=True)), ["Jasmin", "Olivier", "Rose"])
+        self.client.force_login(get_user_model().objects.create_superuser(username="tablecreator", password="test"))
+        response = self.client.post(reverse("admin:guests_guest_seating"), {"action": "create", "name": "Lilas"})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(DinnerTable.objects.filter(name="Lilas").exists())
 
     def test_export_data_excludes_absences_and_lists_incomplete_plan(self):
         from guests.services.seating_export import seating_export_data, build_seating_pdf
@@ -95,7 +100,7 @@ class DinnerSeatingTests(TestCase):
         absent.rsvp_status = Guest.RSVPStatus.NOT_ATTENDING
         absent.save()
         data = seating_export_data()
-        self.assertEqual(data["tables"][0][1], [placed])
+        self.assertEqual(next(guests for table, guests in data["tables"] if table.pk == self.table.pk), [placed])
         self.assertEqual(data["unassigned"], [unassigned])
         self.assertEqual([item.guest_id for item in data["anomalies"]], [absent.pk])
         for per_table in (False, True):
@@ -123,8 +128,8 @@ class DinnerSeatingTests(TestCase):
     def test_table_name_is_required_and_trimmed(self):
         for name in ("", "   ", "\t\n"):
             with self.assertRaises(ValidationError):
-                create_table(number=3, name=name)
-        self.assertEqual(create_table(number=3, name="  Rose  ").name, "Rose")
+                create_table(name=name)
+        self.assertEqual(create_table(name="  Rose  ").name, "Rose")
         self.client.force_login(get_user_model().objects.create_superuser(username="names", password="test"))
         response = self.client.post(reverse("admin:guests_guest_seating"),
             {"action": "create", "number": 4, "name": "   "},

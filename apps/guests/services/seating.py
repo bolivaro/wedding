@@ -20,8 +20,11 @@ def lock_dinner():
 
 
 @transaction.atomic
-def create_table(*, number, name):
+def create_table(*, name):
     lock_dinner()
+    # Retain the legacy column without exposing numbering to planners.
+    from django.db.models import Max
+    number = (DinnerTable.objects.aggregate(last=Max("number"))["last"] or 0) + 1
     table = DinnerTable(number=number, name=name.strip())
     table.full_clean()
     table.save()

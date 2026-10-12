@@ -9,7 +9,6 @@ from guests.services.seating import assign_guests, create_table, dinner_guests, 
 
 class SeatingActionForm(forms.Form):
     action = forms.ChoiceField(choices=[(x, x) for x in ("create", "assign", "remove", "exchange")])
-    number = forms.IntegerField(min_value=1, max_value=32767, required=False)
     name = forms.CharField(max_length=100, required=False)
     table_id = forms.IntegerField(min_value=1, required=False)
     guest_id = forms.IntegerField(min_value=1, required=False)
@@ -17,7 +16,7 @@ class SeatingActionForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        required = {"create": ["number", "name"], "assign": ["table_id"], "remove": ["guest_id"], "exchange": ["guest_id", "second_id"]}
+        required = {"create": ["name"], "assign": ["table_id"], "remove": ["guest_id"], "exchange": ["guest_id", "second_id"]}
         for key in required.get(data.get("action"), []):
             if not data.get(key):
                 self.add_error(key, "Ce champ est requis.")
@@ -38,7 +37,7 @@ def seating_view(model_admin, request):
                 raise ValidationError([message for errors in form.errors.values() for message in errors])
             data = form.cleaned_data
             if data["action"] == "create":
-                create_table(number=data["number"], name=data["name"])
+                create_table(name=data["name"])
             elif data["action"] == "assign":
                 raw_ids = request.POST.getlist("guest_ids")
                 if len(raw_ids) > 10 or any(not value.isdecimal() for value in raw_ids):

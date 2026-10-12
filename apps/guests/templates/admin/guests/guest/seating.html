@@ -13,7 +13,7 @@
 </div>
 <p>Les PDF incluent uniquement les convives confirmés. En cas de personnes à placer ou d’anomalies, ils portent la mention « Plan provisoire » et une annexe des points à résoudre.</p>
 <p id="seating-feedback" role="status" aria-live="polite">{{ error|default:"" }}</p>
-{% if can_edit %}<details class="seating-card"><summary>Ajouter une table</summary><form method="post" data-seating-form>{% csrf_token %}<input type="hidden" name="action" value="create"><label>Numéro <input type="number" name="number" min="1" max="32767" required></label><label>Nom de la table <input name="name" maxlength="100" required placeholder="Olivier"></label><button type="submit">Créer la table</button></form></details>{% endif %}
+{% if can_edit %}<details class="seating-card"><summary>Ajouter une table</summary><form method="post" data-seating-form>{% csrf_token %}<input type="hidden" name="action" value="create"><label>Nom de la table <input name="name" maxlength="100" required placeholder="Olivier"></label><button type="submit">Créer la table</button></form></details>{% endif %}
 <div class="seating-layout">
 <section class="seating-card"><h2>Invités à placer · {{ unassigned_count }}</h2>
 <label>Rechercher un invité <input type="search" id="seating-search" placeholder="Nom, prénom ou groupe…"></label>

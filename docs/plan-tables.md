@@ -53,7 +53,7 @@ Deux liens permettent de télécharger un PDF A4 récapitulatif ou un PDF avec
 une page par table (précédées d’une couverture récapitulative). Les convives sont
 triés par nom et prénom. Dans le PDF récapitulatif, les tables sont affichées
 par leur nom, dans l’ordre alphabétique sans distinction de casse ou d’accent.
-Une table sans nom apparaît sous « Table N ». Seuls les invités actuellement confirmés au dîner
+Seuls les invités actuellement confirmés au dîner
 figurent dans les listes des tables. Les tables vides sont incluses.
 
 En présence de convives non placés ou d’affectations incompatibles avec la présence,
@@ -69,5 +69,8 @@ Le nom est obligatoire à la création, dans le formulaire et côté serveur.
 Les noms vides ou composés uniquement d’espaces sont interdits en base.
 La migration `0018` nomme les éventuelles tables existantes sans nom « Table N »
 puis ajoute cette contrainte, sans toucher aux affectations. Le numéro reste
-un identifiant technique existant. Appliquer `python manage.py migrate --noinput`
+un identifiant technique interne, attribué automatiquement et absent de l’interface
+et des PDF. Les tables sont présentées par leur nom dans l’administration. Appliquer `python manage.py migrate --noinput`
 au déploiement (le pre-deploy Railway déjà configuré le fait automatiquement).
+
+La migration `0019` modifie uniquement l’ordre de présentation des tables, sans changement de colonnes ni des affectations.

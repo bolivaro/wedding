@@ -626,7 +626,7 @@ class DinnerTable(models.Model):
     name = models.CharField("nom", max_length=100)
 
     class Meta:
-        ordering = ["number"]
+        ordering = ["name", "pk"]
         verbose_name = "table du dîner"
         verbose_name_plural = "tables du dîner"
         constraints = [
@@ -639,7 +639,7 @@ class DinnerTable(models.Model):
         return 10
 
     def __str__(self):
-        return f"Table {self.number}" + (f" — {self.name}" if self.name else "")
+        return self.name
 
 
 class DinnerSeatingAssignment(models.Model):
