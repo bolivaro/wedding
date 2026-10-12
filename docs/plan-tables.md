@@ -62,3 +62,12 @@ placer et les affectations exclues à corriger. Les exports sont accessibles ave
 la permission `guests.view_guest` et ne modifient aucune donnée.
 
 Aucune migration ou dépendance supplémentaire n’est nécessaire pour cette évolution.
+
+## Nom obligatoire des tables
+
+Le nom est obligatoire à la création, dans le formulaire et côté serveur.
+Les noms vides ou composés uniquement d’espaces sont interdits en base.
+La migration `0018` nomme les éventuelles tables existantes sans nom « Table N »
+puis ajoute cette contrainte, sans toucher aux affectations. Le numéro reste
+un identifiant technique existant. Appliquer `python manage.py migrate --noinput`
+au déploiement (le pre-deploy Railway déjà configuré le fait automatiquement).

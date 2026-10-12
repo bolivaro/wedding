@@ -17,7 +17,7 @@ class SeatingActionForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        required = {"create": ["number"], "assign": ["table_id"], "remove": ["guest_id"], "exchange": ["guest_id", "second_id"]}
+        required = {"create": ["number", "name"], "assign": ["table_id"], "remove": ["guest_id"], "exchange": ["guest_id", "second_id"]}
         for key in required.get(data.get("action"), []):
             if not data.get(key):
                 self.add_error(key, "Ce champ est requis.")

@@ -623,13 +623,16 @@ class Ticket(models.Model):
 
 class DinnerTable(models.Model):
     number = models.PositiveSmallIntegerField("numéro", unique=True)
-    name = models.CharField("nom", max_length=100, blank=True)
+    name = models.CharField("nom", max_length=100)
 
     class Meta:
         ordering = ["number"]
         verbose_name = "table du dîner"
         verbose_name_plural = "tables du dîner"
-        constraints = [models.CheckConstraint(condition=models.Q(number__gte=1), name="dinner_table_positive_number")]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(number__gte=1), name="dinner_table_positive_number"),
+            models.CheckConstraint(condition=~models.Q(name__regex=r"^\s*$"), name="dinner_table_name_required"),
+        ]
 
     @property
     def capacity(self):

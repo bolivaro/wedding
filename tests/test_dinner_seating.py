@@ -12,7 +12,7 @@ class DinnerSeatingTests(TestCase):
     def setUp(self):
         self.event = WeddingEvent.objects.get(code=WeddingEvent.Code.RECEPTION)
         self.table = create_table(number=1, name="Olivier")
-        self.other = create_table(number=2)
+        self.other = create_table(number=2, name="Jasmin")
 
     def guest(self, name, status=Guest.RSVPStatus.ATTENDING, **kwargs):
         guest = Guest.objects.create(first_name=name, rsvp_status=status, **kwargs)
@@ -84,7 +84,7 @@ class DinnerSeatingTests(TestCase):
 
     def test_duplicate_table_number_is_rejected(self):
         with self.assertRaises(ValidationError):
-            create_table(number=1)
+            create_table(number=1, name="Autre")
 
     def test_export_data_excludes_absences_and_lists_incomplete_plan(self):
         from guests.services.seating_export import seating_export_data, build_seating_pdf
@@ -119,3 +119,15 @@ class DinnerSeatingTests(TestCase):
             self.assertTrue(response.content.startswith(b"%PDF-"))
         self.assertEqual(self.client.get(url, {"layout": "invalid"}).status_code, 400)
         self.assertEqual(self.client.post(url).status_code, 405)
+
+    def test_table_name_is_required_and_trimmed(self):
+        for name in ("", "   ", "\t\n"):
+            with self.assertRaises(ValidationError):
+                create_table(number=3, name=name)
+        self.assertEqual(create_table(number=3, name="  Rose  ").name, "Rose")
+        self.client.force_login(get_user_model().objects.create_superuser(username="names", password="test"))
+        response = self.client.post(reverse("admin:guests_guest_seating"),
+            {"action": "create", "number": 4, "name": "   "},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(DinnerTable.objects.filter(number=4).exists())

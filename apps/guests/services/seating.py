@@ -20,9 +20,9 @@ def lock_dinner():
 
 
 @transaction.atomic
-def create_table(*, number, name=""):
+def create_table(*, number, name):
     lock_dinner()
-    table = DinnerTable(number=number, name=name)
+    table = DinnerTable(number=number, name=name.strip())
     table.full_clean()
     table.save()
     return table
