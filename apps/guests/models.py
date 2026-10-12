@@ -619,3 +619,31 @@ class Ticket(models.Model):
     @property
     def is_ready(self):
         return self.status == self.Status.READY and bool(self.jpg_file and self.pdf_file)
+
+
+class DinnerTable(models.Model):
+    number = models.PositiveSmallIntegerField("numéro", unique=True)
+    name = models.CharField("nom", max_length=100, blank=True)
+
+    class Meta:
+        ordering = ["number"]
+        verbose_name = "table du dîner"
+        verbose_name_plural = "tables du dîner"
+        constraints = [models.CheckConstraint(condition=models.Q(number__gte=1), name="dinner_table_positive_number")]
+
+    @property
+    def capacity(self):
+        return 10
+
+    def __str__(self):
+        return f"Table {self.number}" + (f" — {self.name}" if self.name else "")
+
+
+class DinnerSeatingAssignment(models.Model):
+    guest = models.OneToOneField(Guest, on_delete=models.PROTECT, related_name="dinner_seating", verbose_name="invité")
+    table = models.ForeignKey(DinnerTable, on_delete=models.PROTECT, related_name="assignments", verbose_name="table")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "affectation au dîner"
+        verbose_name_plural = "affectations au dîner"
