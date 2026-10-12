@@ -300,7 +300,10 @@ class GuestAdmin(admin.ModelAdmin):
             )
 
     def get_urls(self):
+        from .seating_admin import seating_view
+
         custom_urls = [
+            path("seating/", self.admin_site.admin_view(lambda request: seating_view(self, request)), name="guests_guest_seating"),
             path("import/", self.admin_site.admin_view(self.import_view), name="guests_guest_import"),
             path(
                 "import/<int:batch_id>/preview/",
