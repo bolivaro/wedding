@@ -27,7 +27,12 @@
   const search = document.querySelector('#seating-search');
   const filters = document.querySelector('[data-group-filters]');
   const filterStatus = document.querySelector('[data-filter-status]');
+  const allGroups = document.querySelector('[data-all-groups]');
+  const groupCheckboxes = [...document.querySelectorAll('[data-group-filter]')];
   const applyFilters = () => {
+    const checkedCount = groupCheckboxes.filter((input) => input.checked).length;
+    allGroups.checked = checkedCount === groupCheckboxes.length;
+    allGroups.indeterminate = checkedCount > 0 && checkedCount < groupCheckboxes.length;
     const query = normalize(search?.value || '');
     const groups = new Set([...document.querySelectorAll('[data-group-filter]:checked')].map((input) => input.value));
     let visible = 0;
@@ -48,6 +53,9 @@
   if (filters && filterStatus) {
     filters.hidden = false;
     filterStatus.hidden = false;
+    allGroups.addEventListener('change', () => {
+      groupCheckboxes.forEach((input) => { input.checked = allGroups.checked; });
+    });
     filters.addEventListener('change', applyFilters);
     search?.addEventListener('input', applyFilters);
     applyFilters();
