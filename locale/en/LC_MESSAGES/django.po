@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 00:43+0200\n"
+"POT-Creation-Date: 2026-10-17 07:46+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -150,9 +150,6 @@ msgstr ""
 "Simply choose whichever option suits you. Your invitation and your place at "
 "the wedding do not, of course, depend on any contribution."
 
-msgid "En quelques clics"
-msgstr "In just a few clicks"
-
 msgid ""
 "PayPal s'ouvre sur son site sécurisé. Vous choisissez librement le montant "
 "et nous ne recevons jamais vos données de paiement."
@@ -160,32 +157,9 @@ msgstr ""
 "PayPal opens on its secure website. You freely choose the amount, and we "
 "never receive your payment details."
 
-msgid "Ouvrir PayPal"
-msgstr "Open PayPal"
-
-msgid "Virement bancaire"
-msgstr "Bank transfer"
-
-#, fuzzy
-#| msgid "Organiser votre venue"
-msgid "Depuis votre banque"
-msgstr "Plan your visit"
-
-msgid ""
-"Utilisez ces coordonnées dans votre application bancaire. Vérifiez toujours "
-"le nom du titulaire avant de confirmer votre virement."
-msgstr ""
-"Use these details in your banking app. Always check the account holder's "
-"name before confirming your transfer."
-
-msgid "Titulaire"
-msgstr "Account holder"
-
-msgid "IBAN copié !"
-msgstr "IBAN copied!"
-
-msgid "Copier"
-msgstr "Copy"
+#, python-format
+msgid "Ouvrir le PayPal de %(name)s"
+msgstr "Open %(name)s's PayPal"
 
 msgid "La valise est encore fermée"
 msgstr "The suitcase is still closed"
