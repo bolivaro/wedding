@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 07:46+0200\n"
+"POT-Creation-Date: 2026-10-20 21:23+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -160,6 +160,26 @@ msgstr ""
 #, python-format
 msgid "Ouvrir le PayPal de %(name)s"
 msgstr "Open %(name)s's PayPal"
+
+#, python-format
+msgid "Virement %(provider)s"
+msgstr "%(provider)s bank transfer"
+
+msgid ""
+"Effectuez le virement depuis votre application bancaire. Vérifiez le "
+"titulaire avant de confirmer : le montant reste entièrement libre."
+msgstr ""
+"Make the transfer from your banking app. Check the account holder before "
+"confirming: the amount is entirely up to you."
+
+msgid "Titulaire"
+msgstr "Account holder"
+
+msgid "IBAN copié !"
+msgstr "IBAN copied!"
+
+msgid "Copier"
+msgstr "Copy"
 
 msgid "La valise est encore fermée"
 msgstr "The suitcase is still closed"

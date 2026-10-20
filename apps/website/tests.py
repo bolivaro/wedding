@@ -8,7 +8,7 @@ from guests.models import Guest, GuestAccessCredential, GuestEventInvitation, We
 from guests.services.access import CREDENTIAL_SESSION_KEY, GUEST_SESSION_KEY
 
 from .models import Accommodation, StayArea
-from .services.gifts import normalize_paypal_url
+from .services.gifts import normalize_iban, normalize_paypal_url
 
 
 @override_settings(
@@ -192,67 +192,53 @@ class PublicWebsiteTests(TestCase):
         self.assertContains(response, "Votre présence, avant tout")
 
     @override_settings(
-        GIFT_PAYPAL_LABEL_1="Leslie",
-        GIFT_PAYPAL_URL_1="https://paypal.me/Leslie",
-        GIFT_PAYPAL_LABEL_2="Bolivar",
-        GIFT_PAYPAL_URL_2="https://paypal.me/Bolivar",
+        GIFT_PAYPAL_LABEL="Leslie",
+        GIFT_PAYPAL_URL="https://paypal.me/Leslie",
+        GIFT_BANK_LABEL="Bolivar",
+        GIFT_BANK_PROVIDER="Revolut",
+        GIFT_BANK_ACCOUNT_HOLDER="Bolivar Exemple",
+        GIFT_BANK_IBAN="FR76 3000 6000 0112 3456 7890 189",
+        GIFT_BANK_BIC="AGRIFRPP",
     )
-    def test_gifts_shows_two_paypal_accounts_to_public_visitors(self):
+    def test_gifts_shows_paypal_and_revolut_bank_details_publicly(self):
         response = self.client.get(reverse("website:gifts"))
 
         self.assertContains(response, "Votre présence, avant tout")
         self.assertContains(response, "aucune participation attendue")
         self.assertContains(response, "https://paypal.me/Leslie")
-        self.assertContains(response, "https://paypal.me/Bolivar")
         self.assertContains(response, "<h3>Leslie</h3>", html=True)
         self.assertContains(response, "<h3>Bolivar</h3>", html=True)
-        self.assertNotContains(response, "Pour Leslie")
-        self.assertNotContains(response, "Pour Bolivar")
-        self.assertNotContains(response, "IBAN")
-        self.assertNotContains(response, "Virement bancaire")
+        self.assertContains(response, "Virement Revolut")
+        self.assertContains(response, "Bolivar Exemple")
+        self.assertContains(response, "FR76 3000 6000 0112 3456 7890 189")
+        self.assertContains(response, "FR7630006000011234567890189")
+        self.assertContains(response, "AGRIFRPP")
         self.assertContains(response, "Votre invitation et votre place ne dépendent évidemment d'aucune contribution.")
 
     @override_settings(
-        GIFT_PAYPAL_LABEL_1="Leslie",
-        GIFT_PAYPAL_URL_1="https://paypal.me/Leslie",
-        GIFT_PAYPAL_LABEL_2="Bolivar",
-        GIFT_PAYPAL_URL_2="https://paypal.me/Bolivar",
-    )
-    def test_gifts_shows_same_paypal_options_to_authenticated_guests(self):
-        guest = Guest.objects.create(first_name="Noah")
-        credential = GuestAccessCredential.objects.create(
-            guest=guest,
-            secret_hash="unused",
-            expires_at=timezone.now() + timedelta(days=1),
-        )
-        session = self.client.session
-        session[GUEST_SESSION_KEY] = guest.pk
-        session[CREDENTIAL_SESSION_KEY] = credential.pk
-        session.save()
-
-        response = self.client.get(reverse("website:gifts"))
-
-        self.assertContains(response, "https://paypal.me/Leslie")
-        self.assertContains(response, "https://paypal.me/Bolivar")
-        self.assertNotContains(response, "IBAN")
-
-    @override_settings(
-        GIFT_PAYPAL_LABEL_1="Leslie",
-        GIFT_PAYPAL_URL_1="https://example.com/not-paypal",
-        GIFT_PAYPAL_LABEL_2="Bolivar",
-        GIFT_PAYPAL_URL_2="",
+        GIFT_PAYPAL_LABEL="Leslie",
+        GIFT_PAYPAL_URL="https://example.com/not-paypal",
+        GIFT_BANK_LABEL="Bolivar",
+        GIFT_BANK_PROVIDER="Revolut",
+        GIFT_BANK_ACCOUNT_HOLDER="Bolivar Exemple",
+        GIFT_BANK_IBAN="FR00 INVALID",
+        GIFT_BANK_BIC="INVALID!",
     )
     def test_gifts_hides_invalid_payment_configuration(self):
         response = self.client.get(reverse("website:gifts"))
 
         self.assertContains(response, "La valise est encore fermée")
         self.assertNotContains(response, "example.com/not-paypal")
+        self.assertNotContains(response, "FR00 INVALID")
 
     @override_settings(
-        GIFT_PAYPAL_LABEL_1="Leslie",
-        GIFT_PAYPAL_URL_1="",
-        GIFT_PAYPAL_LABEL_2="Bolivar",
-        GIFT_PAYPAL_URL_2="",
+        GIFT_PAYPAL_LABEL="Leslie",
+        GIFT_PAYPAL_URL="",
+        GIFT_BANK_LABEL="Bolivar",
+        GIFT_BANK_PROVIDER="Revolut",
+        GIFT_BANK_ACCOUNT_HOLDER="",
+        GIFT_BANK_IBAN="",
+        GIFT_BANK_BIC="",
     )
     def test_gifts_copy_is_translated_to_english(self):
         response = self.client.get(
@@ -265,6 +251,13 @@ class PublicWebsiteTests(TestCase):
 
 
 class GiftConfigurationTests(TestCase):
+    def test_iban_checksum_is_validated_and_formatted(self):
+        self.assertEqual(
+            normalize_iban("fr76 3000 6000 0112 3456 7890 189"),
+            "FR76 3000 6000 0112 3456 7890 189",
+        )
+        self.assertEqual(normalize_iban("FR00 3000 6000 0112 3456 7890 189"), "")
+
     def test_paypal_url_only_accepts_official_https_host(self):
         self.assertEqual(
             normalize_paypal_url("https://paypal.me/LeslieEtBolivar"),
