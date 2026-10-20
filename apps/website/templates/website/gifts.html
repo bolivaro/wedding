@@ -1,0 +1,52 @@
+{% extends "website/base_public.html" %}
+{% load i18n static %}
+{% block title %}{% translate "Une petite attention" %} — Leslie &amp; Bolivar{% endblock %}
+{% block extra_head %}<meta name="robots" content="noindex, nofollow"><script src="{% static 'website/js/gifts.js' %}" defer></script>{% endblock %}
+{% block content %}
+<header class="page-hero gift-hero">
+  <p class="eyebrow">{% translate "Votre présence, avant tout" %}</p>
+  <span class="gift-hero-mark" aria-hidden="true">♡</span>
+  <h1>{% translate "Des souvenirs plein la valise" %}</h1>
+  <p>{% translate "Le plus beau cadeau sera de vous avoir à nos côtés. Vraiment. Il n'y a rien à payer, aucune participation attendue et surtout aucun montant suggéré." %}</p>
+  <p class="gift-soft-note">{% translate "Si le cœur vous en dit malgré tout, vous pouvez glisser une petite attention dans notre valise à souvenirs. Libre à vous — un mot doux nous fera tout autant plaisir." %}</p>
+</header>
+
+<section class="content-section gift-section" aria-labelledby="gift-options-title">
+  <div class="section-heading">
+    <div><p class="eyebrow">{% translate "Seulement si vous le souhaitez" %}</p><h2 id="gift-options-title">{% translate "Deux chemins, même destination" %}</h2></div>
+    <p>{% translate "Choisissez simplement l'option qui vous convient. Votre invitation et votre place ne dépendent évidemment d'aucune contribution." %}</p>
+  </div>
+
+  {% if paypal_account or bank %}
+    <div class="gift-options">
+      {% if paypal_account %}
+        <article class="gift-card">
+          <span class="gift-card-icon" aria-hidden="true">P</span>
+          <p class="eyebrow">PayPal</p>
+          <h3>{{ paypal_account.label }}</h3>
+          <p>{% translate "PayPal s'ouvre sur son site sécurisé. Vous choisissez librement le montant et nous ne recevons jamais vos données de paiement." %}</p>
+          <a class="button button-primary" href="{{ paypal_account.url }}" target="_blank" rel="noopener noreferrer">{% blocktranslate with name=paypal_account.label %}Ouvrir le PayPal de {{ name }}{% endblocktranslate %} <span aria-hidden="true">↗</span></a>
+        </article>
+      {% endif %}
+
+      {% if bank %}
+        <article class="gift-card">
+          <span class="gift-card-icon" aria-hidden="true">€</span>
+          <p class="eyebrow">{% blocktranslate with provider=bank.provider %}Virement {{ provider }}{% endblocktranslate %}</p>
+          <h3>{{ bank.label }}</h3>
+          <p>{% translate "Effectuez le virement depuis votre application bancaire. Vérifiez le titulaire avant de confirmer : le montant reste entièrement libre." %}</p>
+          <dl class="bank-details">
+            {% if bank.account_holder %}<div><dt>{% translate "Titulaire" %}</dt><dd>{{ bank.account_holder }}</dd></div>{% endif %}
+            <div><dt>IBAN</dt><dd><code data-copy-value="{{ bank.iban|cut:' ' }}">{{ bank.iban }}</code><button class="copy-button" type="button" data-copy-button data-copy-success="{% translate 'IBAN copié !' %}">{% translate "Copier" %}</button></dd></div>
+            {% if bank.bic %}<div><dt>BIC</dt><dd><code>{{ bank.bic }}</code></dd></div>{% endif %}
+          </dl>
+        </article>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="gift-empty"><span aria-hidden="true">✦</span><h3>{% translate "La valise est encore fermée" %}</h3><p>{% translate "Les moyens de contribution seront ajoutés prochainement. En attendant, gardez simplement votre plus beau sourire pour le grand jour." %}</p></div>
+  {% endif %}
+
+  <aside class="gift-reminder"><span aria-hidden="true">♡</span><p><strong>{% translate "Promis, aucune pression." %}</strong> {% translate "Cette page est une possibilité, pas une demande. Votre présence, vos rires et quelques pas sur la piste de danse sont déjà un merveilleux cadeau." %}</p></aside>
+</section>
+{% endblock %}

@@ -10,5 +10,6 @@ urlpatterns = [
     path("programme/", views.program, name="program"),
     path("dress-code/", views.dress_code, name="dress_code"),
     path("sejour/", views.stay, name="stay"),
+    path("cadeaux/", views.gifts, name="gifts"),
     path("mon-invitation/", views.my_invitation, name="my_invitation"),
 ]

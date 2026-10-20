@@ -10,6 +10,7 @@ from guests.services.access import get_session_guest
 from guests.services.event_messages import YOUNG_CHILDREN_PROGRAM_MESSAGE
 
 from .models import Accommodation, StayArea
+from .services.gifts import gift_options
 from .services.stay_recommendations import recommend_area, selected_event_codes
 
 
@@ -182,3 +183,11 @@ def my_invitation(request):
     if guest:
         return redirect("guests:rsvp_dashboard")
     return render(request, "website/my_invitation.html", {"session_guest": None, "support_email": settings.RSVP_SUPPORT_EMAIL})
+
+
+def gifts(request):
+    return render(
+        request,
+        "website/gifts.html",
+        _public_context(request, **gift_options(settings)),
+    )
