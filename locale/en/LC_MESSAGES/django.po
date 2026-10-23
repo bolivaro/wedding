@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 21:23+0200\n"
+"POT-Creation-Date: 2026-10-23 11:34+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -343,6 +343,9 @@ msgstr "Home"
 msgid "Cadeaux"
 msgstr "Gifts"
 
+msgid "Merci"
+msgstr "Thank you"
+
 msgid "Mon RSVP"
 msgstr "My RSVP"
 
@@ -580,6 +583,107 @@ msgstr ""
 "These recommendations are editorial guidance only. Check recent reviews, "
 "terms, price, availability and travel times before booking."
 
+msgid "Merci pour cette merveilleuse journée"
+msgstr "Thank you for this wonderful day"
+
+msgid ""
+"Découvrez les premières images de notre mariage et notre message de "
+"remerciement."
+msgstr "Discover the first images from our wedding and our thank-you message."
+
+msgid "Leslie et Bolivar — les premières images de notre mariage"
+msgstr "Leslie and Bolivar — the first images from our wedding"
+
+msgid "Avec toute notre affection"
+msgstr "With all our love"
+
+msgid "Merci d’avoir écrit cette histoire avec nous"
+msgstr "Thank you for writing this story with us"
+
+msgid ""
+"Votre présence, vos sourires, vos messages et votre affection ont rendu "
+"cette journée encore plus belle que nous ne pouvions l’imaginer."
+msgstr ""
+"Your presence, smiles, messages and affection made this day even more "
+"beautiful than we could have imagined."
+
+msgid "Les premières images"
+msgstr "The first images"
+
+msgid "Revivez quelques instants avec nous"
+msgstr "Relive a few moments with us"
+
+msgid ""
+"Un aperçu de nos préparatifs et de nos cérémonies à la mairie et à l’église."
+msgstr ""
+"A glimpse of our preparations and ceremonies at the town hall and church."
+
+msgid "Vidéo des premières images de notre mariage"
+msgstr "Video of the first images from our wedding"
+
+msgid "Regarder directement sur YouTube"
+msgstr "Watch directly on YouTube"
+
+msgid "La vidéo arrive bientôt"
+msgstr "The video is coming soon"
+
+msgid ""
+"Nous préparons encore ces souvenirs avec soin. Revenez très prochainement."
+msgstr ""
+"We are still carefully preparing these memories. Please come back soon."
+
+msgid "À vous tous"
+msgstr "To all of you"
+
+msgid "Une journée que nous n’oublierons jamais"
+msgstr "A day we will never forget"
+
+msgid ""
+"Merci d’avoir dansé, ri, prié, trinqué et célébré à nos côtés. Chaque "
+"présence et chaque pensée ont trouvé leur place dans nos souvenirs."
+msgstr ""
+"Thank you for dancing, laughing, praying, raising a glass and celebrating "
+"with us. Every presence and every thought found its place in our memories."
+
+msgid ""
+"Nous espérons que ces images vous feront revivre un peu de cette journée, "
+"comme elles le font déjà pour nous."
+msgstr ""
+"We hope these images will let you relive a little of that day, as they "
+"already do for us."
+
+msgid "Prolonger les souvenirs"
+msgstr "Keep the memories alive"
+
+msgid "Retrouvez-nous en quelques liens"
+msgstr "Find us in a few links"
+
+msgid ""
+"Revenez sur notre site ou partagez directement ce message avec vos proches."
+msgstr ""
+"Come back to our website or share this message directly with your loved ones."
+
+msgid "Partager sur WhatsApp"
+msgstr "Share on WhatsApp"
+
+msgid "Retourner à l’accueil"
+msgstr "Return to the home page"
+
+msgid "À la demande de plusieurs invités"
+msgstr "At the request of several guests"
+
+msgid ""
+"Plusieurs d’entre vous nous ont demandé comment nous faire parvenir une "
+"attention. Nous avons regroupé les informations utiles sur une page dédiée, "
+"en toute simplicité et bien sûr sans aucune attente."
+msgstr ""
+"Several of you asked how you could send us a gift. We have gathered the "
+"useful details on a dedicated page, simply and of course with no expectation "
+"whatsoever."
+
+msgid "Voir les informations demandées"
+msgstr "View the requested information"
+
 msgid "Terre brûlée"
 msgstr "Burnt earth"
 
@@ -766,6 +870,33 @@ msgstr "Plan every step with ease"
 msgid ""
 "Programme, tenue, trajets et conseils de logement réunis au même endroit."
 msgstr "Schedule, attire, travel and accommodation advice, all in one place."
+
+#, python-brace-format
+msgid ""
+"Merci d'avoir partagé cette merveilleuse journée avec nous 🤍\n"
+"\n"
+"Découvrez les premières images de notre mariage : {thanks_url}\n"
+"\n"
+"Retrouvez notre site : {home_url}\n"
+"\n"
+"Plusieurs d'entre vous nous ayant demandé comment nous faire parvenir une "
+"attention, nous avons regroupé les informations utiles ici, sans aucune "
+"attente : {gifts_url}\n"
+"\n"
+"Avec toute notre affection,\n"
+"Leslie & Bolivar"
+msgstr ""
+"Thank you for sharing this wonderful day with us 🤍\n"
+"\n"
+"Discover the first images from our wedding: {thanks_url}\n"
+"\n"
+"Visit our website: {home_url}\n"
+"\n"
+"Several of you asked how you could send us a gift, so we have gathered the "
+"useful details here, with no expectation whatsoever: {gifts_url}\n"
+"\n"
+"With all our love,\n"
+"Leslie & Bolivar"
 
 msgid "Django site admin"
 msgstr "Django site admin"

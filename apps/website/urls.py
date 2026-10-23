@@ -11,5 +11,6 @@ urlpatterns = [
     path("dress-code/", views.dress_code, name="dress_code"),
     path("sejour/", views.stay, name="stay"),
     path("cadeaux/", views.gifts, name="gifts"),
+    path("merci/", views.thanks, name="thanks"),
     path("mon-invitation/", views.my_invitation, name="my_invitation"),
 ]

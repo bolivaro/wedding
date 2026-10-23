@@ -38,6 +38,10 @@ WEDDING_DRESS_CODE_URL = normalize_public_url(
 )
 GOOGLE_MAPS_EMBED_API_KEY = env("GOOGLE_MAPS_EMBED_API_KEY", default="")
 GOOGLE_MY_MAPS_EMBED_URL = env("GOOGLE_MY_MAPS_EMBED_URL", default="")
+THANKS_YOUTUBE_URL = env(
+    "THANKS_YOUTUBE_URL",
+    default="https://youtu.be/LiPlfsgWX04",
+)
 RSVP_DEADLINE = datetime.fromisoformat(
     env("RSVP_DEADLINE", default="2026-09-15T23:59:59+02:00")
 )

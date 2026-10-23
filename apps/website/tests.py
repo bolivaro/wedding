@@ -1,4 +1,5 @@
 from datetime import timedelta
+from urllib.parse import parse_qs, urlparse
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -9,6 +10,7 @@ from guests.services.access import CREDENTIAL_SESSION_KEY, GUEST_SESSION_KEY
 
 from .models import Accommodation, StayArea
 from .services.gifts import normalize_iban, normalize_paypal_url
+from .services.thanks_video import extract_youtube_video_id, youtube_video_context
 
 
 @override_settings(
@@ -39,7 +41,7 @@ class PublicWebsiteTests(TestCase):
         )
 
     def test_public_pages_are_accessible(self):
-        for name in ("home", "program", "dress_code", "stay", "my_invitation"):
+        for name in ("home", "program", "dress_code", "stay", "thanks", "my_invitation"):
             with self.subTest(name=name):
                 response = self.client.get(reverse(f"website:{name}"))
                 self.assertEqual(response.status_code, 200)
@@ -50,6 +52,7 @@ class PublicWebsiteTests(TestCase):
             "program": ("The events of our day in order", "Plan your visit"),
             "dress_code": ("For this special day", "Burnt earth", "Let your elegance shine"),
             "stay": ("Stay & travel", "Your starting point", "Recommended areas"),
+            "thanks": ("Thank you for writing this story with us", "Relive a few moments with us", "Share on WhatsApp"),
             "my_invitation": ("Your invitation is private", "Recover my access"),
         }
 
@@ -184,6 +187,48 @@ class PublicWebsiteTests(TestCase):
         response = self.client.get(reverse("website:my_invitation"))
         self.assertRedirects(response, reverse("guests:rsvp_dashboard"), fetch_redirect_response=False)
 
+    @override_settings(
+        THANKS_YOUTUBE_URL="https://youtu.be/LiPlfsgWX04",
+        SITE_BASE_URL="https://www.leslieniboli.fr",
+    )
+    def test_thanks_page_embeds_video_and_social_preview(self):
+        response = self.client.get(reverse("website:thanks"))
+
+        self.assertContains(response, "Merci d’avoir écrit cette histoire avec nous")
+        self.assertContains(
+            response,
+            "https://www.youtube-nocookie.com/embed/LiPlfsgWX04?playsinline=1&amp;rel=0",
+        )
+        self.assertContains(response, 'referrerpolicy="strict-origin-when-cross-origin"')
+        self.assertContains(response, 'content="noindex, nofollow"')
+        self.assertContains(response, 'property="og:title"')
+        self.assertContains(
+            response,
+            'content="https://i.ytimg.com/vi/LiPlfsgWX04/maxresdefault.jpg"',
+        )
+        self.assertContains(response, "https://www.leslieniboli.fr/merci/")
+        self.assertContains(response, reverse("website:gifts"))
+
+    @override_settings(
+        THANKS_YOUTUBE_URL="https://youtu.be/LiPlfsgWX04",
+        SITE_BASE_URL="https://www.leslieniboli.fr",
+    )
+    def test_thanks_whatsapp_message_contains_site_video_and_gift_links(self):
+        response = self.client.get(reverse("website:thanks"))
+        share_url = response.context["whatsapp_share_url"]
+        message = parse_qs(urlparse(share_url).query)["text"][0]
+
+        self.assertIn("https://www.leslieniboli.fr/merci/", message)
+        self.assertIn("https://www.leslieniboli.fr/", message)
+        self.assertIn("https://www.leslieniboli.fr/cadeaux/", message)
+
+    @override_settings(THANKS_YOUTUBE_URL="https://example.com/not-youtube")
+    def test_thanks_page_fails_safely_for_invalid_video_url(self):
+        response = self.client.get(reverse("website:thanks"))
+
+        self.assertContains(response, "La vidéo arrive bientôt")
+        self.assertNotContains(response, "<iframe")
+
     def test_gifts_is_accessible_without_private_guest_access(self):
         response = self.client.get(reverse("website:gifts"))
 
@@ -271,3 +316,37 @@ class GiftConfigurationTests(TestCase):
         ):
             with self.subTest(url=unsafe_url):
                 self.assertEqual(normalize_paypal_url(unsafe_url), "")
+
+
+class ThanksVideoConfigurationTests(TestCase):
+    def test_supported_youtube_urls_are_normalized(self):
+        for url in (
+            "https://youtu.be/LiPlfsgWX04",
+            "https://www.youtube.com/watch?v=LiPlfsgWX04",
+            "https://youtube.com/embed/LiPlfsgWX04",
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(extract_youtube_video_id(url), "LiPlfsgWX04")
+
+    def test_untrusted_or_invalid_video_urls_are_rejected(self):
+        for url in (
+            "http://youtu.be/LiPlfsgWX04",
+            "https://youtube.example/LiPlfsgWX04",
+            "https://youtu.be/not-valid",
+            "javascript:alert(1)",
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(extract_youtube_video_id(url), "")
+
+    def test_video_context_uses_privacy_enhanced_embed(self):
+        context = youtube_video_context("https://youtu.be/LiPlfsgWX04")
+
+        self.assertEqual(context["watch_url"], "https://youtu.be/LiPlfsgWX04")
+        self.assertEqual(
+            context["embed_url"],
+            "https://www.youtube-nocookie.com/embed/LiPlfsgWX04?playsinline=1&rel=0",
+        )
+        self.assertEqual(
+            context["thumbnail_url"],
+            "https://i.ytimg.com/vi/LiPlfsgWX04/maxresdefault.jpg",
+        )

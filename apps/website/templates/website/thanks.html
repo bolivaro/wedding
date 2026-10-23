@@ -1,0 +1,53 @@
+{% extends "website/base_public.html" %}
+{% load i18n %}
+{% block title %}{% translate "Merci pour cette merveilleuse journée" %} — Leslie &amp; Bolivar{% endblock %}
+{% block extra_head %}
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="{{ canonical_url }}">
+  <meta name="description" content="{% translate 'Découvrez les premières images de notre mariage et notre message de remerciement.' %}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Leslie &amp; Bolivar">
+  <meta property="og:title" content="{% translate 'Merci pour cette merveilleuse journée' %}">
+  <meta property="og:description" content="{% translate 'Découvrez les premières images de notre mariage et notre message de remerciement.' %}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  {% if video %}<meta property="og:image" content="{{ video.thumbnail_url }}"><meta property="og:image:secure_url" content="{{ video.thumbnail_url }}"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="720"><meta property="og:image:alt" content="{% translate 'Leslie et Bolivar — les premières images de notre mariage' %}">{% endif %}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% translate 'Merci pour cette merveilleuse journée' %}">
+  <meta name="twitter:description" content="{% translate 'Découvrez les premières images de notre mariage et notre message de remerciement.' %}">
+  {% if video %}<meta name="twitter:image" content="{{ video.thumbnail_url }}">{% endif %}
+{% endblock %}
+{% block content %}
+<header class="page-hero thanks-hero">
+  <p class="eyebrow">{% translate "Avec toute notre affection" %}</p>
+  <span class="thanks-heart" aria-hidden="true">♡</span>
+  <h1>{% translate "Merci d’avoir écrit cette histoire avec nous" %}</h1>
+  <p>{% translate "Votre présence, vos sourires, vos messages et votre affection ont rendu cette journée encore plus belle que nous ne pouvions l’imaginer." %}</p>
+</header>
+
+<section class="content-section thanks-video-section" aria-labelledby="thanks-video-title">
+  <div class="section-heading"><div><p class="eyebrow">{% translate "Les premières images" %}</p><h2 id="thanks-video-title">{% translate "Revivez quelques instants avec nous" %}</h2></div><p>{% translate "Un aperçu de nos préparatifs et de nos cérémonies à la mairie et à l’église." %}</p></div>
+  {% if video %}
+    <div class="thanks-video-frame">
+      <iframe src="{{ video.embed_url }}" title="{% translate 'Vidéo des premières images de notre mariage' %}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+    <p class="thanks-video-fallback"><a href="{{ video.watch_url }}" target="_blank" rel="noopener noreferrer">{% translate "Regarder directement sur YouTube" %} <span aria-hidden="true">↗</span></a></p>
+  {% else %}
+    <div class="gift-empty"><span aria-hidden="true">✦</span><h3>{% translate "La vidéo arrive bientôt" %}</h3><p>{% translate "Nous préparons encore ces souvenirs avec soin. Revenez très prochainement." %}</p></div>
+  {% endif %}
+</section>
+
+<section class="content-section thanks-letter" aria-labelledby="thanks-letter-title">
+  <span aria-hidden="true">“</span>
+  <div><p class="eyebrow">{% translate "À vous tous" %}</p><h2 id="thanks-letter-title">{% translate "Une journée que nous n’oublierons jamais" %}</h2><p>{% translate "Merci d’avoir dansé, ri, prié, trinqué et célébré à nos côtés. Chaque présence et chaque pensée ont trouvé leur place dans nos souvenirs." %}</p><p>{% translate "Nous espérons que ces images vous feront revivre un peu de cette journée, comme elles le font déjà pour nous." %}</p><p class="thanks-signature">Leslie &amp; Bolivar</p></div>
+</section>
+
+<section class="content-section thanks-links" aria-labelledby="thanks-links-title">
+  <div><p class="eyebrow">{% translate "Prolonger les souvenirs" %}</p><h2 id="thanks-links-title">{% translate "Retrouvez-nous en quelques liens" %}</h2><p>{% translate "Revenez sur notre site ou partagez directement ce message avec vos proches." %}</p></div>
+  <div class="thanks-actions"><a class="button button-primary" href="{{ whatsapp_share_url }}" target="_blank" rel="noopener noreferrer">{% translate "Partager sur WhatsApp" %}</a><a class="button button-secondary" href="{% url 'website:home' %}">{% translate "Retourner à l’accueil" %}</a></div>
+</section>
+
+<aside class="content-section thanks-gift-note">
+  <span aria-hidden="true">♡</span>
+  <div><p class="eyebrow">{% translate "À la demande de plusieurs invités" %}</p><h2>{% translate "Une petite attention" %}</h2><p>{% translate "Plusieurs d’entre vous nous ont demandé comment nous faire parvenir une attention. Nous avons regroupé les informations utiles sur une page dédiée, en toute simplicité et bien sûr sans aucune attente." %}</p><a class="button button-secondary" href="{% url 'website:gifts' %}">{% translate "Voir les informations demandées" %}</a></div>
+</aside>
+{% endblock %}
