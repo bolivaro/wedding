@@ -37,7 +37,7 @@
           <p>{% translate "Effectuez le virement depuis votre application bancaire. Vérifiez le titulaire avant de confirmer : le montant reste entièrement libre." %}</p>
           <dl class="bank-details">
             {% if bank.account_holder %}<div><dt>{% translate "Titulaire" %}</dt><dd>{{ bank.account_holder }}</dd></div>{% endif %}
-            <div><dt>IBAN</dt><dd><code data-copy-value="{{ bank.iban|cut:' ' }}">{{ bank.iban }}</code><button class="copy-button" type="button" data-copy-button data-copy-success="{% translate 'IBAN copié !' %}">{% translate "Copier" %}</button></dd></div>
+            <div><dt>IBAN</dt><dd><code data-copy-value="{{ bank.iban|cut:' ' }}">{{ bank.masked_iban }}</code><button class="copy-button" type="button" data-copy-button data-copy-success="{% translate 'IBAN copié !' %}">{% translate "Copier" %}</button></dd></div>
             {% if bank.bic %}<div><dt>BIC</dt><dd><code>{{ bank.bic }}</code></dd></div>{% endif %}
           </dl>
         </article>

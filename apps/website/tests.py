@@ -9,7 +9,7 @@ from guests.models import Guest, GuestAccessCredential, GuestEventInvitation, We
 from guests.services.access import CREDENTIAL_SESSION_KEY, GUEST_SESSION_KEY
 
 from .models import Accommodation, StayArea
-from .services.gifts import normalize_iban, normalize_paypal_url
+from .services.gifts import mask_iban, normalize_iban, normalize_paypal_url
 from .services.thanks_video import extract_youtube_video_id, youtube_video_context
 
 
@@ -255,7 +255,8 @@ class PublicWebsiteTests(TestCase):
         self.assertContains(response, "<h3>Bolivar</h3>", html=True)
         self.assertContains(response, "Virement Revolut")
         self.assertContains(response, "Bolivar Exemple")
-        self.assertContains(response, "FR76 3000 6000 0112 3456 7890 189")
+        self.assertContains(response, "FR76 •••• •••• •••• •••• •••• 189")
+        self.assertNotContains(response, ">FR76 3000 6000 0112 3456 7890 189<")
         self.assertContains(response, "FR7630006000011234567890189")
         self.assertContains(response, "AGRIFRPP")
         self.assertContains(response, "Votre invitation et votre place ne dépendent évidemment d'aucune contribution.")
@@ -296,6 +297,12 @@ class PublicWebsiteTests(TestCase):
 
 
 class GiftConfigurationTests(TestCase):
+    def test_iban_is_masked_except_for_country_checksum_and_last_digits(self):
+        self.assertEqual(
+            mask_iban("FR76 3000 6000 0112 3456 7890 189"),
+            "FR76 •••• •••• •••• •••• •••• 189",
+        )
+
     def test_iban_checksum_is_validated_and_formatted(self):
         self.assertEqual(
             normalize_iban("fr76 3000 6000 0112 3456 7890 189"),
