@@ -143,7 +143,7 @@ class PublicWebsiteTests(TestCase):
 
         self.assertContains(response, "L<i>&amp;</i>B")
         self.assertContains(response, "Leslie&amp;Bolivar")
-        self.assertContains(response, "Version 1.5.0")
+        self.assertContains(response, "Version 1.5.1")
 
     def test_lodging_address_is_hidden_until_selected(self):
         response = self.client.get(reverse("website:stay"))
@@ -199,6 +199,7 @@ class PublicWebsiteTests(TestCase):
             response,
             "https://www.youtube-nocookie.com/embed/LiPlfsgWX04?playsinline=1&amp;rel=0",
         )
+        self.assertNotContains(response, "https://www.youtube.com/watch?v=LiPlfsgWX04")
         self.assertContains(response, 'referrerpolicy="strict-origin-when-cross-origin"')
         self.assertContains(response, 'content="noindex, nofollow"')
         self.assertContains(response, 'property="og:title"')

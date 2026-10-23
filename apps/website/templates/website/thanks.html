@@ -30,7 +30,6 @@
     <div class="thanks-video-frame">
       <iframe src="{{ video.embed_url }}" title="{% translate 'Vidéo des premières images de notre mariage' %}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     </div>
-    <p class="thanks-video-fallback"><a href="{{ video.watch_url }}" target="_blank" rel="noopener noreferrer">{% translate "Regarder directement sur YouTube" %} <span aria-hidden="true">↗</span></a></p>
   {% else %}
     <div class="gift-empty"><span aria-hidden="true">✦</span><h3>{% translate "La vidéo arrive bientôt" %}</h3><p>{% translate "Nous préparons encore ces souvenirs avec soin. Revenez très prochainement." %}</p></div>
   {% endif %}
