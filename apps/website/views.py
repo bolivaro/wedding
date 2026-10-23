@@ -3,15 +3,18 @@ from urllib.parse import quote_plus
 from django.conf import settings
 from django.db.models import Prefetch
 from django.shortcuts import redirect, render
-from django.utils.translation import get_language, gettext as translate, gettext_lazy as _
+from django.urls import reverse
+from django.utils.translation import get_language, gettext, gettext_lazy as _
 
 from guests.models import GuestEventInvitation, WeddingEvent
 from guests.services.access import get_session_guest
 from guests.services.event_messages import YOUNG_CHILDREN_PROGRAM_MESSAGE
+from lesbon.public_urls import build_public_url
 
 from .models import Accommodation, StayArea
 from .services.gifts import gift_options
 from .services.stay_recommendations import recommend_area, selected_event_codes
+from .services.thanks_video import youtube_video_context
 
 
 DRESS_CODE_THEMES = [
@@ -81,7 +84,7 @@ def _localize_fields(instance, *field_names):
     for field_name in field_names:
         value = getattr(instance, field_name, "")
         if value:
-            setattr(instance, field_name, translate(value))
+            setattr(instance, field_name, gettext(value))
 
 
 def _public_context(request, **extra):
@@ -190,4 +193,47 @@ def gifts(request):
         request,
         "website/gifts.html",
         _public_context(request, **gift_options(settings)),
+    )
+
+
+def thanks(request):
+    video = youtube_video_context(settings.THANKS_YOUTUBE_URL)
+    thanks_url = build_public_url(
+        reverse("website:thanks"),
+        base_url=settings.SITE_BASE_URL,
+        debug=settings.DEBUG,
+    )
+    home_url = build_public_url(
+        reverse("website:home"),
+        base_url=settings.SITE_BASE_URL,
+        debug=settings.DEBUG,
+    )
+    gifts_url = build_public_url(
+        reverse("website:gifts"),
+        base_url=settings.SITE_BASE_URL,
+        debug=settings.DEBUG,
+    )
+    share_message = gettext(
+        "Merci d'avoir partagé cette merveilleuse journée avec nous 🤍\n\n"
+        "Découvrez les premières images de notre mariage : {thanks_url}\n\n"
+        "Retrouvez notre site : {home_url}\n\n"
+        "Plusieurs d'entre vous nous ayant demandé comment nous faire parvenir "
+        "une attention, nous avons regroupé les informations utiles ici, sans "
+        "aucune attente : {gifts_url}\n\nAvec toute notre affection,\nLeslie & Bolivar"
+    ).format(
+        thanks_url=thanks_url,
+        home_url=home_url,
+        gifts_url=gifts_url,
+    )
+    return render(
+        request,
+        "website/thanks.html",
+        _public_context(
+            request,
+            video=video,
+            canonical_url=thanks_url,
+            home_url=home_url,
+            gifts_url=gifts_url,
+            whatsapp_share_url=f"https://wa.me/?text={quote_plus(share_message)}",
+        ),
     )

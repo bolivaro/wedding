@@ -14,6 +14,7 @@
       <a href="{% url 'website:dress_code' %}" {% if request.resolver_match.url_name == 'dress_code' %}aria-current="page"{% endif %}>Dress code</a>
       <a href="{% url 'website:stay' %}" {% if request.resolver_match.url_name == 'stay' %}aria-current="page"{% endif %}>{% translate "Séjour" %}</a>
       <a href="{% url 'website:gifts' %}" {% if request.resolver_match.url_name == 'gifts' %}aria-current="page"{% endif %}>{% translate "Cadeaux" %}</a>
+      <a href="{% url 'website:thanks' %}" {% if request.resolver_match.url_name == 'thanks' %}aria-current="page"{% endif %}>{% translate "Merci" %}</a>
       <a class="nav-invitation" href="{% url 'website:my_invitation' %}" {% if request.resolver_match.namespace == 'guests' %}aria-current="page"{% endif %}>{% if session_guest or request.resolver_match.namespace == 'guests' %}{% translate "Mon RSVP" %}{% else %}{% translate "Mon invitation" %}{% endif %}</a>
       <form class="language-switcher" action="{% url 'set_language' %}" method="post">
         {% csrf_token %}<input name="next" type="hidden" value="{{ request.get_full_path }}">
