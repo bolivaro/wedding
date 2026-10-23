@@ -41,13 +41,13 @@
   <div><p class="eyebrow">{% translate "À vous tous" %}</p><h2 id="thanks-letter-title">{% translate "Une journée que nous n’oublierons jamais" %}</h2><p>{% translate "Merci d’avoir dansé, ri, prié, trinqué et célébré à nos côtés. Chaque présence et chaque pensée ont trouvé leur place dans nos souvenirs." %}</p><p>{% translate "Nous espérons que ces images vous feront revivre un peu de cette journée, comme elles le font déjà pour nous." %}</p><p class="thanks-signature">Leslie &amp; Bolivar</p></div>
 </section>
 
-<section class="content-section thanks-links" aria-labelledby="thanks-links-title">
-  <div><p class="eyebrow">{% translate "Prolonger les souvenirs" %}</p><h2 id="thanks-links-title">{% translate "Retrouvez-nous en quelques liens" %}</h2><p>{% translate "Revenez sur notre site ou partagez directement ce message avec vos proches." %}</p></div>
-  <div class="thanks-actions"><a class="button button-primary" href="{{ whatsapp_share_url }}" target="_blank" rel="noopener noreferrer">{% translate "Partager sur WhatsApp" %}</a><a class="button button-secondary" href="{% url 'website:home' %}">{% translate "Retourner à l’accueil" %}</a></div>
-</section>
-
 <aside class="content-section thanks-gift-note">
   <span aria-hidden="true">♡</span>
   <div><p class="eyebrow">{% translate "À la demande de plusieurs invités" %}</p><h2>{% translate "Une petite attention" %}</h2><p>{% translate "Plusieurs d’entre vous nous ont demandé comment nous faire parvenir une attention. Nous avons regroupé les informations utiles sur une page dédiée, en toute simplicité et bien sûr sans aucune attente." %}</p><a class="button button-secondary" href="{% url 'website:gifts' %}">{% translate "Voir les informations demandées" %}</a></div>
 </aside>
+
+<section class="content-section thanks-links" aria-labelledby="thanks-links-title">
+  <div><p class="eyebrow">{% translate "Prolonger les souvenirs" %}</p><h2 id="thanks-links-title">{% translate "Retrouvez-nous en quelques liens" %}</h2><p>{% translate "Revenez sur notre site ou partagez directement ce message avec vos proches." %}</p></div>
+  <div class="thanks-actions"><a class="button button-primary" href="{{ whatsapp_share_url }}" target="_blank" rel="noopener noreferrer">{% translate "Partager sur WhatsApp" %}</a><a class="button button-secondary" href="{% url 'website:home' %}">{% translate "Retourner à l’accueil" %}</a></div>
+</section>
 {% endblock %}
