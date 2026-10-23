@@ -37,5 +37,5 @@ def youtube_video_context(value):
             f"https://www.youtube-nocookie.com/embed/{video_id}"
             "?playsinline=1&rel=0"
         ),
-        "thumbnail_url": f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg",
+        "thumbnail_url": f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg",
     }

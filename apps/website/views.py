@@ -203,11 +203,6 @@ def thanks(request):
         base_url=settings.SITE_BASE_URL,
         debug=settings.DEBUG,
     )
-    home_url = build_public_url(
-        reverse("website:home"),
-        base_url=settings.SITE_BASE_URL,
-        debug=settings.DEBUG,
-    )
     gifts_url = build_public_url(
         reverse("website:gifts"),
         base_url=settings.SITE_BASE_URL,
@@ -215,14 +210,14 @@ def thanks(request):
     )
     share_message = gettext(
         "Merci d'avoir partagé cette merveilleuse journée avec nous 🤍\n\n"
+        "Merci également pour vos messages, vos attentions et vos cadeaux, "
+        "qui nous ont profondément touchés.\n\n"
         "Découvrez les premières images de notre mariage : {thanks_url}\n\n"
-        "Retrouvez notre site : {home_url}\n\n"
         "Plusieurs d'entre vous nous ayant demandé comment nous faire parvenir "
         "une attention, nous avons regroupé les informations utiles ici, sans "
         "aucune attente : {gifts_url}\n\nAvec toute notre affection,\nLeslie & Bolivar"
     ).format(
         thanks_url=thanks_url,
-        home_url=home_url,
         gifts_url=gifts_url,
     )
     return render(
@@ -232,7 +227,6 @@ def thanks(request):
             request,
             video=video,
             canonical_url=thanks_url,
-            home_url=home_url,
             gifts_url=gifts_url,
             whatsapp_share_url=f"https://wa.me/?text={quote_plus(share_message)}",
         ),
