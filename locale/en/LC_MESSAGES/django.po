@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 11:34+0200\n"
+"POT-Creation-Date: 2026-10-23 11:58+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -621,9 +621,6 @@ msgstr ""
 msgid "Vidéo des premières images de notre mariage"
 msgstr "Video of the first images from our wedding"
 
-msgid "Regarder directement sur YouTube"
-msgstr "Watch directly on YouTube"
-
 msgid "La vidéo arrive bientôt"
 msgstr "The video is coming soon"
 
@@ -652,6 +649,21 @@ msgstr ""
 "We hope these images will let you relive a little of that day, as they "
 "already do for us."
 
+msgid "À la demande de plusieurs invités"
+msgstr "At the request of several guests"
+
+msgid ""
+"Plusieurs d’entre vous nous ont demandé comment nous faire parvenir une "
+"attention. Nous avons regroupé les informations utiles sur une page dédiée, "
+"en toute simplicité et bien sûr sans aucune attente."
+msgstr ""
+"Several of you asked how you could send us a gift. We have gathered the "
+"useful details on a dedicated page, simply and of course with no expectation "
+"whatsoever."
+
+msgid "Voir les informations demandées"
+msgstr "View the requested information"
+
 msgid "Prolonger les souvenirs"
 msgstr "Keep the memories alive"
 
@@ -668,21 +680,6 @@ msgstr "Share on WhatsApp"
 
 msgid "Retourner à l’accueil"
 msgstr "Return to the home page"
-
-msgid "À la demande de plusieurs invités"
-msgstr "At the request of several guests"
-
-msgid ""
-"Plusieurs d’entre vous nous ont demandé comment nous faire parvenir une "
-"attention. Nous avons regroupé les informations utiles sur une page dédiée, "
-"en toute simplicité et bien sûr sans aucune attente."
-msgstr ""
-"Several of you asked how you could send us a gift. We have gathered the "
-"useful details on a dedicated page, simply and of course with no expectation "
-"whatsoever."
-
-msgid "Voir les informations demandées"
-msgstr "View the requested information"
 
 msgid "Terre brûlée"
 msgstr "Burnt earth"
