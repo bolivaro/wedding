@@ -9,6 +9,7 @@ from guests.services.access import CREDENTIAL_SESSION_KEY, GUEST_SESSION_KEY
 
 from .models import Accommodation, StayArea
 from .services.gifts import normalize_iban, normalize_paypal_url
+from .services.thanks_video import extract_youtube_video_id, youtube_video_context
 
 
 @override_settings(
@@ -271,3 +272,37 @@ class GiftConfigurationTests(TestCase):
         ):
             with self.subTest(url=unsafe_url):
                 self.assertEqual(normalize_paypal_url(unsafe_url), "")
+
+
+class ThanksVideoConfigurationTests(TestCase):
+    def test_supported_youtube_urls_are_normalized(self):
+        for url in (
+            "https://youtu.be/LiPlfsgWX04",
+            "https://www.youtube.com/watch?v=LiPlfsgWX04",
+            "https://youtube.com/embed/LiPlfsgWX04",
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(extract_youtube_video_id(url), "LiPlfsgWX04")
+
+    def test_untrusted_or_invalid_video_urls_are_rejected(self):
+        for url in (
+            "http://youtu.be/LiPlfsgWX04",
+            "https://youtube.example/LiPlfsgWX04",
+            "https://youtu.be/not-valid",
+            "javascript:alert(1)",
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(extract_youtube_video_id(url), "")
+
+    def test_video_context_uses_privacy_enhanced_embed(self):
+        context = youtube_video_context("https://youtu.be/LiPlfsgWX04")
+
+        self.assertEqual(context["watch_url"], "https://youtu.be/LiPlfsgWX04")
+        self.assertEqual(
+            context["embed_url"],
+            "https://www.youtube-nocookie.com/embed/LiPlfsgWX04?playsinline=1&rel=0",
+        )
+        self.assertEqual(
+            context["thumbnail_url"],
+            "https://i.ytimg.com/vi/LiPlfsgWX04/maxresdefault.jpg",
+        )
