@@ -143,7 +143,7 @@ class PublicWebsiteTests(TestCase):
 
         self.assertContains(response, "L<i>&amp;</i>B")
         self.assertContains(response, "Leslie&amp;Bolivar")
-        self.assertContains(response, "Version 1.5.1")
+        self.assertContains(response, "Version 1.5.2")
 
     def test_lodging_address_is_hidden_until_selected(self):
         response = self.client.get(reverse("website:stay"))
@@ -205,7 +205,7 @@ class PublicWebsiteTests(TestCase):
         self.assertContains(response, 'property="og:title"')
         self.assertContains(
             response,
-            'content="https://i.ytimg.com/vi/LiPlfsgWX04/maxresdefault.jpg"',
+            'content="https://i.ytimg.com/vi/LiPlfsgWX04/hqdefault.jpg"',
         )
         self.assertContains(response, "https://www.leslieniboli.fr/merci/")
         self.assertContains(response, reverse("website:gifts"))
@@ -214,14 +214,16 @@ class PublicWebsiteTests(TestCase):
         THANKS_YOUTUBE_URL="https://youtu.be/LiPlfsgWX04",
         SITE_BASE_URL="https://www.leslieniboli.fr",
     )
-    def test_thanks_whatsapp_message_contains_site_video_and_gift_links(self):
+    def test_thanks_whatsapp_message_thanks_guests_and_contains_useful_links(self):
         response = self.client.get(reverse("website:thanks"))
         share_url = response.context["whatsapp_share_url"]
         message = parse_qs(urlparse(share_url).query)["text"][0]
 
+        self.assertIn("Merci également pour vos messages, vos attentions et vos cadeaux", message)
         self.assertIn("https://www.leslieniboli.fr/merci/", message)
-        self.assertIn("https://www.leslieniboli.fr/", message)
         self.assertIn("https://www.leslieniboli.fr/cadeaux/", message)
+        self.assertNotIn("Retrouvez notre site", message)
+        self.assertEqual(message.count("https://"), 2)
 
     @override_settings(THANKS_YOUTUBE_URL="https://example.com/not-youtube")
     def test_thanks_page_fails_safely_for_invalid_video_url(self):
@@ -356,5 +358,5 @@ class ThanksVideoConfigurationTests(TestCase):
         )
         self.assertEqual(
             context["thumbnail_url"],
-            "https://i.ytimg.com/vi/LiPlfsgWX04/maxresdefault.jpg",
+            "https://i.ytimg.com/vi/LiPlfsgWX04/hqdefault.jpg",
         )
