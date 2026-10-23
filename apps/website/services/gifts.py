@@ -36,6 +36,14 @@ def normalize_iban(value):
     return " ".join(compact[index:index + 4] for index in range(0, len(compact), 4))
 
 
+def mask_iban(value):
+    compact = re.sub(r"\s+", "", value or "")
+    if len(compact) < 8:
+        return ""
+    masked = compact[:4] + "•" * (len(compact) - 7) + compact[-3:]
+    return " ".join(masked[index:index + 4] for index in range(0, len(masked), 4))
+
+
 def normalize_bic(value):
     compact = re.sub(r"\s+", "", (value or "")).upper()
     return compact if not compact or BIC_RE.fullmatch(compact) else ""
@@ -54,6 +62,7 @@ def gift_options(settings):
             "provider": settings.GIFT_BANK_PROVIDER.strip(),
             "account_holder": settings.GIFT_BANK_ACCOUNT_HOLDER.strip(),
             "iban": iban,
+            "masked_iban": mask_iban(iban),
             "bic": normalize_bic(settings.GIFT_BANK_BIC),
         } if iban else None,
     }
